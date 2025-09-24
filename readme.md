@@ -76,3 +76,5 @@ generate the two separate html and js file contents and use simple html and css 
 
 chat gpt discussion:
 https://chatgpt.com/c/68d3ee2e-1838-8328-a329-04ab9ac3e352
+shared link to this discussion:
+https://chatgpt.com/share/68d4042a-de5c-8010-befb-9b61247a3cb0
