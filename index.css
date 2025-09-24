@@ -1,0 +1,117 @@
+/* ===== Basic page look ===== */
+:root {
+  --bg: #ffffff;
+  --fg: #222222;
+  --card: #f5f5f5;
+  --accent: #1976d2;
+  --accent-hover: #155a9c;
+  --border: #cccccc;
+  --rowEven: #fafafa;
+  --rowOdd: #ffffff;
+  --highlight: #fff3cd;
+}
+body[data-theme="dark"] {
+  --bg: #121212;
+  --fg: #e6e6e6;
+  --card: #1e1e1e;
+  --accent: #64b5f6;
+  --accent-hover: #4b8bbf;
+  --border: #333333;
+  --rowEven: #1a1a1a;
+  --rowOdd: #151515;
+  --highlight: #3a2f00;
+}
+body[data-font="small"] { font-size: 14px; }
+body[data-font="medium"] { font-size: 16px; }
+body[data-font="large"] { font-size: 18px; }
+
+body {
+  margin: 0;
+  padding: 0 8px 24px;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: system-ui, Arial, sans-serif;
+  line-height: 1.4;
+}
+
+/* ===== Sections ===== */
+.section {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--card);
+  margin: 10px 0;
+}
+.section-header {
+  padding: 10px;
+  cursor: pointer;
+  font-weight: 600;
+  border-bottom: 1px solid var(--border);
+}
+.section-header .chev { margin-right: 6px; color: var(--accent); }
+.section-content { padding: 10px; }
+.collapsed .section-content { display: none; }
+
+/* ===== Buttons & inputs ===== */
+button {
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--fg);
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+button.primary {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+input, select, textarea {
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--fg);
+  width: 100%;
+  box-sizing: border-box;
+  margin: 4px 0 10px;
+}
+label { display: block; margin-top: 6px; }
+
+/* ===== Tables ===== */
+table { width: 100%; border-collapse: collapse; background: var(--bg); }
+th, td { border: 1px solid var(--border); padding: 6px; text-align: left; }
+tbody tr:nth-child(even) { background: var(--rowEven); }
+tbody tr:nth-child(odd)  { background: var(--rowOdd); }
+tr.selected { background: var(--highlight); }
+
+/* ===== Message overlay ===== */
+#message.section {
+  position: fixed;
+  inset: 0;
+  margin: 0;
+  display: none;
+  background: rgba(0,0,0,0.4);
+  border: none;
+}
+#message .box {
+  max-width: 520px;
+  margin: 15vh auto;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 12px;
+}
+
+/* ===== Helpers ===== */
+.row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.grow { flex: 1; }
+
+/* ===== Hover styles ===== */
+button:hover {
+  background: var(--rowEven);
+}
+button.primary:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
