@@ -28,7 +28,7 @@ var currentUser = null;
 var uiVisible = [];
 var uiCollapsed = {};
 var settings = { theme: "light", font: "medium" };
-var afterMessageShowId = [];
+var afterMessageShowId = null;
 
 /* ===== DOM Helpers ===== */
 function $(id) {
@@ -44,7 +44,7 @@ function setVal(id, val) {
 }
 function getVal(id) {
   var el = $(id);
-  return el ? el.value.trim() : "";
+  return el ? ("" + el.value).trim() : "";
 }
 
 /* ===== Storage Helpers ===== */
@@ -66,11 +66,13 @@ function setSectionVisible(id, visible) {
   if (!el) return;
   el.style.display = visible ? "block" : "none";
 
-  if (visible && uiVisible.indexOf(id) === -1) uiVisible.push(id);
-  if (!visible)
+  if (visible) {
+    if (uiVisible.indexOf(id) === -1) uiVisible.push(id);
+  } else {
     uiVisible = uiVisible.filter(function (x) {
       return x !== id;
     });
+  }
   save(LS.uiVisible, uiVisible);
 
   updateChevron(id);
@@ -82,8 +84,7 @@ function showOnly(id) {
 }
 function toggleVisibility(id) {
   var el = $(id);
-  var nowVisible = el && el.style.display !== "none";
-  setSectionVisible(id, !nowVisible);
+  setSectionVisible(id, !(el && el.style.display !== "none"));
 }
 function setCollapsed(id, collapsed) {
   var el = $(id);
@@ -97,51 +98,36 @@ function setCollapsed(id, collapsed) {
 function toggleCollapse(id) {
   var el = $(id);
   if (!el) return;
-  var isCollapsed = el.classList.contains("collapsed");
-  setCollapsed(id, !isCollapsed);
+  setCollapsed(id, !el.classList.contains("collapsed"));
 }
 function updateChevron(id) {
-  var chev = $("chev-" + id);
-  var el = $(id);
+  var chev = $("chev-" + id),
+    el = $(id);
   if (!chev || !el) return;
   var isCollapsed = el.classList.contains("collapsed");
   var isVisible = el.style.display !== "none";
   chev.textContent = isVisible ? (isCollapsed ? "►" : "▼") : "";
 }
 
-/* ===== Message Overlay ===== */
+/* ===== Message (normal section) ===== */
 function showMessage(text, showAfterId) {
-  if (showAfterId) {
-    if (Array.isArray(showAfterId)) {
-      afterMessageShowId = showAfterId;
-    } else {
-      afterMessageShowId = [showAfterId];
-    }
-  } else {
-    afterMessageShowId = [];
-  }
-  save(LS.messagePrev, uiVisible);
+  afterMessageShowId = showAfterId || null;
+  save(LS.messagePrev, uiVisible.slice(0));
   setText("message-text", text);
-
   SECTIONS.forEach(function (id) {
     setSectionVisible(id, false);
   });
   setSectionVisible("message", true);
 }
-
 function closeMessage() {
   setSectionVisible("message", false);
   var prev = load(LS.messagePrev, ["menu", "login"]);
-  if (afterMessageShowId && afterMessageShowId.length > 0) {
-    SECTIONS.forEach(function (id) {
-      setSectionVisible(id, afterMessageShowId.indexOf(id) !== -1);
-    });
-  } else {
+  if (afterMessageShowId) showOnly(afterMessageShowId);
+  else
     SECTIONS.forEach(function (id) {
       setSectionVisible(id, prev.indexOf(id) !== -1);
     });
-  }
-  afterMessageShowId = [];
+  afterMessageShowId = null;
 }
 
 /* ===== Users ===== */
@@ -165,15 +151,14 @@ function findUser(username) {
 function updateWelcome() {
   setText("welcome", currentUser ? "Welcome, " + currentUser : "Not logged in");
 }
+
 function renderUsersRow(u, i, selectUsername) {
   var tr = document.createElement("tr");
 
-  // # column
   var tdIndex = document.createElement("td");
   tdIndex.textContent = i + 1;
   tr.appendChild(tdIndex);
 
-  // username column with button
   var tdUser = document.createElement("td");
   var btn = document.createElement("button");
   btn.textContent = u.username;
@@ -183,28 +168,25 @@ function renderUsersRow(u, i, selectUsername) {
   tdUser.appendChild(btn);
   tr.appendChild(tdUser);
 
-  // name column
   var tdName = document.createElement("td");
   tdName.textContent = u.name || "";
   tr.appendChild(tdName);
-
-  // surname column
   var tdSurname = document.createElement("td");
   tdSurname.textContent = u.surname || "";
   tr.appendChild(tdSurname);
 
-  // highlight selected row
   if (selectUsername && u.username === selectUsername) {
     tr.classList.add("selected");
-    setTimeout(function () { tr.scrollIntoView({ block: "center" }); }, 0);
+    setTimeout(function () {
+      tr.scrollIntoView({ block: "center" });
+    }, 0);
   }
-
   return tr;
 }
 function refreshUsersTable(selectUsername) {
-  var tbody = $("users-tbody");
-  var table = $("users-table");
-  var empty = $("users-empty");
+  var tbody = $("users-tbody"),
+    table = $("users-table"),
+    empty = $("users-empty");
   tbody.innerHTML = "";
   if (users.length === 0) {
     table.style.display = "none";
@@ -227,10 +209,8 @@ function handleLogin() {
     currentUser = found.username;
     save(LS.currentUser, currentUser);
     updateWelcome();
-    showMessage("Login successful. Welcome, " + currentUser + "!",["usersList","menu"]);
-  } else {
-    showMessage("Login failed. Wrong username or password.");//, ["login","menu"]);
-  }
+    showMessage("Login successful. Welcome, " + currentUser + "!", "menu");
+  } else showMessage("Login failed. Wrong username or password.", "login");
 }
 function logout() {
   if (!currentUser)
@@ -254,11 +234,11 @@ function clearRegisterForm() {
   setVal("reg-gender", "");
 }
 function registerUser() {
-  var username = getVal("reg-username");
-  var password = $("reg-password").value;
-  var name = getVal("reg-name");
-  var surname = getVal("reg-surname");
-  var gender = getVal("reg-gender");
+  var username = getVal("reg-username"),
+    password = $("reg-password").value;
+  var name = getVal("reg-name"),
+    surname = getVal("reg-surname"),
+    gender = getVal("reg-gender");
   if (!username || !password)
     return showMessage("Please enter username and password.", "register");
   if (findUser(username))
@@ -287,7 +267,7 @@ function openUserDetails(username) {
   var u = findUser(username);
   if (!u) return;
   fillUserDetails(u);
-  setSectionVisible("usersList", false);
+  setSectionVisible("usersList", true);
   setSectionVisible("userDetails", true);
 }
 function applyUserEdit(oldU, newU, newName, newSurname) {
@@ -312,10 +292,10 @@ function handleCurrentUserRename(oldU, newU) {
   }
 }
 function saveUserDetails() {
-  var oldU = getVal("ud-username-old");
-  var newU = getVal("ud-username");
-  var newName = getVal("ud-name");
-  var newSurname = getVal("ud-surname");
+  var oldU = getVal("ud-username-old"),
+    newU = getVal("ud-username");
+  var newName = getVal("ud-name"),
+    newSurname = getVal("ud-surname");
   if (!newU) return showMessage("Username cannot be empty.", "userDetails");
   if (oldU !== newU && findUser(newU))
     return showMessage("Username already exists.", "userDetails");
@@ -373,25 +353,33 @@ function getPointFormData() {
 function validLatLng(lat, lng) {
   return Number.isFinite(Number(lat)) && Number.isFinite(Number(lng));
 }
+
 function renderPointsRow(p, i, selectId) {
   var tr = document.createElement("tr");
+
+  var tdIndex = document.createElement("td");
+  tdIndex.textContent = i + 1;
+  tr.appendChild(tdIndex);
+
+  var tdTitle = document.createElement("td");
   var btn = document.createElement("button");
   btn.textContent = p.title || "(no title)";
   btn.addEventListener("click", function () {
     openMapPointDetails(p.id);
   });
-  var tdTitle = document.createElement("td");
   tdTitle.appendChild(btn);
-  tr.innerHTML = "<td>" + (i + 1) + "</td>";
   tr.appendChild(tdTitle);
-  tr.innerHTML +=
-    "<td>" +
-    (p.username || "") +
-    "</td><td>" +
-    (p.lat || "") +
-    "</td><td>" +
-    (p.lng || "") +
-    "</td>";
+
+  var tdUser = document.createElement("td");
+  tdUser.textContent = p.username || "";
+  tr.appendChild(tdUser);
+  var tdLat = document.createElement("td");
+  tdLat.textContent = String(p.lat);
+  tr.appendChild(tdLat);
+  var tdLng = document.createElement("td");
+  tdLng.textContent = String(p.lng);
+  tr.appendChild(tdLng);
+
   if (selectId != null && Number(p.id) === Number(selectId)) {
     tr.classList.add("selected");
     setTimeout(function () {
@@ -523,20 +511,63 @@ function resetAll() {
   location.reload();
 }
 
-/* ===== About ===== */
+/* ===== About (kept so it can be opened) ===== */
 function openAbout() {
   showMessage("Simple Users & Map Points app.\nAuthor: You.", "menu");
 }
 
+/* ===== Switchboard in Menu ===== */
+function renderSwitchboard() {
+  var host = $("switchboard-list");
+  if (!host) return;
+  host.innerHTML = "";
+
+  // One full-width button per section (except 'menu')
+  SECTIONS.forEach(function (id) {
+    if (id === "menu") return;
+    var btn = document.createElement("button");
+    btn.className = "switch-btn";
+    btn.textContent = id;
+    btn.addEventListener("click", function () {
+      var el = $(id);
+      var alreadyVisible = el && el.style.display !== "none";
+
+      // Show and expand target; keep menu visible for fast switching
+      setSectionVisible(id, true);
+      setCollapsed(id, false);
+      setSectionVisible("menu", true);
+
+      // Scroll into view either way
+      setTimeout(function () {
+        var target = $(id);
+        if (target)
+          target.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 0);
+    });
+    host.appendChild(btn);
+  });
+}
+
+/* ===== Close (✕) header buttons ===== */
+function handleCloseButtons() {
+  document.body.addEventListener("click", function (e) {
+    var t = e.target;
+    if (t && t.classList && t.classList.contains("close-btn")) {
+      e.stopPropagation(); // prevent header toggle
+      var id = t.getAttribute("data-target");
+      if (id) setSectionVisible(id, false);
+    }
+  });
+}
+
 /* ===== Load & Init ===== */
 function loadAll() {
-  // load users and points from localStorage or from SAMPLE data
+  // Load from LS or from samples
   users = load(LS.users, null);
   if (!users || users.length === 0) {
     users = typeof SAMPLE_USERS !== "undefined" ? SAMPLE_USERS.slice() : [];
     save(LS.users, users);
   }
-
   mapPoints = load(LS.points, null);
   if (!mapPoints || mapPoints.length === 0) {
     mapPoints =
@@ -550,6 +581,8 @@ function loadAll() {
   settings = load(LS.settings, { theme: "light", font: "medium" });
 
   applyThemeFont();
+
+  // Apply visibility & collapse
   SECTIONS.forEach(function (id) {
     setSectionVisible(id, uiVisible.indexOf(id) !== -1);
   });
@@ -557,11 +590,13 @@ function loadAll() {
   SECTIONS.forEach(function (id) {
     setCollapsed(id, !!uiCollapsed[id]);
   });
+
+  // Initial renders
   refreshUsersTable();
   refreshMapPointsTable();
   updateWelcome();
 
-  /* === Attach events === */
+  /* === Collapse toggles === */
   $("menu-header").addEventListener("click", function () {
     toggleCollapse("menu");
   });
@@ -577,6 +612,9 @@ function loadAll() {
   $("userDetails-header").addEventListener("click", function () {
     toggleCollapse("userDetails");
   });
+  $("message-header").addEventListener("click", function () {
+    toggleCollapse("message");
+  });
   $("mapPoints-header").addEventListener("click", function () {
     toggleCollapse("mapPoints");
   });
@@ -590,30 +628,42 @@ function loadAll() {
     toggleCollapse("about");
   });
 
+  /* === Menu buttons === */
   $("btn-settings").addEventListener("click", openSettings);
-  $("btn-about").addEventListener("click", openAbout);
   $("btn-logout").addEventListener("click", logout);
 
+  /* === Auth & Register === */
   $("btn-login").addEventListener("click", handleLogin);
   $("btn-goto-register").addEventListener("click", gotoRegister);
-
   $("btn-register").addEventListener("click", registerUser);
   $("btn-cancel-register").addEventListener("click", cancelRegister);
 
+  /* === User details === */
   $("btn-save-user").addEventListener("click", saveUserDetails);
   $("btn-delete-user").addEventListener("click", deleteUser);
 
+  /* === Message === */
   $("btn-close-message").addEventListener("click", closeMessage);
 
+  /* === Map points === */
   $("btn-save-point").addEventListener("click", saveMapPoint);
   $("btn-clear-point").addEventListener("click", clearMapPointForm);
   $("btn-clear-all-points").addEventListener("click", clearAllMapPoints);
-
   $("btn-edit-point").addEventListener("click", editMapPointFromDetails);
   $("btn-delete-point").addEventListener("click", deleteMapPointFromDetails);
 
+  /* === Settings === */
   $("btn-apply-settings").addEventListener("click", applySettings);
   $("btn-reset-all").addEventListener("click", resetAll);
+
+  /* === Switchboard & Close buttons === */
+  renderSwitchboard();
+  $("menu-header").addEventListener("click", function () {
+    setTimeout(function () {
+      renderSwitchboard();
+    }, 0);
+  });
+  handleCloseButtons();
 }
 
 /* ===== Start ===== */
