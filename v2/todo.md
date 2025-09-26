@@ -1,6 +1,7 @@
-1) user.role - admin,hider, seeker, hider+seeker
+0) user surname remove
+1) user.role - admin,hider, seeker
 2) remove user.gender
-3) coin.status - found,hidden,lost
+3) coin.status - found,hidden
 4) -app
     - control.panel
         - login
