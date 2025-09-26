@@ -165,6 +165,16 @@ function renderUsersRow(u, i) {
     renderCommandHTML({ payload: u.username }, "users.deleteRow"),
     renderCommandHTML({ payload: u.username }, "users.editRow"),
   ].join(" ");
+  // var html = `
+  //   <tr>
+  //     <td>${i + 1}</td>
+  //     <td><button class="link-btn" data-open-user="${u.username}">${
+  //   u.username
+  // }</button></td>
+  //     <td>${u.name || ""}</td>
+  //     <td>${u.surname || ""}</td>
+  //     <td>${actionsHTML}</td>
+  //   </tr>`;
   var html = `
     <tr>
       <td>${i + 1}</td>
@@ -172,9 +182,9 @@ function renderUsersRow(u, i) {
     u.username
   }</button></td>
       <td>${u.name || ""}</td>
-      <td>${u.surname || ""}</td>
       <td>${actionsHTML}</td>
     </tr>`;
+
   return html;
 }
 export function refreshUsersTable() {
@@ -694,7 +704,7 @@ var COMMANDS = {
       visible: true,
       enabled: true,
     },
-     {
+    {
       name: "settings.close",
       caption: "Close",
       menu: { location: "menu.bottom.title" },

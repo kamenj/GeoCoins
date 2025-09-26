@@ -1,4 +1,4 @@
-0) user surname remove
+0) user surname remove and add regulations for the username example(20 chars max)
 1) user.role - admin,hider, seeker
 2) remove user.gender
 3) coin.status - found,hidden
