@@ -91,4 +91,6 @@ now generate a new version where:
     use backtick strings with variable interpolation to render the command html
         e.g.    html += `<td>${renderCommand(point, "delete map point")}</td>`;   
 
+
+
 generate the relavant files for the new version so that i can download them and dont show me the details of your thinkng process, just the files.
