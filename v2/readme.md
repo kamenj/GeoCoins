@@ -1,5 +1,6 @@
 https://chatgpt.com/c/68d3ee2e-1838-8328-a329-04ab9ac3e352
 search for comments like this to find the changes:
+it talks about v3 , but it's actually v2
 now generate a new version where:
 -1) introduce the concept of commands associated with each div 0) introduce two menu divs:
 0.1) menu.top -docked at the top of the screen
