@@ -694,6 +694,16 @@ var COMMANDS = {
       visible: true,
       enabled: true,
     },
+     {
+      name: "settings.close",
+      caption: "Close",
+      menu: { location: "menu.bottom.title" },
+      action: function () {
+        showContent(null);
+      },
+      visible: true,
+      enabled: true,
+    },
   ],
   about: [
     {
