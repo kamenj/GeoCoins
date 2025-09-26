@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Users & Map Points — v3 (Modules + Commands + Docked Menus)</title>
+<link rel="stylesheet" href="index.css" />
+</head>
+<body data-theme="light" data-font="medium">
+
+<!-- 0.1) MENU TOP (docked) -->
+<div id="menuTop" class="section dock dock-top">
+  <div id="menuTop-header" class="section-header">
+    <div class="title-left">
+      <span class="chev" id="chev-menuTop">▼</span>
+      <span class="title-text">Menu (Top)</span>
+    </div>
+    <div id="menuTop-title-commands" class="cmd-bar title-cmds"></div>
+  </div>
+  <div class="section-content">
+    <div id="menuTop-top-commands" class="cmd-bar"></div>
+    <div id="menuTop-bottom-commands" class="cmd-bar"></div>
+  </div>
+</div>
+
+<!-- 1.1) LOGIN -->
+<div id="login" class="section">
+  <div id="login-header" class="section-header">
+    <div class="title-left">
+      <span class="chev" id="chev-login">▼</span>
+      <span class="title-text">Login</span>
+    </div>
+  </div>
+  <div class="section-content">
+    <label>Username <input id="login-username" /></label>
+    <label>Password <input id="login-password" type="password" /></label>
+  </div>
+</div>
+
+<!-- 1.2) REGISTER -->
+<div id="register" class="section">
+  <div id="register-header" class="section-header">
+    <div class="title-left">
+      <span class="chev" id="chev-register">▼</span>
+      <span class="title-text">Register User</span>
+    </div>
+  </div>
+  <div class="section-content">
+    <label>Username <input id="reg-username" /></label>
+    <label>Password <input id="reg-password" type="password" /></label>
+    <label>Name <input id="reg-name" /></label>
+    <label>Surname <input id="reg-surname" /></label>
+    <label>Gender
+      <select id="reg-gender">
+        <option value="">(select)</option>
+        <option>male</option>
+        <option>female</option>
+        <option>other</option>
+      </select>
+    </label>
+  </div>
+</div>
+
+<!-- 1.3) USERS LIST -->
+<div id="usersList" class="section">
+  <div id="usersList-header" class="section-header">
+    <div class="title-left">
+      <span class="chev" id="chev-usersList">▼</span>
+      <span class="title-text">Users</span>
+    </div>
+  </div>
+  <div class="section-content">
+    <div id="users-empty" style="display:none;">No registered users.</div>
+    <table id="users-table" style="display:none;">
+      <thead>
+        <tr><th>#</th><th>Username</th><th>Name</th><th>Surname</th><th>Actions</th></tr>
+      </thead>
+      <tbody id="users-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- 1.4) USER DETAILS -->
+<div id="userDetails" class="section">
+  <div id="userDetails-header" class="section-header">
+    <div class="title-left">
+      <span class="chev" id="chev-userDetails">▼</span>
+      <span class="title-text">User Details</span>
+    </div>
+  </div>
+  <div class="section-content">
+    <input type="hidden" id="ud-username-old" />
+    <label>Username <input id="ud-username" /></label>
+    <label>Name <input id="ud-name" /></label>
+    <label>Surname <input id="ud-surname" /></label>
+  </div>
+</div>
+
+<!-- 1.5) MESSAGE -->
+<div id="message" class="section">
+  <div id="message-header" class="section-header">
+    <div class="title-left">
+      <span class="chev" id="chev-message">▼</span>
+      <span class="title-text">Message</span>
+    </div>
+  </div>
+  <div class="section-content">
+    <div id="message-text"></div>
+  </div>
+</div>
+
+<!-- 1.6) MAP POINTS -->
+<div id="mapPoints" class="section">
+  <div id="mapPoints-header" class="section-header">
+    <div class="title-left">
+      <span class="chev" id="chev-mapPoints">▼</span>
+      <span class="title-text">Map Points</span>
+    </div>
+  </div>
+  <div class="section-content">
+    <input type="hidden" id="mp-id" />
+    <label>Owner Username <input id="mp-username" /></label>
+    <label>Title <input id="mp-title" /></label>
+    <label>Latitude <input id="mp-lat" /></label>
+    <label>Longitude <input id="mp-lng" /></label>
+    <label>Description <textarea id="mp-desc"></textarea></label>
+
+    <div id="mps-empty" style="display:none;">No map points.</div>
+    <table id="mps-table" style="display:none;">
+      <thead>
+        <tr><th>#</th><th>Title</th><th>User</th><th>Lat</th><th>Lng</th><th>Actions</th></tr>
+      </thead>
+      <tbody id="mps-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- 1.7) MAP POINT DETAILS -->
+<div id="mapPointDetails" class="section">
+  <div id="mapPointDetails-header" class="section-header">
+    <div class="title-left">
+      <span class="chev" id="chev-mapPointDetails">▼</span>
+      <span class="title-text">Map Point Details</span>
+    </div>
+  </div>
+  <div class="section-content">
+    <input type="hidden" id="mpd-id" />
+    <div><b>Title:</b> <span id="mpd-title"></span></div>
+    <div><b>User:</b> <span id="mpd-username"></span></div>
+    <div><b>Lat:</b> <span id="mpd-lat"></span></div>
+    <div><b>Lng:</b> <span id="mpd-lng"></span></div>
+    <div><b>Description:</b> <div id="mpd-desc"></div></div>
+  </div>
+</div>
+
+<!-- 1.8) SETTINGS -->
+<div id="settings" class="section">
+  <div id="settings-header" class="section-header">
+    <div class="title-left">
+      <span class="chev" id="chev-settings">▼</span>
+      <span class="title-text">Settings</span>
+    </div>
+  </div>
+  <div class="section-content">
+    <label>Theme
+      <select id="set-theme">
+        <option value="light">light</option>
+        <option value="dark">dark</option>
+      </select>
+    </label>
+    <label>Font Size
+      <select id="set-font">
+        <option value="small">small</option>
+        <option value="medium" selected>medium</option>
+        <option value="large">large</option>
+      </select>
+    </label>
+  </div>
+</div>
+
+<!-- 1.9) ABOUT -->
+<div id="about" class="section">
+  <div id="about-header" class="section-header">
+    <div class="title-left">
+      <span class="chev" id="chev-about">▼</span>
+      <span class="title-text">About</span>
+    </div>
+  </div>
+  <div class="section-content">
+    <p>Simple demo app for users and map points.</p>
+    <p>Author: You 🙂</p>
+  </div>
+</div>
+
+<!-- 0.2) MENU BOTTOM (docked) -->
+<div id="menuBottom" class="section dock dock-bottom">
+  <div id="menuBottom-header" class="section-header">
+    <div class="title-left">
+      <span class="chev" id="chev-menuBottom">▼</span>
+      <span class="title-text">Menu (Bottom)</span>
+    </div>
+    <div id="menuBottom-title-commands" class="cmd-bar title-cmds"></div>
+  </div>
+  <div class="section-content">
+    <div id="menuBottom-top-commands" class="cmd-bar"></div>
+    <div id="menuBottom-bottom-commands" class="cmd-bar"></div>
+  </div>
+</div>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>
