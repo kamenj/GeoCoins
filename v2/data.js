@@ -6,6 +6,7 @@ export var SAMPLE_USERS = [
     name: "Alice",
     // surname: "Anderson",
     gender: "female",
+    // todo:1
   },
   {
     username: "bob",
@@ -13,6 +14,7 @@ export var SAMPLE_USERS = [
     name: "Bob",
     // surname: "Brown",
     gender: "male",
+    //todo:1
   },
 ];
 

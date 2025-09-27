@@ -203,6 +203,7 @@ function fillUserDetails(u) {
   setVal("ud-name", u.name || "");
   // setVal("ud-surname", u.surname || "");
   setVal("ud-password", u.password || "");
+  //todo:1
 }
 export function openUserDetails(username) {
   var u = findUser(username);
@@ -215,7 +216,9 @@ export function saveUserDetails() {
     newU = getVal("ud-username"),
     newName = getVal("ud-name"),
     // newSurname = getVal("ud-surname");
-    newPassword = getVal("ud-password");
+    newPassword = getVal("ud-password")
+    // todo:1
+    ;
     console.log( `newName.length = ${newName.length}` );
   if (!newU) return showMessage("Username cannot be empty.", "userDetails");
   if (oldU !== newU && findUser(newU))
