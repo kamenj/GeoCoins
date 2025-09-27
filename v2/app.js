@@ -216,11 +216,17 @@ export function saveUserDetails() {
     newU = getVal("ud-username"),
     newName = getVal("ud-name"),
     // newSurname = getVal("ud-surname");
-    newPassword = getVal("ud-password")
-    // todo:1
-    ;
-    console.log( `newName.length = ${newName.length}` );
+    newPassword = getVal("ud-password");
+  // todo:1
+
+ 
   if (!newU) return showMessage("Username cannot be empty.", "userDetails");
+   //todo:0
+  // console.log(`newU.length = ${newU.length}`);
+  if (newU.length > 20) {
+    showMessage("Username must be maximum 20 characters.", "userDetails");
+    return;
+  }
   if (oldU !== newU && findUser(newU))
     return showMessage("Username already exists.", "userDetails");
   for (var i = 0; i < users.length; i++) {
