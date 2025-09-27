@@ -200,7 +200,8 @@ function fillUserDetails(u) {
   setVal("ud-username-old", u.username);
   setVal("ud-username", u.username);
   setVal("ud-name", u.name || "");
-  setVal("ud-surname", u.surname || "");
+  // setVal("ud-surname", u.surname || "");
+  setVal("ud-password", u.password || "");
 }
 export function openUserDetails(username) {
   var u = findUser(username);
@@ -212,7 +213,8 @@ export function saveUserDetails() {
   var oldU = getVal("ud-username-old"),
     newU = getVal("ud-username"),
     newName = getVal("ud-name"),
-    newSurname = getVal("ud-surname");
+    // newSurname = getVal("ud-surname");
+    newPassword = getVal("ud-password");
   if (!newU) return showMessage("Username cannot be empty.", "userDetails");
   if (oldU !== newU && findUser(newU))
     return showMessage("Username already exists.", "userDetails");
@@ -220,7 +222,7 @@ export function saveUserDetails() {
     if (users[i].username === oldU) {
       users[i].username = newU;
       users[i].name = newName;
-      users[i].surname = newSurname;
+      users[i].password = newPassword;
     }
   }
   save(LS.users, users);
