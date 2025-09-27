@@ -1,4 +1,7 @@
 import { load, save } from "./app.js";
+
+// https://chatgpt.com/share/68d81a52-34c4-8010-908d-2158d98fa6a3
+
 function deepClone(obj) {
   try {
     return JSON.parse(JSON.stringify(obj));
