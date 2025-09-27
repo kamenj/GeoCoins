@@ -172,9 +172,11 @@ function renderUsersRow(u, i) {
     u.username
   }</button></td>
       <td>${u.name || ""}</td>
-      <td>${u.surname || ""}</td>
+     <!-- <td>${u.surname || ""}</td> -->
       <td>${actionsHTML}</td>
     </tr>`;
+
+
   return html;
 }
 export function refreshUsersTable() {
