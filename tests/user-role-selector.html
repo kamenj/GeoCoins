@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Role Selector</title>
+  <style>
+    :root{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#111}
+    body{padding:24px;max-width:780px;margin:0 auto}
+    fieldset{border:1px solid #ddd;padding:16px;border-radius:8px;margin-bottom:16px}
+    legend{font-weight:600;padding:0 8px}
+    label{display:inline-flex;align-items:center;gap:8px;margin-right:12px}
+    .controls{display:flex;flex-direction:column;gap:12px}
+    .row{display:flex;gap:12px;align-items:center}
+    .result{margin-top:18px;padding:12px;border-radius:8px;background:#f7f7f9;border:1px dashed #e1e1e5}
+    .hint{font-size:0.9rem;color:#666}
+    button{padding:8px 12px;border-radius:6px;border:1px solid #bbb;background:white;cursor:pointer}
+  </style>
+</head>
+<body>
+  <h1>Role Selector</h1>
+  <p class="hint">Choose your role and preferences, then see the summary below.</p>
+
+  <div class="controls">
+
+    <!-- Combo box (roles) -->
+    <div>
+      <label for="role">Select a role:</label>
+      <select id="role" aria-label="User role">
+        <option value="admin">Admin</option>
+        <option value="seeker">Seeker</option>
+        <option value="hider">Hider</option>
+      </select>
+    </div>
+
+    <!-- Radio group 1 (roles as radios) -->
+    <fieldset id="group-role">
+      <legend>Pick a role (radio)</legend>
+      <div class="row" role="radiogroup" aria-labelledby="group-role">
+        <label><input type="radio" name="roleRadio" value="admin" checked> Admin</label>
+        <label><input type="radio" name="roleRadio" value="seeker"> Seeker</label>
+        <label><input type="radio" name="roleRadio" value="hider"> Hider</label>
+      </div>
+    </fieldset>
+
+    <!-- Radio group 2 -->
+    <fieldset id="group-size">
+      <legend>Pick a size</legend>
+      <div class="row" role="radiogroup" aria-labelledby="group-size">
+        <label><input type="radio" name="size" value="small"> Small</label>
+        <label><input type="radio" name="size" value="medium" checked> Medium</label>
+        <label><input type="radio" name="size" value="large"> Large</label>
+      </div>
+    </fieldset>
+
+    <div class="row">
+      <button id="show">Show selection</button>
+      <button id="reset" type="button">Reset</button>
+    </div>
+
+    <div id="result" class="result" aria-live="polite">No selection yet.</div>
+  </div>
+
+  <script>
+    const role = document.getElementById('role');
+    const result = document.getElementById('result');
+    const showBtn = document.getElementById('show');
+    const resetBtn = document.getElementById('reset');
+
+    function getRadioValue(name){
+      const r = document.querySelector(`input[name="${name}"]:checked`);
+      return r ? r.value : null;
+    }
+
+    function updateSummary(){
+      const r = role.value;
+      const rRadio = getRadioValue('roleRadio');
+      const size = getRadioValue('size');
+      result.textContent = `Role (combo): ${r}; Role (radio): ${rRadio}; Size: ${size}`;
+    }
+
+    // live update when controls change
+    role.addEventListener('change', updateSummary);
+    document.querySelectorAll('input[name="roleRadio"]').forEach(i => i.addEventListener('change', updateSummary));
+    document.querySelectorAll('input[name="size"]').forEach(i => i.addEventListener('change', updateSummary));
+
+    showBtn.addEventListener('click', () => updateSummary());
+    resetBtn.addEventListener('click', () => {
+      role.selectedIndex = 0;
+      document.querySelector('input[name="roleRadio"][value="admin"]').checked = true;
+      document.querySelector('input[name="size"][value="medium"]').checked = true;
+      updateSummary();
+    });
+
+    // initialize
+    updateSummary();
+  </script>
+</body>
+</html>
