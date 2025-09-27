@@ -562,6 +562,16 @@ var COMMANDS = {
       visible: true,
       enabled: true,
     },
+    {
+      name: "users.cancel",
+      caption: "Cancel",
+      menu: { location: "menu.bottom.title" },
+      action: function () {
+        showContent(null);
+      },
+      visible: true,
+      enabled: true,
+    }
   ],
   userDetails: [
     {
