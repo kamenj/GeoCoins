@@ -1,5 +1,5 @@
 import { SAMPLE_USERS, SAMPLE_POINTS } from "./data.js";
-
+import { syncArrayWithTemplate } from "./dataUtils.js";
 /* ===== Globals & Helpers ===== */
 var LS = {
   users: "app.users",
@@ -219,9 +219,8 @@ export function saveUserDetails() {
     newPassword = getVal("ud-password");
   // todo:1
 
- 
   if (!newU) return showMessage("Username cannot be empty.", "userDetails");
-   //todo:0
+  //todo:0
   // console.log(`newU.length = ${newU.length}`);
   if (newU.length > 20) {
     showMessage("Username must be maximum 20 characters.", "userDetails");
@@ -571,7 +570,7 @@ var COMMANDS = {
       },
       visible: true,
       enabled: true,
-    }
+    },
   ],
   userDetails: [
     {
@@ -964,17 +963,28 @@ function bindListDelegates() {
 
 /* ===== Init ===== */
 function loadAll() {
-  users = load(LS.users, null);
-  if (!users || users.length === 0) {
-    users = typeof SAMPLE_USERS !== "undefined" ? SAMPLE_USERS.slice() : [];
-    save(LS.users, users);
-  }
-  mapPoints = load(LS.points, null);
-  if (!mapPoints || mapPoints.length === 0) {
-    mapPoints =
-      typeof SAMPLE_POINTS !== "undefined" ? SAMPLE_POINTS.slice() : [];
-    save(LS.points, mapPoints);
-  }
+  // users = load(LS.users, null);
+  // if (!users || users.length === 0) {
+  //   users = typeof SAMPLE_USERS !== "undefined" ? SAMPLE_USERS.slice() : [];
+  //   save(LS.users, users);
+  // }
+
+  users = syncArrayWithTemplate(
+    LS.users,
+    typeof SAMPLE_USERS !== "undefined" ? SAMPLE_USERS : []
+  );
+
+  // mapPoints = load(LS.points, null);
+  // if (!mapPoints || mapPoints.length === 0) {
+  //   mapPoints =
+  //     typeof SAMPLE_POINTS !== "undefined" ? SAMPLE_POINTS.slice() : [];
+  //   save(LS.points, mapPoints);
+  // }
+  mapPoints = syncArrayWithTemplate(
+    LS.points,
+    typeof SAMPLE_POINTS !== "undefined" ? SAMPLE_POINTS : []
+  );
+
   currentUser = load(LS.currentUser, null);
   settings = load(LS.settings, { theme: "light", font: "medium" });
   applyThemeFont();
