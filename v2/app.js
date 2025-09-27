@@ -176,7 +176,6 @@ function renderUsersRow(u, i) {
       <td>${actionsHTML}</td>
     </tr>`;
 
-
   return html;
 }
 export function refreshUsersTable() {
@@ -217,6 +216,7 @@ export function saveUserDetails() {
     newName = getVal("ud-name"),
     // newSurname = getVal("ud-surname");
     newPassword = getVal("ud-password");
+    console.log( `newName.length = ${newName.length}` );
   if (!newU) return showMessage("Username cannot be empty.", "userDetails");
   if (oldU !== newU && findUser(newU))
     return showMessage("Username already exists.", "userDetails");
@@ -698,7 +698,7 @@ var COMMANDS = {
       visible: true,
       enabled: true,
     },
-     {
+    {
       name: "settings.close",
       caption: "Close",
       menu: { location: "menu.bottom.title" },
