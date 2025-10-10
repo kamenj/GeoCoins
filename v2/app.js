@@ -249,7 +249,7 @@ export function cancelUserDetails() {
   showContent("usersList");
 }
 
-/* ===== Auth ===== */
+/* ===== Auth ===== §kamen_20251010_180801 */
 export function handleLogin() {
   var user = getVal("login-username"),
     pass = $("login-password").value;

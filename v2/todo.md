@@ -1,3 +1,5 @@
+-1) §kamen_20251010_180801
+
 0) user surname remove §kamen_20251010_175213
 0.1)  add regulations for the username example(20 chars max) §kamen_20251010_175547
 1) user.role - admin,hider, seeker
