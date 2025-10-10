@@ -1,5 +1,8 @@
-0) user surname remove and add regulations for the username example(20 chars max)
+0) user surname remove §kamen_20251010_175213
+0.1)  add regulations for the username example(20 chars max) §kamen_20251010_175547
 1) user.role - admin,hider, seeker
+  §kamen_20251010_180320
+   
   <!-- Combo box (roles) -->
     <div>
       <label for="role">Select a role:</label>
@@ -26,3 +29,4 @@
     - map
      - coins rendered in a map managed by leafletjs
        (see: C:\my.desktop\projects\.mind.maps\main\software\dani\maps\tests\LeafletTutorial\LeafletTutorial1\.tutorials.html)
+

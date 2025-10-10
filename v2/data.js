@@ -4,18 +4,18 @@ export var SAMPLE_USERS = [
     username: "alice",
     password: "1234",
     name: "Alice",
-    // surname: "Anderson",
+    // surname: "Anderson", //§kamen_20251010_175213
     gender: "female",
-    // todo:1
+    // §kamen_20251010_180320
     role: "admin"
   },
   {
     username: "bob",
     password: "1234",
     name: "Bob",
-    // surname: "Brown",
+    // surname: "Brown",//§kamen_20251010_175213
     gender: "male",
-    //todo:1
+    //§kamen_20251010_180320
     role: "hider"
   },
 ];

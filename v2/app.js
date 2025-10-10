@@ -201,9 +201,8 @@ function fillUserDetails(u) {
   setVal("ud-username-old", u.username);
   setVal("ud-username", u.username);
   setVal("ud-name", u.name || "");
-  // setVal("ud-surname", u.surname || "");
+  // setVal("ud-surname", u.surname || "");§kamen_20251010_175213
   setVal("ud-password", u.password || "");
-  //todo:1
 }
 export function openUserDetails(username) {
   var u = findUser(username);
@@ -217,12 +216,10 @@ export function saveUserDetails() {
     newName = getVal("ud-name"),
     // newSurname = getVal("ud-surname");
     newPassword = getVal("ud-password");
-  // todo:1
-
   if (!newU) return showMessage("Username cannot be empty.", "userDetails");
-  //todo:0
+ 
   // console.log(`newU.length = ${newU.length}`);
-  if (newU.length > 20) {
+  if (newU.length > 20) { //§kamen_20251010_175547
     showMessage("Username must be maximum 20 characters.", "userDetails");
     return;
   }

@@ -1,4 +1,5 @@
-https://chatgpt.com/c/68d3ee2e-1838-8328-a329-04ab9ac3e352
+'main' -  https://chatgpt.com/c/68d3ee2e-1838-8328-a329-04ab9ac3e352
+'how to exclude a folder from vscode workspace' - https://chatgpt.com/c/68d66d3c-76fc-8321-9b4d-f1577b5e5814
 search for comments like this to find the changes:
 it talks about v3 , but it's actually v2
 now generate a new version where:
