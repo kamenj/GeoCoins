@@ -217,9 +217,10 @@ export function saveUserDetails() {
     // newSurname = getVal("ud-surname");
     newPassword = getVal("ud-password");
   if (!newU) return showMessage("Username cannot be empty.", "userDetails");
- 
+
   // console.log(`newU.length = ${newU.length}`);
-  if (newU.length > 20) { //§kamen_20251010_175547
+  if (newU.length > 20) {
+    //§kamen_20251010_175547
     showMessage("Username must be maximum 20 characters.", "userDetails");
     return;
   }
