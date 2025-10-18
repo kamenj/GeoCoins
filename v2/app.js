@@ -272,10 +272,10 @@ export function logout() {
 /* ===== Registration ===== */
 export function clearRegisterForm() {
   setVal("reg-username", ""),
-    setVal("reg-password", ""),
-    setVal("reg-name", ""),
-    setVal("reg-surname", ""),
-    setVal("reg-gender", "");
+  setVal("reg-password", ""),
+  setVal("reg-name", ""),
+  setVal("reg-surname", ""),
+  setVal("reg-gender", "");
 }
 export function registerUser() {
   var username = getVal("reg-username"),
