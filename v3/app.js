@@ -23,6 +23,127 @@ const Config = {
     LIST: null, // Will be initialized below
     DEFAULT_MENU_TOP: null, // Will be initialized below
   },
+  Constants: {
+    HtmlElement: {
+      Button: "button",
+    },
+    ClassName: {
+      CmdBtn: "cmd-btn",
+      LinkBtn: "link-btn",
+      Cmd: "cmd",
+      Collapsed: "collapsed",
+    },
+    ContentSection: {
+      Login: "login",
+      Register: "register",
+      UsersList: "usersList",
+      UserDetails: "userDetails",
+      Message: "message",
+      MapPoints: "mapPoints",
+      MapPointDetails: "mapPointDetails",
+      Settings: "settings",
+      About: "about",
+    },
+    CommandName: {
+      // Login commands
+      LoginOk: "login.ok",
+      LoginCancel: "login.cancel",
+      LoginRegister: "login.register",
+      // Register commands
+      RegisterOk: "register.ok",
+      RegisterCancel: "register.cancel",
+      // Users commands
+      UsersAdd: "users.add",
+      UsersRefresh: "users.refresh",
+      UsersDeleteRow: "users.deleteRow",
+      UsersEditRow: "users.editRow",
+      UsersCancel: "users.cancel",
+      // User details commands
+      UserSave: "user.save",
+      UserDelete: "user.delete",
+      UserCancel: "user.cancel",
+      // Message commands
+      MessageOk: "message.ok",
+      // Points commands
+      PointsAdd: "points.add",
+      PointsRefresh: "points.refresh",
+      PointsDeleteRow: "points.deleteRow",
+      PointsEditRow: "points.editRow",
+      // Map point details commands
+      MpdSave: "mpd.save",
+      MpdDelete: "mpd.delete",
+      MpdCancel: "mpd.cancel",
+      // Settings commands
+      SettingsApply: "settings.apply",
+      SettingsReset: "settings.reset",
+      SettingsClose: "settings.close",
+      // About commands
+      AboutOk: "about.ok",
+      // Show commands
+      ShowLogin: "show.login",
+      ShowRegister: "show.register",
+      ShowUsers: "show.users",
+      ShowPoints: "show.points",
+      ShowSettings: "show.settings",
+      ShowAbout: "show.about",
+    },
+    MenuLocation: {
+      TopTitle: "menu.top.title",
+      TopTop: "menu.top.top",
+      TopBottom: "menu.top.bottom",
+      BottomTitle: "menu.bottom.title",
+      BottomTop: "menu.bottom.top",
+      BottomBottom: "menu.bottom.bottom",
+      ListRow: "list.row",
+    },
+    ElementId: {
+      MenuTopTitleCommands: "menuTop-title-commands",
+      MenuTopTopCommands: "menuTop-top-commands",
+      MenuTopBottomCommands: "menuTop-bottom-commands",
+      MenuBottomTitleCommands: "menuBottom-title-commands",
+      MenuBottomTopCommands: "menuBottom-top-commands",
+      MenuBottomBottomCommands: "menuBottom-bottom-commands",
+      MenuTop: "menuTop",
+      MenuBottom: "menuBottom",
+      MenuTopHeader: "menuTop-header",
+      MenuBottomHeader: "menuBottom-header",
+      LoginHeader: "login-header",
+      RegisterHeader: "register-header",
+      UsersListHeader: "usersList-header",
+      UserDetailsHeader: "userDetails-header",
+      MessageHeader: "message-header",
+      MapPointsHeader: "mapPoints-header",
+      MapPointDetailsHeader: "mapPointDetails-header",
+      SettingsHeader: "settings-header",
+      AboutHeader: "about-header",
+      UsersTbody: "users-tbody",
+      UsersTable: "users-table",
+      UsersEmpty: "users-empty",
+      MpsTbody: "mps-tbody",
+      MpsTable: "mps-table",
+      MpsEmpty: "mps-empty",
+      MessageText: "message-text",
+      Message: "message",
+    },
+    Attribute: {
+      DataOpenUser: "data-open-user",
+      DataOpenPoint: "data-open-point",
+      DataCmd: "data-cmd",
+      DataPayload: "data-payload",
+      DataTheme: "data-theme",
+      DataFont: "data-font",
+    },
+    Theme: {
+      Light: "light",
+    },
+    FontSize: {
+      Medium: "medium",
+    },
+    CommandPrefix: {
+      Users: "users.",
+      Points: "points.",
+    },
+  },
 };
 
 const State = {
@@ -31,7 +152,7 @@ const State = {
   users: [],
   mapPoints: [],
   currentUser: null,
-  settings: { theme: "light", font: "medium" },
+  settings: { theme: Config.Constants.Theme.Light, font: Config.Constants.FontSize.Medium },
   afterMessageShowId: null, // target section to show after closing the message
 };
 
@@ -73,14 +194,14 @@ export function setSectionVisible(id, visible) {
 export function setCollapsed(id, collapsed) {
   var el = $(id);
   if (!el) return;
-  if (collapsed) el.classList.add("collapsed");
-  else el.classList.remove("collapsed");
+  if (collapsed) el.classList.add(Config.Constants.ClassName.Collapsed);
+  else el.classList.remove(Config.Constants.ClassName.Collapsed);
   updateChevron(id);
 }
 export function toggleCollapse(id) {
   var el = $(id);
   if (!el) return;
-  setCollapsed(id, !el.classList.contains("collapsed"));
+  setCollapsed(id, !el.classList.contains(Config.Constants.ClassName.Collapsed));
 }
 export function updateChevron(id) {
   var chev = $("chev-" + id),
@@ -88,7 +209,7 @@ export function updateChevron(id) {
   if (!chev || !el) return;
   chev.textContent =
     el.style.display !== "none"
-      ? el.classList.contains("collapsed")
+      ? el.classList.contains(Config.Constants.ClassName.Collapsed)
         ? "►"
         : "▼"
       : "";
@@ -124,15 +245,15 @@ function showMessage(text, showAfterId) {
   State.afterMessageShowId = showAfterId || null;
   //save(Config.LS.messagePrev, uiVisible.slice(0));
 
-  setText("message-text", text);
+  setText(Config.Constants.ElementId.MessageText, text);
   hideAllContent();
   // Hide everything, show only the message section
-  showContent("message"); //  setSectionVisible("message", true);
+  showContent(Config.Constants.ContentSection.Message); //  setSectionVisible("message", true);
 }
 
 function closeMessage() {
   // Hide the message
-  setSectionVisible("message", false);
+  setSectionVisible(Config.Constants.ElementId.Message, false);
 
   // If a target was specified → navigate there.
   // Otherwise restore the previously visible sections.
@@ -170,13 +291,13 @@ export function findUser(username) {
 
 function renderUsersRow(u, i) {
   var actionsHTML = [
-    renderCommandHTML({ payload: u.username }, "users.deleteRow"),
-    renderCommandHTML({ payload: u.username }, "users.editRow"),
+    renderCommandHTML({ payload: u.username }, Config.Constants.CommandName.UsersDeleteRow),
+    renderCommandHTML({ payload: u.username }, Config.Constants.CommandName.UsersEditRow),
   ].join(" ");
   var html = `
     <tr>
       <td>${i + 1}</td>
-      <td><button class="link-btn" data-open-user="${u.username}">${
+      <td><button class="${Config.Constants.ClassName.LinkBtn}" ${Config.Constants.Attribute.DataOpenUser}="${u.username}">${
     u.username
   }</button></td>
       <td>${u.name || ""}</td>
@@ -187,9 +308,9 @@ function renderUsersRow(u, i) {
   return html;
 }
 export function refreshUsersTable() {
-  var tbody = $("users-tbody"),
-    table = $("users-table"),
-    empty = $("users-empty");
+  var tbody = $(Config.Constants.ElementId.UsersTbody),
+    table = $(Config.Constants.ElementId.UsersTable),
+    empty = $(Config.Constants.ElementId.UsersEmpty);
   tbody.innerHTML = "";
   if (State.users.length === 0) {
     table.style.display = "none";
@@ -321,13 +442,13 @@ function savePoints() {
 }
 function renderPointsRow(p, i) {
   var actionsHTML = [
-    renderCommandHTML({ payload: p.id }, "points.deleteRow"),
-    renderCommandHTML({ payload: p.id }, "points.editRow"),
+    renderCommandHTML({ payload: p.id }, Config.Constants.CommandName.PointsDeleteRow),
+    renderCommandHTML({ payload: p.id }, Config.Constants.CommandName.PointsEditRow),
   ].join(" ");
   var html = `
     <tr>
       <td>${i + 1}</td>
-      <td><button class="link-btn" data-open-point="${p.id}">${
+      <td><button class="${Config.Constants.ClassName.LinkBtn}" ${Config.Constants.Attribute.DataOpenPoint}="${p.id}">${
     p.title || "(no title)"
   }</button></td>
       <td>${p.username || ""}</td>
@@ -338,9 +459,9 @@ function renderPointsRow(p, i) {
   return html;
 }
 export function refreshMapPointsTable() {
-  var tbody = $("mps-tbody"),
-    table = $("mps-table"),
-    empty = $("mps-empty");
+  var tbody = $(Config.Constants.ElementId.MpsTbody),
+    table = $(Config.Constants.ElementId.MpsTable),
+    empty = $(Config.Constants.ElementId.MpsEmpty);
   tbody.innerHTML = "";
   if (State.mapPoints.length === 0) {
     table.style.display = "none";
@@ -447,22 +568,22 @@ export function deleteMapPointFromDetails() {
 
 /* ===== Settings ===== */
 export function applyThemeFont() {
-  document.body.setAttribute("data-theme", State.settings.theme || "light");
-  document.body.setAttribute("data-font", State.settings.font || "medium");
+  document.body.setAttribute(Config.Constants.Attribute.DataTheme, State.settings.theme || Config.Constants.Theme.Light);
+  document.body.setAttribute(Config.Constants.Attribute.DataFont, State.settings.font || Config.Constants.FontSize.Medium);
 }
 export function openSettings() {
-  showContent("settings");
-  setVal("set-theme", State.settings.theme || "light");
-  setVal("set-font", State.settings.font || "medium");
+  showContent(Config.Constants.ContentSection.Settings);
+  setVal("set-theme", State.settings.theme || Config.Constants.Theme.Light);
+  setVal("set-font", State.settings.font || Config.Constants.FontSize.Medium);
 }
 export function applySettings() {
   State.settings = {
     theme: getVal("set-theme"),
-    font: getVal("set-font") || "medium",
+    font: getVal("set-font") || Config.Constants.FontSize.Medium,
   };
   save(Config.LS.settings, State.settings);
   applyThemeFont();
-  showMessage("Settings applied.", "settings");
+  showMessage("Settings applied.", Config.Constants.ContentSection.Settings);
 }
 export function resetAll() {
   localStorage.clear();
@@ -811,25 +932,45 @@ Config.Commands.DEFAULT_MENU_TOP = [
 ];
 
 /* ===== Command rendering ===== */
-function createMenuButton(cmd) {
-  var btn = document.createElement("button");
-  btn.className = "cmd-btn";
+function on_before_command_added(target_menu, cmd) {
+  // This function is called before adding a command to a menu
+  // It can modify visibility/enabled state based on current State
+  // Returns the HTML element if it should be added, or null to skip it
+  
+  if (!cmd || cmd.visible === false) return null;
+  
+  // If no user is logged in, only show "Show Login" and "Show About" commands
+  if (!State.currentUser) {
+    if (cmd.name !== Config.Constants.CommandName.ShowLogin && cmd.name !== Config.Constants.CommandName.ShowAbout) {
+      return null; // Skip all other commands when not logged in
+    }
+  }
+  
+  // Determine enabled state (can be modified based on State)
+  var enabled = cmd.enabled !== false;
+  // Apply any state-based modifications here
+  // enabled = enabled && State.currentUser !== null;
+  
+  // Create the HTML button element
+  var btn = document.createElement(Config.Constants.HtmlElement.Button);
+  btn.className = Config.Constants.ClassName.CmdBtn;
   btn.textContent = cmd.caption || cmd.name || "(cmd)";
-  if (cmd.enabled === false) btn.disabled = true;
+  if (!enabled) btn.disabled = true;
   btn.addEventListener("click", function () {
-    if (cmd.enabled === false) return;
+    if (!enabled) return;
     cmd.action();
   });
+  
   return btn;
 }
 function clearMenuBars() {
   var ids = [
-    "menuTop-title-commands",
-    "menuTop-top-commands",
-    "menuTop-bottom-commands",
-    "menuBottom-title-commands",
-    "menuBottom-top-commands",
-    "menuBottom-bottom-commands",
+    Config.Constants.ElementId.MenuTopTitleCommands,
+    Config.Constants.ElementId.MenuTopTopCommands,
+    Config.Constants.ElementId.MenuTopBottomCommands,
+    Config.Constants.ElementId.MenuBottomTitleCommands,
+    Config.Constants.ElementId.MenuBottomTopCommands,
+    Config.Constants.ElementId.MenuBottomBottomCommands,
   ];
   for (var i = 0; i < ids.length; i++) {
     var el = $(ids[i]);
@@ -842,17 +983,17 @@ function hasAnyChild(id) {
 }
 function setMenusVisibility() {
   var topHas =
-    hasAnyChild("menuTop-title-commands") ||
-    hasAnyChild("menuTop-top-commands") ||
-    hasAnyChild("menuTop-bottom-commands");
+    hasAnyChild(Config.Constants.ElementId.MenuTopTitleCommands) ||
+    hasAnyChild(Config.Constants.ElementId.MenuTopTopCommands) ||
+    hasAnyChild(Config.Constants.ElementId.MenuTopBottomCommands);
   var bottomHas =
-    hasAnyChild("menuBottom-title-commands") ||
-    hasAnyChild("menuBottom-top-commands") ||
-    hasAnyChild("menuBottom-bottom-commands");
-  setSectionVisible("menuTop", topHas);
-  setSectionVisible("menuBottom", bottomHas);
-  setCollapsed("menuTop", false);
-  setCollapsed("menuBottom", false);
+    hasAnyChild(Config.Constants.ElementId.MenuBottomTitleCommands) ||
+    hasAnyChild(Config.Constants.ElementId.MenuBottomTopCommands) ||
+    hasAnyChild(Config.Constants.ElementId.MenuBottomBottomCommands);
+  setSectionVisible(Config.Constants.ElementId.MenuTop, topHas);
+  setSectionVisible(Config.Constants.ElementId.MenuBottom, bottomHas);
+  setCollapsed(Config.Constants.ElementId.MenuTop, false);
+  setCollapsed(Config.Constants.ElementId.MenuBottom, false);
 }
 function renderMenusFor(contentId) {
   clearMenuBars();
@@ -860,27 +1001,30 @@ function renderMenusFor(contentId) {
     var cmds = Config.Commands.LIST[contentId];
     for (var i = 0; i < cmds.length; i++) {
       var c = cmds[i];
-      if (c.visible === false) continue;
       var loc =
-        c.menu && c.menu.location ? c.menu.location : "menu.bottom.title";
+        c.menu && c.menu.location ? c.menu.location : Config.Constants.MenuLocation.BottomTitle;
       var hostId =
-        loc === "menu.top.title"
-          ? "menuTop-title-commands"
-          : loc === "menu.top.top"
-          ? "menuTop-top-commands"
-          : loc === "menu.top.bottom"
-          ? "menuTop-bottom-commands"
-          : loc === "menu.bottom.title"
-          ? "menuBottom-title-commands"
-          : loc === "menu.bottom.top"
-          ? "menuBottom-top-commands"
-          : loc === "menu.bottom.bottom"
-          ? "menuBottom-bottom-commands"
+        loc === Config.Constants.MenuLocation.TopTitle
+          ? Config.Constants.ElementId.MenuTopTitleCommands
+          : loc === Config.Constants.MenuLocation.TopTop
+          ? Config.Constants.ElementId.MenuTopTopCommands
+          : loc === Config.Constants.MenuLocation.TopBottom
+          ? Config.Constants.ElementId.MenuTopBottomCommands
+          : loc === Config.Constants.MenuLocation.BottomTitle
+          ? Config.Constants.ElementId.MenuBottomTitleCommands
+          : loc === Config.Constants.MenuLocation.BottomTop
+          ? Config.Constants.ElementId.MenuBottomTopCommands
+          : loc === Config.Constants.MenuLocation.BottomBottom
+          ? Config.Constants.ElementId.MenuBottomBottomCommands
           : null;
       if (hostId) {
         var host = $(hostId);
         if (host) {
-          host.appendChild(createMenuButton(c));
+          // Call on_before_command_added to get the HTML element
+          var btnElement = on_before_command_added(hostId, c);
+          if (btnElement) {
+            host.appendChild(btnElement);
+          }
         }
       }
     }
@@ -888,9 +1032,13 @@ function renderMenusFor(contentId) {
     // No content visible -> default top menu commands
     for (var j = 0; j < Config.Commands.DEFAULT_MENU_TOP.length; j++) {
       var cmd = Config.Commands.DEFAULT_MENU_TOP[j];
-      var host = $("menuTop-top-commands");
+      var host = $(Config.Constants.ElementId.MenuTopTopCommands);
       if (host) {
-        host.appendChild(createMenuButton(cmd));
+        // Call on_before_command_added to get the HTML element
+        var btnElement = on_before_command_added(Config.Constants.ElementId.MenuTopTopCommands, cmd);
+        if (btnElement) {
+          host.appendChild(btnElement);
+        }
       }
     }
   }
@@ -903,7 +1051,7 @@ function renderCommandHTML(ctx, cmdName) {
   var cmd = findCommandByName(cmdName);
   if (cmd && cmd.caption) label = cmd.caption;
   var payload = ctx && ctx.payload != null ? String(ctx.payload) : "";
-  return `<button class="cmd" data-cmd="${cmdName}" data-payload="${payload}">${label}</button>`;
+  return `<button class="${Config.Constants.ClassName.Cmd}" ${Config.Constants.Attribute.DataCmd}="${cmdName}" ${Config.Constants.Attribute.DataPayload}="${payload}">${label}</button>`;
 }
 function findCommandByName(name) {
   var keys = Object.keys(Config.Commands.LIST);
@@ -918,11 +1066,11 @@ function findCommandByName(name) {
 function executeCommandByName(name, payload) {
   var cmd = findCommandByName(name);
   if (!cmd || cmd.enabled === false) return;
-  if (name.indexOf("users.") === 0) {
+  if (name.indexOf(Config.Constants.CommandPrefix.Users) === 0) {
     cmd.action(payload);
     return;
   }
-  if (name.indexOf("points.") === 0) {
+  if (name.indexOf(Config.Constants.CommandPrefix.Points) === 0) {
     cmd.action(payload);
     return;
   }
@@ -931,36 +1079,36 @@ function executeCommandByName(name, payload) {
 
 /* ===== Delegates, headers ===== */
 function bindListDelegates() {
-  var uBody = $("users-tbody");
+  var uBody = $(Config.Constants.ElementId.UsersTbody);
   if (uBody) {
     uBody.addEventListener("click", function (e) {
       var t = e.target;
-      if (t && t.classList && t.classList.contains("link-btn")) {
-        var username = t.getAttribute("data-open-user");
+      if (t && t.classList && t.classList.contains(Config.Constants.ClassName.LinkBtn)) {
+        var username = t.getAttribute(Config.Constants.Attribute.DataOpenUser);
         openUserDetails(username);
         return;
       }
-      if (t && t.classList && t.classList.contains("cmd")) {
+      if (t && t.classList && t.classList.contains(Config.Constants.ClassName.Cmd)) {
         executeCommandByName(
-          t.getAttribute("data-cmd"),
-          t.getAttribute("data-payload")
+          t.getAttribute(Config.Constants.Attribute.DataCmd),
+          t.getAttribute(Config.Constants.Attribute.DataPayload)
         );
       }
     });
   }
-  var pBody = $("mps-tbody");
+  var pBody = $(Config.Constants.ElementId.MpsTbody);
   if (pBody) {
     pBody.addEventListener("click", function (e) {
       var t = e.target;
-      if (t && t.classList && t.classList.contains("link-btn")) {
-        var id = t.getAttribute("data-open-point");
+      if (t && t.classList && t.classList.contains(Config.Constants.ClassName.LinkBtn)) {
+        var id = t.getAttribute(Config.Constants.Attribute.DataOpenPoint);
         openMapPointDetails(Number(id));
         return;
       }
-      if (t && t.classList && t.classList.contains("cmd")) {
+      if (t && t.classList && t.classList.contains(Config.Constants.ClassName.Cmd)) {
         executeCommandByName(
-          t.getAttribute("data-cmd"),
-          t.getAttribute("data-payload")
+          t.getAttribute(Config.Constants.Attribute.DataCmd),
+          t.getAttribute(Config.Constants.Attribute.DataPayload)
         );
       }
     });
@@ -992,7 +1140,7 @@ function loadAll() {
   );
 
   State.currentUser = load(Config.LS.currentUser, null);
-  State.settings = load(Config.LS.settings, { theme: "light", font: "medium" });
+  State.settings = load(Config.LS.settings, { theme: Config.Constants.Theme.Light, font: Config.Constants.FontSize.Medium });
   applyThemeFont();
 
   // Initially, no content -> default menu commands
@@ -1001,38 +1149,38 @@ function loadAll() {
   renderMenusFor(null);
 
   // Collapse toggles
-  $("menuTop-header").addEventListener("click", function () {
-    toggleCollapse("menuTop");
+  $(Config.Constants.ElementId.MenuTopHeader).addEventListener("click", function () {
+    toggleCollapse(Config.Constants.ElementId.MenuTop);
   });
-  $("menuBottom-header").addEventListener("click", function () {
-    toggleCollapse("menuBottom");
+  $(Config.Constants.ElementId.MenuBottomHeader).addEventListener("click", function () {
+    toggleCollapse(Config.Constants.ElementId.MenuBottom);
   });
-  $("login-header").addEventListener("click", function () {
-    toggleCollapse("login");
+  $(Config.Constants.ElementId.LoginHeader).addEventListener("click", function () {
+    toggleCollapse(Config.Constants.ContentSection.Login);
   });
-  $("register-header").addEventListener("click", function () {
-    toggleCollapse("register");
+  $(Config.Constants.ElementId.RegisterHeader).addEventListener("click", function () {
+    toggleCollapse(Config.Constants.ContentSection.Register);
   });
-  $("usersList-header").addEventListener("click", function () {
-    toggleCollapse("usersList");
+  $(Config.Constants.ElementId.UsersListHeader).addEventListener("click", function () {
+    toggleCollapse(Config.Constants.ContentSection.UsersList);
   });
-  $("userDetails-header").addEventListener("click", function () {
-    toggleCollapse("userDetails");
+  $(Config.Constants.ElementId.UserDetailsHeader).addEventListener("click", function () {
+    toggleCollapse(Config.Constants.ContentSection.UserDetails);
   });
-  $("message-header").addEventListener("click", function () {
-    toggleCollapse("message");
+  $(Config.Constants.ElementId.MessageHeader).addEventListener("click", function () {
+    toggleCollapse(Config.Constants.ContentSection.Message);
   });
-  $("mapPoints-header").addEventListener("click", function () {
-    toggleCollapse("mapPoints");
+  $(Config.Constants.ElementId.MapPointsHeader).addEventListener("click", function () {
+    toggleCollapse(Config.Constants.ContentSection.MapPoints);
   });
-  $("mapPointDetails-header").addEventListener("click", function () {
-    toggleCollapse("mapPointDetails");
+  $(Config.Constants.ElementId.MapPointDetailsHeader).addEventListener("click", function () {
+    toggleCollapse(Config.Constants.ContentSection.MapPointDetails);
   });
-  $("settings-header").addEventListener("click", function () {
-    toggleCollapse("settings");
+  $(Config.Constants.ElementId.SettingsHeader).addEventListener("click", function () {
+    toggleCollapse(Config.Constants.ContentSection.Settings);
   });
-  $("about-header").addEventListener("click", function () {
-    toggleCollapse("about");
+  $(Config.Constants.ElementId.AboutHeader).addEventListener("click", function () {
+    toggleCollapse(Config.Constants.ContentSection.About);
   });
 
   // Delegates for list row actions
