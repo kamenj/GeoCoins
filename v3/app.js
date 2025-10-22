@@ -26,10 +26,8 @@ const State = {
   message_BefireDisplayContentID: null,
   users: [],
 };
-let currentContentId = State.currentContentId;
 let message_BefireDisplayContentID = State.message_BefireDisplayContentID;
 
-const LS = Config.LS; // Backward compat
 const CONTENT_SECTIONS = Config.CONTENT_SECTIONS; // Backward compat
 
 
@@ -107,13 +105,13 @@ function hideAllContent() {
     setSectionVisible(CONTENT_SECTIONS[i], false);
 }
 export function showContent(id) {
-  currentContentId = id || null;
+  State.currentContentId = id || null;
   hideAllContent();
-  if (currentContentId) {
-    setSectionVisible(currentContentId, true);
-    setCollapsed(currentContentId, false);
+  if (State.currentContentId) {
+    setSectionVisible(State.currentContentId, true);
+    setCollapsed(State.currentContentId, false);
   }
-  renderMenusFor(currentContentId);
+  renderMenusFor(State.currentContentId);
 }
 
 /* ===== Message helpers ===== */
@@ -125,11 +123,11 @@ export function showContent(id) {
 //   showContent(id || null);
 // }
 function showMessage(text, showAfterId) {
-  message_BefireDisplayContentID = currentContentId;
+  message_BefireDisplayContentID = State.currentContentId;
   // Remember where we were before showing the message
   // (same approach as v1: store the array of currently visible sections)
   afterMessageShowId = showAfterId || null;
-  //save(LS.messagePrev, uiVisible.slice(0));
+  //save(Config.LS.messagePrev, uiVisible.slice(0));
 
   setText("message-text", text);
   hideAllContent();
@@ -143,7 +141,7 @@ function closeMessage() {
 
   // If a target was specified → navigate there.
   // Otherwise restore the previously visible sections.
-  // var prev = load(LS.messagePrev, ["menu", "login"]);
+  // var prev = load(Config.LS.messagePrev, ["menu", "login"]);
   if (afterMessageShowId) {
     showContent(afterMessageShowId);
   } else {
@@ -160,13 +158,13 @@ function closeMessage() {
 /* ===== Users ===== */
 export function addUser(u) {
   State.users.push(u);
-  save(LS.users, State.users);
+  save(Config.LS.users, State.users);
 }
 export function removeUserByUsername(username) {
   State.users = State.users.filter(function (u) {
     return u.username !== username;
   });
-  save(LS.users, State.users);
+  save(Config.LS.users, State.users);
 }
 export function findUser(username) {
   for (var i = 0; i < State.users.length; i++) {
@@ -248,7 +246,7 @@ export function saveUserDetails() {
       State.users[i].password = newPassword;
     }
   }
-  save(LS.users, State.users);
+  save(Config.LS.users, State.users);
   if (currentUser === oldU) currentUser = newU;
   refreshUsersTable();
   showContent("usersList");
@@ -272,7 +270,7 @@ export function handleLogin() {
   var found = findUser(user);
   if (found && found.password === pass) {
     currentUser = found.username;
-    save(LS.currentUser, currentUser);
+    save(Config.LS.currentUser, currentUser);
     showMessage("Login successful. Welcome, " + currentUser + "!", "usersList");
   } else {
     showMessage("Login failed. Wrong username or password.", "login");
@@ -280,7 +278,7 @@ export function handleLogin() {
 }
 export function logout() {
   currentUser = null;
-  save(LS.currentUser, null);
+  save(Config.LS.currentUser, null);
   showMessage("You have been logged out.", null);
 }
 
@@ -324,7 +322,7 @@ function nextPointId() {
   return max + 1;
 }
 function savePoints() {
-  save(LS.points, mapPoints);
+  save(Config.LS.points, mapPoints);
 }
 function renderPointsRow(p, i) {
   var actionsHTML = [
@@ -467,7 +465,7 @@ export function applySettings() {
     theme: getVal("set-theme"),
     font: getVal("set-font") || "medium",
   };
-  save(LS.settings, settings);
+  save(Config.LS.settings, settings);
   applyThemeFont();
   showMessage("Settings applied.", "settings");
 }
@@ -976,30 +974,30 @@ function bindListDelegates() {
 
 /* ===== Init ===== */
 function loadAll() {
-  // users = load(LS.users, null);
+  // users = load(Config.LS.users, null);
   // if (!users || users.length === 0) {
   //   users = typeof SAMPLE_USERS !== "undefined" ? SAMPLE_USERS.slice() : [];
-  //   save(LS.users, users);
+  //   save(Config.LS.users, users);
   // }
 
   State.users = syncArrayWithTemplate(
-    LS.users,
+    Config.LS.users,
     typeof SAMPLE_USERS !== "undefined" ? SAMPLE_USERS : []
   );
 
-  // mapPoints = load(LS.points, null);
+  // mapPoints = load(Config.LS.points, null);
   // if (!mapPoints || mapPoints.length === 0) {
   //   mapPoints =
   //     typeof SAMPLE_POINTS !== "undefined" ? SAMPLE_POINTS.slice() : [];
-  //   save(LS.points, mapPoints);
+  //   save(Config.LS.points, mapPoints);
   // }
   mapPoints = syncArrayWithTemplate(
-    LS.points,
+    Config.LS.points,
     typeof SAMPLE_POINTS !== "undefined" ? SAMPLE_POINTS : []
   );
 
-  currentUser = load(LS.currentUser, null);
-  settings = load(LS.settings, { theme: "light", font: "medium" });
+  currentUser = load(Config.LS.currentUser, null);
+  settings = load(Config.LS.settings, { theme: "light", font: "medium" });
   applyThemeFont();
 
   // Initially, no content -> default menu commands
