@@ -3,22 +3,26 @@ import { syncArrayWithTemplate } from "./dataUtils.js";
 
 const Config = {
   LS: {
-  users: "app.users",
-  points: "app.mapPoints",
-  currentUser: "app.currentUser",
-  settings: "app.settings",
-},
+    users: "app.users",
+    points: "app.mapPoints",
+    currentUser: "app.currentUser",
+    settings: "app.settings",
+  },
   CONTENT_SECTIONS: [
-  "login",
-  "register",
-  "usersList",
-  "userDetails",
-  "message",
-  "mapPoints",
-  "mapPointDetails",
-  "settings",
-  "about",
-],
+    "login",
+    "register",
+    "usersList",
+    "userDetails",
+    "message",
+    "mapPoints",
+    "mapPointDetails",
+    "settings",
+    "about",
+  ],
+  Commands: {
+    LIST: null, // Will be initialized below
+    DEFAULT_MENU_TOP: null, // Will be initialized below
+  },
 };
 
 const State = {
@@ -31,8 +35,6 @@ const State = {
   afterMessageShowId: null, // target section to show after closing the message
 };
 
-
-/* ===== Globals & Helpers ===== */
 
 export function $(id) {
   return document.getElementById(id);
@@ -468,7 +470,7 @@ export function resetAll() {
 }
 
 /* ===== Commands model ===== */
-var COMMANDS = {
+Config.Commands.LIST = {
   login: [
     {
       name: "login.ok",
@@ -745,7 +747,7 @@ var COMMANDS = {
   ],
 };
 
-var DEFAULT_MENU_TOP_COMMANDS = [
+Config.Commands.DEFAULT_MENU_TOP = [
   {
     name: "show.login",
     caption: "Show Login",
@@ -854,8 +856,8 @@ function setMenusVisibility() {
 }
 function renderMenusFor(contentId) {
   clearMenuBars();
-  if (contentId && COMMANDS[contentId]) {
-    var cmds = COMMANDS[contentId];
+  if (contentId && Config.Commands.LIST[contentId]) {
+    var cmds = Config.Commands.LIST[contentId];
     for (var i = 0; i < cmds.length; i++) {
       var c = cmds[i];
       if (c.visible === false) continue;
@@ -884,8 +886,8 @@ function renderMenusFor(contentId) {
     }
   } else {
     // No content visible -> default top menu commands
-    for (var j = 0; j < DEFAULT_MENU_TOP_COMMANDS.length; j++) {
-      var cmd = DEFAULT_MENU_TOP_COMMANDS[j];
+    for (var j = 0; j < Config.Commands.DEFAULT_MENU_TOP.length; j++) {
+      var cmd = Config.Commands.DEFAULT_MENU_TOP[j];
       var host = $("menuTop-top-commands");
       if (host) {
         host.appendChild(createMenuButton(cmd));
@@ -904,9 +906,9 @@ function renderCommandHTML(ctx, cmdName) {
   return `<button class="cmd" data-cmd="${cmdName}" data-payload="${payload}">${label}</button>`;
 }
 function findCommandByName(name) {
-  var keys = Object.keys(COMMANDS);
+  var keys = Object.keys(Config.Commands.LIST);
   for (var i = 0; i < keys.length; i++) {
-    var arr = COMMANDS[keys[i]];
+    var arr = Config.Commands.LIST[keys[i]];
     for (var j = 0; j < arr.length; j++) {
       if (arr[j].name === name) return arr[j];
     }
