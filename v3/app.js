@@ -956,12 +956,15 @@ function on_before_command_added(target_menu, cmd) {
   
   // If no user is logged in, only show specific commands
   if (!State.currentUser) {
-    // Allow: Show Login, Show About, and all login page bottom commands
+    // Allow: Show Login, Show About, and all login/register page commands
     var allowedCommands = [
       Config.Constants.CommandName.ShowLogin,
       Config.Constants.CommandName.ShowAbout,
       Config.Constants.CommandName.LoginOk,
-      Config.Constants.CommandName.LoginCancel
+      Config.Constants.CommandName.LoginCancel,
+      Config.Constants.CommandName.LoginRegister,
+      Config.Constants.CommandName.RegisterOk,
+      Config.Constants.CommandName.RegisterCancel
     ];
     
     if (allowedCommands.indexOf(cmd.name) === -1) {
