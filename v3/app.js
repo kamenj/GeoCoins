@@ -166,6 +166,16 @@ const Config = {
         visible: true,
         enabled: true,
       },
+      {
+        name: "login.register",
+        caption: "Register",
+        menu: { location: "menu.bottom.title" },
+        action: function () {
+          showContent("register");
+        },
+        visible: true,
+        enabled: true,
+      },
     ],
     [Constants.ContentSection.Register]: [
       {
