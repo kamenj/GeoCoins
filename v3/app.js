@@ -26,9 +26,6 @@ const State = {
   message_BefireDisplayContentID: null,
   users: [],
 };
-let message_BefireDisplayContentID = State.message_BefireDisplayContentID;
-
-const CONTENT_SECTIONS = Config.CONTENT_SECTIONS; // Backward compat
 
 
 /* ===== Globals & Helpers ===== */
@@ -101,8 +98,8 @@ export function updateChevron(id) {
 
 /* ===== Show one content at a time ===== */
 function hideAllContent() {
-  for (var i = 0; i < CONTENT_SECTIONS.length; i++)
-    setSectionVisible(CONTENT_SECTIONS[i], false);
+  for (var i = 0; i < Config.CONTENT_SECTIONS.length; i++)
+    setSectionVisible(Config.CONTENT_SECTIONS[i], false);
 }
 export function showContent(id) {
   State.currentContentId = id || null;
@@ -123,7 +120,7 @@ export function showContent(id) {
 //   showContent(id || null);
 // }
 function showMessage(text, showAfterId) {
-  message_BefireDisplayContentID = State.currentContentId;
+  State.message_BefireDisplayContentID = State.currentContentId;
   // Remember where we were before showing the message
   // (same approach as v1: store the array of currently visible sections)
   afterMessageShowId = showAfterId || null;
@@ -145,14 +142,14 @@ function closeMessage() {
   if (afterMessageShowId) {
     showContent(afterMessageShowId);
   } else {
-    if (message_BefireDisplayContentID) {
-      showContent(message_BefireDisplayContentID);
+    if (State.message_BefireDisplayContentID) {
+      showContent(State.message_BefireDisplayContentID);
     }
   }
 
   // Reset intent
   afterMessageShowId = null;
-  message_BefireDisplayContentID = null;
+  State.message_BefireDisplayContentID = null;
 }
 
 /* ===== Users ===== */
@@ -1001,8 +998,8 @@ function loadAll() {
   applyThemeFont();
 
   // Initially, no content -> default menu commands
-  for (var i = 0; i < CONTENT_SECTIONS.length; i++)
-    setSectionVisible(CONTENT_SECTIONS[i], false);
+  for (var i = 0; i < Config.CONTENT_SECTIONS.length; i++)
+    setSectionVisible(Config.CONTENT_SECTIONS[i], false);
   renderMenusFor(null);
 
   // Collapse toggles
