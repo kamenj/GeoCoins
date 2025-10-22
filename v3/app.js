@@ -28,14 +28,11 @@ const State = {
   mapPoints: [],
   currentUser: null,
   settings: { theme: "light", font: "medium" },
+  afterMessageShowId: null, // target section to show after closing the message
 };
 
 
 /* ===== Globals & Helpers ===== */
-
-
-/* ===== v3: Message navigation intent (same as v1) ===== */
-var afterMessageShowId = null; // target section to show after closing the message
 
 export function $(id) {
   return document.getElementById(id);
@@ -122,7 +119,7 @@ function showMessage(text, showAfterId) {
   State.message_BefireDisplayContentID = State.currentContentId;
   // Remember where we were before showing the message
   // (same approach as v1: store the array of currently visible sections)
-  afterMessageShowId = showAfterId || null;
+  State.afterMessageShowId = showAfterId || null;
   //save(Config.LS.messagePrev, uiVisible.slice(0));
 
   setText("message-text", text);
@@ -138,8 +135,8 @@ function closeMessage() {
   // If a target was specified → navigate there.
   // Otherwise restore the previously visible sections.
   // var prev = load(Config.LS.messagePrev, ["menu", "login"]);
-  if (afterMessageShowId) {
-    showContent(afterMessageShowId);
+  if (State.afterMessageShowId) {
+    showContent(State.afterMessageShowId);
   } else {
     if (State.message_BefireDisplayContentID) {
       showContent(State.message_BefireDisplayContentID);
@@ -147,7 +144,7 @@ function closeMessage() {
   }
 
   // Reset intent
-  afterMessageShowId = null;
+  State.afterMessageShowId = null;
   State.message_BefireDisplayContentID = null;
 }
 
