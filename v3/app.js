@@ -1,13 +1,14 @@
 import { SAMPLE_USERS, SAMPLE_POINTS } from "./data.js";
 import { syncArrayWithTemplate } from "./dataUtils.js";
-/* ===== Globals & Helpers ===== */
-var LS = {
+
+const Config = {
+  LS: {
   users: "app.users",
   points: "app.mapPoints",
   currentUser: "app.currentUser",
   settings: "app.settings",
-};
-var CONTENT_SECTIONS = [
+},
+  CONTENT_SECTIONS: [
   "login",
   "register",
   "usersList",
@@ -17,12 +18,27 @@ var CONTENT_SECTIONS = [
   "mapPointDetails",
   "settings",
   "about",
-];
-var users = [],
-  mapPoints = [],
+],
+};
+
+const State = {
+  currentContentId: null,
+  message_BefireDisplayContentID: null,
+  users: [],
+};
+let currentContentId = State.currentContentId;
+let message_BefireDisplayContentID = State.message_BefireDisplayContentID;
+
+const LS = Config.LS; // Backward compat
+const CONTENT_SECTIONS = Config.CONTENT_SECTIONS; // Backward compat
+
+
+/* ===== Globals & Helpers ===== */
+
+
+var mapPoints = [],
   currentUser = null,
   settings = { theme: "light", font: "medium" };
-var currentContentId = null;
 
 /* ===== v3: Message navigation intent (same as v1) ===== */
 var afterMessageShowId = null; // target section to show after closing the message
@@ -108,7 +124,6 @@ export function showContent(id) {
 // export function closeMessageTo(id) {
 //   showContent(id || null);
 // }
-var message_BefireDisplayContentID = null;
 function showMessage(text, showAfterId) {
   message_BefireDisplayContentID = currentContentId;
   // Remember where we were before showing the message
@@ -144,18 +159,18 @@ function closeMessage() {
 
 /* ===== Users ===== */
 export function addUser(u) {
-  users.push(u);
-  save(LS.users, users);
+  State.users.push(u);
+  save(LS.users, State.users);
 }
 export function removeUserByUsername(username) {
-  users = users.filter(function (u) {
+  State.users = State.users.filter(function (u) {
     return u.username !== username;
   });
-  save(LS.users, users);
+  save(LS.users, State.users);
 }
 export function findUser(username) {
-  for (var i = 0; i < users.length; i++) {
-    if (users[i].username === username) return users[i];
+  for (var i = 0; i < State.users.length; i++) {
+    if (State.users[i].username === username) return State.users[i];
   }
   return null;
 }
@@ -183,7 +198,7 @@ export function refreshUsersTable() {
     table = $("users-table"),
     empty = $("users-empty");
   tbody.innerHTML = "";
-  if (users.length === 0) {
+  if (State.users.length === 0) {
     table.style.display = "none";
     empty.style.display = "block";
     return;
@@ -191,8 +206,8 @@ export function refreshUsersTable() {
   table.style.display = "table";
   empty.style.display = "none";
   var rows = [];
-  for (var i = 0; i < users.length; i++) {
-    rows.push(renderUsersRow(users[i], i));
+  for (var i = 0; i < State.users.length; i++) {
+    rows.push(renderUsersRow(State.users[i], i));
   }
   tbody.innerHTML = rows.join(""); // delegate events below
 }
@@ -226,14 +241,14 @@ export function saveUserDetails() {
   }
   if (oldU !== newU && findUser(newU))
     return showMessage("Username already exists.", "userDetails");
-  for (var i = 0; i < users.length; i++) {
-    if (users[i].username === oldU) {
-      users[i].username = newU;
-      users[i].name = newName;
-      users[i].password = newPassword;
+  for (var i = 0; i < State.users.length; i++) {
+    if (State.users[i].username === oldU) {
+      State.users[i].username = newU;
+      State.users[i].name = newName;
+      State.users[i].password = newPassword;
     }
   }
-  save(LS.users, users);
+  save(LS.users, State.users);
   if (currentUser === oldU) currentUser = newU;
   refreshUsersTable();
   showContent("usersList");
@@ -272,10 +287,10 @@ export function logout() {
 /* ===== Registration ===== */
 export function clearRegisterForm() {
   setVal("reg-username", ""),
-    setVal("reg-password", ""),
-    setVal("reg-name", ""),
-    setVal("reg-surname", ""),
-    setVal("reg-gender", "");
+  setVal("reg-password", ""),
+  setVal("reg-name", ""),
+  setVal("reg-surname", ""),
+  setVal("reg-gender", "");
 }
 export function registerUser() {
   var username = getVal("reg-username"),
@@ -967,7 +982,7 @@ function loadAll() {
   //   save(LS.users, users);
   // }
 
-  users = syncArrayWithTemplate(
+  State.users = syncArrayWithTemplate(
     LS.users,
     typeof SAMPLE_USERS !== "undefined" ? SAMPLE_USERS : []
   );
