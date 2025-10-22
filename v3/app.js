@@ -102,6 +102,9 @@ const Constants = {
     MpsEmpty: "mps-empty",
     MessageText: "message-text",
     Message: "message",
+    StatusBar: "statusBar",
+    StatusBarTitle: "statusBar-title",
+    StatusBarUser: "statusBar-user",
   },
   Attribute: {
     DataOpenUser: "data-open-user",
@@ -131,6 +134,7 @@ const Config = {
     settings: "app.settings",
   },
   Constants: Constants,
+  AppTitle: "Dani-Geo-Coins",
   CONTENT_SECTIONS: [
     Constants.ContentSection.Login,
     Constants.ContentSection.Register,
@@ -423,7 +427,7 @@ const Config = {
   DEFAULT_MENU_TOP: [
     {
       name: "show.login",
-      caption: "Show Login",
+      caption: "Login",
       menu: { location: "menu.top.top" },
       action: function () {
         showContent("login");
@@ -433,7 +437,7 @@ const Config = {
     },
     {
       name: "show.register",
-      caption: "Show Register",
+      caption: "Register",
       menu: { location: "menu.top.top" },
       action: function () {
         showContent("register");
@@ -443,7 +447,7 @@ const Config = {
     },
     {
       name: "show.users",
-      caption: "Show Users List",
+      caption: "Users List",
       menu: { location: "menu.top.top" },
       action: function () {
         showContent("usersList");
@@ -453,7 +457,7 @@ const Config = {
     },
     {
       name: "show.points",
-      caption: "Show Map Points",
+      caption: "Map Points",
       menu: { location: "menu.top.top" },
       action: function () {
         showContent("mapPoints");
@@ -463,7 +467,7 @@ const Config = {
     },
     {
       name: "show.settings",
-      caption: "Show Settings",
+      caption: "Settings",
       menu: { location: "menu.top.top" },
       action: function () {
         showContent("settings");
@@ -473,7 +477,7 @@ const Config = {
     },
     {
       name: "show.about",
-      caption: "Show About",
+      caption: "About",
       menu: { location: "menu.top.top" },
       action: function () {
         showContent("about");
@@ -521,6 +525,19 @@ export function load(k, def) {
   } catch (e) {
     return def;
   }
+}
+
+/* ===== Status Bar ===== */
+export function setStatusBarTitle(title) {
+  setText(Config.Constants.ElementId.StatusBarTitle, title);
+}
+export function setStatusBarUser(username) {
+  var userText = username ? "User: " + username : "Not logged in";
+  setText(Config.Constants.ElementId.StatusBarUser, userText);
+}
+export function updateStatusBar() {
+  setStatusBarTitle(Config.AppTitle);
+  setStatusBarUser(State.currentUser);
 }
 
 /* ===== Visibility / Collapse ===== */
@@ -725,7 +742,7 @@ export function handleLogin() {
   var found = findUser(user);
   if (found && found.password === pass) {
     State.currentUser = found.username;
-    save(Config.LS.currentUser, State.currentUser);
+    updateStatusBar();
     showMessage("Login successful. Welcome, " + State.currentUser + "!", "usersList");
   } else {
     showMessage("Login failed. Wrong username or password.", "login");
@@ -733,7 +750,7 @@ export function handleLogin() {
 }
 export function logout() {
   State.currentUser = null;
-  save(Config.LS.currentUser, null);
+  updateStatusBar();
   showMessage("You have been logged out.", null);
 }
 
@@ -1145,9 +1162,12 @@ function loadAll() {
     typeof SAMPLE_POINTS !== "undefined" ? SAMPLE_POINTS : []
   );
 
-  State.currentUser = load(Config.LS.currentUser, null);
+  State.currentUser = null;
   State.settings = load(Config.LS.settings, { theme: Config.Constants.Theme.Light, font: Config.Constants.FontSize.Medium });
   applyThemeFont();
+
+  // Initialize status bar
+  updateStatusBar();
 
   // Initially, no content -> default menu commands
   for (var i = 0; i < Config.CONTENT_SECTIONS.length; i++)
