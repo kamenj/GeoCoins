@@ -25,15 +25,14 @@ const State = {
   currentContentId: null,
   message_BefireDisplayContentID: null,
   users: [],
+  mapPoints: [],
+  currentUser: null,
+  settings: { theme: "light", font: "medium" },
 };
 
 
 /* ===== Globals & Helpers ===== */
 
-
-var mapPoints = [],
-  currentUser = null,
-  settings = { theme: "light", font: "medium" };
 
 /* ===== v3: Message navigation intent (same as v1) ===== */
 var afterMessageShowId = null; // target section to show after closing the message
@@ -244,7 +243,7 @@ export function saveUserDetails() {
     }
   }
   save(Config.LS.users, State.users);
-  if (currentUser === oldU) currentUser = newU;
+  if (State.currentUser === oldU) State.currentUser = newU;
   refreshUsersTable();
   showContent("usersList");
 }
@@ -252,7 +251,7 @@ export function deleteUser() {
   var username = getVal("ud-username-old");
   if (!username) return;
   removeUserByUsername(username);
-  if (currentUser === username) currentUser = null;
+  if (State.currentUser === username) State.currentUser = null;
   refreshUsersTable();
   showContent("usersList");
 }
@@ -266,15 +265,15 @@ export function handleLogin() {
     pass = $("login-password").value;
   var found = findUser(user);
   if (found && found.password === pass) {
-    currentUser = found.username;
-    save(Config.LS.currentUser, currentUser);
-    showMessage("Login successful. Welcome, " + currentUser + "!", "usersList");
+    State.currentUser = found.username;
+    save(Config.LS.currentUser, State.currentUser);
+    showMessage("Login successful. Welcome, " + State.currentUser + "!", "usersList");
   } else {
     showMessage("Login failed. Wrong username or password.", "login");
   }
 }
 export function logout() {
-  currentUser = null;
+  State.currentUser = null;
   save(Config.LS.currentUser, null);
   showMessage("You have been logged out.", null);
 }
@@ -312,14 +311,14 @@ export function registerUser() {
 /* ===== Map Points ===== */
 function nextPointId() {
   var max = -1;
-  for (var i = 0; i < mapPoints.length; i++) {
-    var n = Number(mapPoints[i].id);
+  for (var i = 0; i < State.mapPoints.length; i++) {
+    var n = Number(State.mapPoints[i].id);
     if (isFinite(n) && n > max) max = n;
   }
   return max + 1;
 }
 function savePoints() {
-  save(Config.LS.points, mapPoints);
+  save(Config.LS.points, State.mapPoints);
 }
 function renderPointsRow(p, i) {
   var actionsHTML = [
@@ -344,7 +343,7 @@ export function refreshMapPointsTable() {
     table = $("mps-table"),
     empty = $("mps-empty");
   tbody.innerHTML = "";
-  if (mapPoints.length === 0) {
+  if (State.mapPoints.length === 0) {
     table.style.display = "none";
     empty.style.display = "block";
     return;
@@ -352,8 +351,8 @@ export function refreshMapPointsTable() {
   table.style.display = "table";
   empty.style.display = "none";
   var rows = [];
-  for (var i = 0; i < mapPoints.length; i++) {
-    rows.push(renderPointsRow(mapPoints[i], i));
+  for (var i = 0; i < State.mapPoints.length; i++) {
+    rows.push(renderPointsRow(State.mapPoints[i], i));
   }
   tbody.innerHTML = rows.join("");
 }
@@ -377,9 +376,9 @@ export function saveMapPoint() {
     return showMessage("Latitude and Longitude must be numbers.", "mapPoints");
   if (idStr) {
     var id = Number(idStr);
-    for (var i = 0; i < mapPoints.length; i++) {
-      if (mapPoints[i].id === id) {
-        mapPoints[i] = {
+    for (var i = 0; i < State.mapPoints.length; i++) {
+      if (State.mapPoints[i].id === id) {
+        State.mapPoints[i] = {
           id: id,
           username: username,
           title: title,
@@ -394,7 +393,7 @@ export function saveMapPoint() {
     showContent("mapPoints");
   } else {
     var nid = nextPointId();
-    mapPoints.push({
+    State.mapPoints.push({
       id: nid,
       username: username,
       title: title,
@@ -410,8 +409,8 @@ export function saveMapPoint() {
 }
 export function openMapPointDetails(id) {
   var p = null;
-  for (var i = 0; i < mapPoints.length; i++) {
-    if (Number(mapPoints[i].id) === Number(id)) p = mapPoints[i];
+  for (var i = 0; i < State.mapPoints.length; i++) {
+    if (Number(State.mapPoints[i].id) === Number(id)) p = State.mapPoints[i];
   }
   if (!p) return;
   setVal("mpd-id", p.id);
@@ -425,8 +424,8 @@ export function openMapPointDetails(id) {
 export function editMapPointFromDetails() {
   var id = Number(getVal("mpd-id"));
   var p = null;
-  for (var i = 0; i < mapPoints.length; i++) {
-    if (Number(mapPoints[i].id) === id) p = mapPoints[i];
+  for (var i = 0; i < State.mapPoints.length; i++) {
+    if (Number(State.mapPoints[i].id) === id) p = State.mapPoints[i];
   }
   if (!p) return;
   setVal("mp-id", p.id);
@@ -439,7 +438,7 @@ export function editMapPointFromDetails() {
 }
 export function deleteMapPointFromDetails() {
   var id = Number(getVal("mpd-id"));
-  mapPoints = mapPoints.filter(function (x) {
+  State.mapPoints = State.mapPoints.filter(function (x) {
     return Number(x.id) !== id;
   });
   savePoints();
@@ -449,20 +448,20 @@ export function deleteMapPointFromDetails() {
 
 /* ===== Settings ===== */
 export function applyThemeFont() {
-  document.body.setAttribute("data-theme", settings.theme || "light");
-  document.body.setAttribute("data-font", settings.font || "medium");
+  document.body.setAttribute("data-theme", State.settings.theme || "light");
+  document.body.setAttribute("data-font", State.settings.font || "medium");
 }
 export function openSettings() {
   showContent("settings");
-  setVal("set-theme", settings.theme || "light");
-  setVal("set-font", settings.font || "medium");
+  setVal("set-theme", State.settings.theme || "light");
+  setVal("set-font", State.settings.font || "medium");
 }
 export function applySettings() {
-  settings = {
+  State.settings = {
     theme: getVal("set-theme"),
     font: getVal("set-font") || "medium",
   };
-  save(Config.LS.settings, settings);
+  save(Config.LS.settings, State.settings);
   applyThemeFont();
   showMessage("Settings applied.", "settings");
 }
@@ -650,7 +649,7 @@ var COMMANDS = {
       caption: "Delete",
       menu: { location: "list.row" },
       action: function (id) {
-        mapPoints = mapPoints.filter(function (p) {
+        State.mapPoints = State.mapPoints.filter(function (p) {
           return Number(p.id) !== Number(id);
         });
         savePoints();
@@ -982,19 +981,19 @@ function loadAll() {
     typeof SAMPLE_USERS !== "undefined" ? SAMPLE_USERS : []
   );
 
-  // mapPoints = load(Config.LS.points, null);
-  // if (!mapPoints || mapPoints.length === 0) {
-  //   mapPoints =
+  // State.mapPoints = load(Config.LS.points, null);
+  // if (!State.mapPoints || State.mapPoints.length === 0) {
+  //   State.mapPoints =
   //     typeof SAMPLE_POINTS !== "undefined" ? SAMPLE_POINTS.slice() : [];
-  //   save(Config.LS.points, mapPoints);
+  //   save(Config.LS.points, State.mapPoints);
   // }
-  mapPoints = syncArrayWithTemplate(
+  State.mapPoints = syncArrayWithTemplate(
     Config.LS.points,
     typeof SAMPLE_POINTS !== "undefined" ? SAMPLE_POINTS : []
   );
 
-  currentUser = load(Config.LS.currentUser, null);
-  settings = load(Config.LS.settings, { theme: "light", font: "medium" });
+  State.currentUser = load(Config.LS.currentUser, null);
+  State.settings = load(Config.LS.settings, { theme: "light", font: "medium" });
   applyThemeFont();
 
   // Initially, no content -> default menu commands
