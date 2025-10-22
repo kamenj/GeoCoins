@@ -1,6 +1,128 @@
 import { SAMPLE_USERS, SAMPLE_POINTS } from "./data.js";
 import { syncArrayWithTemplate } from "./dataUtils.js";
 
+const Constants = {
+  HtmlElement: {
+    Button: "button",
+  },
+  ClassName: {
+    CmdBtn: "cmd-btn",
+    LinkBtn: "link-btn",
+    Cmd: "cmd",
+    Collapsed: "collapsed",
+  },
+  ContentSection: {
+    Login: "login",
+    Register: "register",
+    UsersList: "usersList",
+    UserDetails: "userDetails",
+    Message: "message",
+    MapPoints: "mapPoints",
+    MapPointDetails: "mapPointDetails",
+    Settings: "settings",
+    About: "about",
+  },
+  CommandName: {
+    // Login commands
+    LoginOk: "login.ok",
+    LoginCancel: "login.cancel",
+    LoginRegister: "login.register",
+    // Register commands
+    RegisterOk: "register.ok",
+    RegisterCancel: "register.cancel",
+    // Users commands
+    UsersAdd: "users.add",
+    UsersRefresh: "users.refresh",
+    UsersDeleteRow: "users.deleteRow",
+    UsersEditRow: "users.editRow",
+    UsersCancel: "users.cancel",
+    // User details commands
+    UserSave: "user.save",
+    UserDelete: "user.delete",
+    UserCancel: "user.cancel",
+    // Message commands
+    MessageOk: "message.ok",
+    // Points commands
+    PointsAdd: "points.add",
+    PointsRefresh: "points.refresh",
+    PointsDeleteRow: "points.deleteRow",
+    PointsEditRow: "points.editRow",
+    // Map point details commands
+    MpdSave: "mpd.save",
+    MpdDelete: "mpd.delete",
+    MpdCancel: "mpd.cancel",
+    // Settings commands
+    SettingsApply: "settings.apply",
+    SettingsReset: "settings.reset",
+    SettingsClose: "settings.close",
+    // About commands
+    AboutOk: "about.ok",
+    // Show commands
+    ShowLogin: "show.login",
+    ShowRegister: "show.register",
+    ShowUsers: "show.users",
+    ShowPoints: "show.points",
+    ShowSettings: "show.settings",
+    ShowAbout: "show.about",
+  },
+  MenuLocation: {
+    TopTitle: "menu.top.title",
+    TopTop: "menu.top.top",
+    TopBottom: "menu.top.bottom",
+    BottomTitle: "menu.bottom.title",
+    BottomTop: "menu.bottom.top",
+    BottomBottom: "menu.bottom.bottom",
+    ListRow: "list.row",
+  },
+  ElementId: {
+    MenuTopTitleCommands: "menuTop-title-commands",
+    MenuTopTopCommands: "menuTop-top-commands",
+    MenuTopBottomCommands: "menuTop-bottom-commands",
+    MenuBottomTitleCommands: "menuBottom-title-commands",
+    MenuBottomTopCommands: "menuBottom-top-commands",
+    MenuBottomBottomCommands: "menuBottom-bottom-commands",
+    MenuTop: "menuTop",
+    MenuBottom: "menuBottom",
+    MenuTopHeader: "menuTop-header",
+    MenuBottomHeader: "menuBottom-header",
+    LoginHeader: "login-header",
+    RegisterHeader: "register-header",
+    UsersListHeader: "usersList-header",
+    UserDetailsHeader: "userDetails-header",
+    MessageHeader: "message-header",
+    MapPointsHeader: "mapPoints-header",
+    MapPointDetailsHeader: "mapPointDetails-header",
+    SettingsHeader: "settings-header",
+    AboutHeader: "about-header",
+    UsersTbody: "users-tbody",
+    UsersTable: "users-table",
+    UsersEmpty: "users-empty",
+    MpsTbody: "mps-tbody",
+    MpsTable: "mps-table",
+    MpsEmpty: "mps-empty",
+    MessageText: "message-text",
+    Message: "message",
+  },
+  Attribute: {
+    DataOpenUser: "data-open-user",
+    DataOpenPoint: "data-open-point",
+    DataCmd: "data-cmd",
+    DataPayload: "data-payload",
+    DataTheme: "data-theme",
+    DataFont: "data-font",
+  },
+  Theme: {
+    Light: "light",
+  },
+  FontSize: {
+    Medium: "medium",
+  },
+  CommandPrefix: {
+    Users: "users.",
+    Points: "points.",
+  },
+};
+
 const Config = {
   LS: {
     users: "app.users",
@@ -8,141 +130,348 @@ const Config = {
     currentUser: "app.currentUser",
     settings: "app.settings",
   },
+  Constants: Constants,
   CONTENT_SECTIONS: [
-    "login",
-    "register",
-    "usersList",
-    "userDetails",
-    "message",
-    "mapPoints",
-    "mapPointDetails",
-    "settings",
-    "about",
+    Constants.ContentSection.Login,
+    Constants.ContentSection.Register,
+    Constants.ContentSection.UsersList,
+    Constants.ContentSection.UserDetails,
+    Constants.ContentSection.Message,
+    Constants.ContentSection.MapPoints,
+    Constants.ContentSection.MapPointDetails,
+    Constants.ContentSection.Settings,
+    Constants.ContentSection.About,
   ],
+
   Commands: {
-    LIST: null, // Will be initialized below
-    DEFAULT_MENU_TOP: null, // Will be initialized below
+    LIST: {
+      [Constants.ContentSection.Login]: [
+      {
+        name: "login.ok",
+        caption: "OK",
+        menu: { location: "menu.bottom.title" },
+        action: function () {
+          handleLogin();
+        },
+        visible: true,
+        enabled: true,
+      },
+      {
+        name: "login.cancel",
+        caption: "Cancel",
+        menu: { location: "menu.bottom.title" },
+        action: function () {
+          showContent(null);
+        },
+        visible: true,
+        enabled: true,
+      },
+    ],
+    [Constants.ContentSection.Register]: [
+      {
+        name: "register.ok",
+        caption: "OK",
+        menu: { location: "menu.bottom.title" },
+        action: function () {
+          registerUser();
+        },
+        visible: true,
+        enabled: true,
+      },
+      {
+        name: "register.cancel",
+        caption: "Cancel",
+        menu: { location: "menu.bottom.title" },
+        action: function () {
+          showContent("login");
+        },
+        visible: true,
+        enabled: true,
+      },
+    ],
+    [Constants.ContentSection.UsersList]: [
+      {
+        name: "users.add",
+        caption: "Add user",
+        menu: { location: "menu.bottom.title" },
+        action: function () {
+          showContent("register");
+        },
+        visible: true,
+        enabled: true,
+      },
+      {
+        name: "users.refresh",
+        caption: "Refresh",
+        menu: { location: "menu.bottom.title" },
+        action: function () {
+          refreshUsersTable();
+        },
+        visible: true,
+        enabled: true,
+      },
+      {
+        name: "users.deleteRow",
+        caption: "Delete",
+        menu: { location: "list.row" },
+        action: function (username) {
+          removeUserByUsername(username);
+          refreshUsersTable();
+        },
+        visible: true,
+        enabled: true,
+      },
+      {
+        name: "users.editRow",
+        caption: "Edit",
+        menu: { location: "list.row" },
+        action: function (username) {
+          openUserDetails(username);
+        },
+        visible: true,
+        enabled: true,
+      },
+      {
+        name: "users.cancel",
+        caption: "Cancel",
+        menu: { location: "menu.bottom.title" },
+        action: function () {
+          showContent(null);
+        },
+        visible: true,
+        enabled: true,
+      },
+    ],
+    [Constants.ContentSection.UserDetails]: [
+      {
+        name: "user.save",
+        caption: "Save",
+        menu: { location: "menu.bottom.title" },
+        action: function () {
+          saveUserDetails();
+        },
+        visible: true,
+        enabled: true,
+      },
+      {
+        name: "user.delete",
+        caption: "Delete",
+        menu: { location: "menu.bottom.title" },
+        action: function () {
+          deleteUser();
+        },
+        visible: true,
+        enabled: true,
+      },
+      {
+        name: "user.cancel",
+        caption: "Cancel",
+        menu: { location: "menu.bottom.title" },
+        action: function () {
+          cancelUserDetails();
+        },
+        visible: true,
+        enabled: true,
+      },
+    ],
+    [Constants.ContentSection.Message]: [
+      {
+        name: "message.ok",
+        caption: "OK",
+        menu: { location: "menu.bottom.title" },
+        action: function () {
+          closeMessage();
+        },
+        visible: true,
+        enabled: true,
+      },
+    ],
+    [Constants.ContentSection.MapPoints]: [
+      {
+        name: "points.add",
+        caption: "Add map point",
+        menu: { location: "menu.bottom.title" },
+        action: function () {
+          clearMapPointForm();
+        },
+        visible: true,
+        enabled: true,
+      },
+      {
+        name: "points.refresh",
+        caption: "Refresh",
+        menu: { location: "menu.bottom.title" },
+        action: function () {
+          refreshMapPointsTable();
+        },
+        visible: true,
+        enabled: true,
+      },
+      {
+        name: "points.deleteRow",
+        caption: "Delete",
+        menu: { location: "list.row" },
+        action: function (id) {
+          State.mapPoints = State.mapPoints.filter(function (p) {
+            return Number(p.id) !== Number(id);
+          });
+          savePoints();
+          refreshMapPointsTable();
+        },
+        visible: true,
+        enabled: true,
+      },
+      {
+        name: "points.editRow",
+        caption: "Edit",
+        menu: { location: "list.row" },
+        action: function (id) {
+          openMapPointDetails(id);
+          editMapPointFromDetails();
+        },
+        visible: true,
+        enabled: true,
+      },
+    ],
+    [Constants.ContentSection.MapPointDetails]: [
+      {
+        name: "mpd.save",
+        caption: "Save",
+        menu: { location: "menu.bottom.title" },
+        action: function () {
+          saveMapPoint();
+        },
+        visible: true,
+        enabled: true,
+      },
+      {
+        name: "mpd.delete",
+        caption: "Delete",
+        menu: { location: "menu.bottom.title" },
+        action: function () {
+          deleteMapPointFromDetails();
+        },
+        visible: true,
+        enabled: true,
+      },
+      {
+        name: "mpd.cancel",
+        caption: "Cancel",
+        menu: { location: "menu.bottom.title" },
+        action: function () {
+          showContent("mapPoints");
+        },
+        visible: true,
+        enabled: true,
+      },
+    ],
+    [Constants.ContentSection.Settings]: [
+      {
+        name: "settings.apply",
+        caption: "Apply",
+        menu: { location: "menu.bottom.title" },
+        action: function () {
+          applySettings();
+        },
+        visible: true,
+        enabled: true,
+      },
+      {
+        name: "settings.reset",
+        caption: "Reset",
+        menu: { location: "menu.bottom.title" },
+        action: function () {
+          resetAll();
+        },
+        visible: true,
+        enabled: true,
+      },
+      {
+        name: "settings.close",
+        caption: "Close",
+        menu: { location: "menu.bottom.title" },
+        action: function () {
+          showContent(null);
+        },
+        visible: true,
+        enabled: true,
+      },
+    ],
+    [Constants.ContentSection.About]: [
+      {
+        name: "about.ok",
+        caption: "OK",
+        menu: { location: "menu.bottom.title" },
+        action: function () {
+          showContent(null);
+        },
+        visible: true,
+        enabled: true,
+      },
+    ],
   },
-  Constants: {
-    HtmlElement: {
-      Button: "button",
+  DEFAULT_MENU_TOP: [
+    {
+      name: "show.login",
+      caption: "Show Login",
+      menu: { location: "menu.top.top" },
+      action: function () {
+        showContent("login");
+      },
+      visible: true,
+      enabled: true,
     },
-    ClassName: {
-      CmdBtn: "cmd-btn",
-      LinkBtn: "link-btn",
-      Cmd: "cmd",
-      Collapsed: "collapsed",
+    {
+      name: "show.register",
+      caption: "Show Register",
+      menu: { location: "menu.top.top" },
+      action: function () {
+        showContent("register");
+      },
+      visible: true,
+      enabled: true,
     },
-    ContentSection: {
-      Login: "login",
-      Register: "register",
-      UsersList: "usersList",
-      UserDetails: "userDetails",
-      Message: "message",
-      MapPoints: "mapPoints",
-      MapPointDetails: "mapPointDetails",
-      Settings: "settings",
-      About: "about",
+    {
+      name: "show.users",
+      caption: "Show Users List",
+      menu: { location: "menu.top.top" },
+      action: function () {
+        showContent("usersList");
+      },
+      visible: true,
+      enabled: true,
     },
-    CommandName: {
-      // Login commands
-      LoginOk: "login.ok",
-      LoginCancel: "login.cancel",
-      LoginRegister: "login.register",
-      // Register commands
-      RegisterOk: "register.ok",
-      RegisterCancel: "register.cancel",
-      // Users commands
-      UsersAdd: "users.add",
-      UsersRefresh: "users.refresh",
-      UsersDeleteRow: "users.deleteRow",
-      UsersEditRow: "users.editRow",
-      UsersCancel: "users.cancel",
-      // User details commands
-      UserSave: "user.save",
-      UserDelete: "user.delete",
-      UserCancel: "user.cancel",
-      // Message commands
-      MessageOk: "message.ok",
-      // Points commands
-      PointsAdd: "points.add",
-      PointsRefresh: "points.refresh",
-      PointsDeleteRow: "points.deleteRow",
-      PointsEditRow: "points.editRow",
-      // Map point details commands
-      MpdSave: "mpd.save",
-      MpdDelete: "mpd.delete",
-      MpdCancel: "mpd.cancel",
-      // Settings commands
-      SettingsApply: "settings.apply",
-      SettingsReset: "settings.reset",
-      SettingsClose: "settings.close",
-      // About commands
-      AboutOk: "about.ok",
-      // Show commands
-      ShowLogin: "show.login",
-      ShowRegister: "show.register",
-      ShowUsers: "show.users",
-      ShowPoints: "show.points",
-      ShowSettings: "show.settings",
-      ShowAbout: "show.about",
+    {
+      name: "show.points",
+      caption: "Show Map Points",
+      menu: { location: "menu.top.top" },
+      action: function () {
+        showContent("mapPoints");
+      },
+      visible: true,
+      enabled: true,
     },
-    MenuLocation: {
-      TopTitle: "menu.top.title",
-      TopTop: "menu.top.top",
-      TopBottom: "menu.top.bottom",
-      BottomTitle: "menu.bottom.title",
-      BottomTop: "menu.bottom.top",
-      BottomBottom: "menu.bottom.bottom",
-      ListRow: "list.row",
+    {
+      name: "show.settings",
+      caption: "Show Settings",
+      menu: { location: "menu.top.top" },
+      action: function () {
+        showContent("settings");
+      },
+      visible: true,
+      enabled: true,
     },
-    ElementId: {
-      MenuTopTitleCommands: "menuTop-title-commands",
-      MenuTopTopCommands: "menuTop-top-commands",
-      MenuTopBottomCommands: "menuTop-bottom-commands",
-      MenuBottomTitleCommands: "menuBottom-title-commands",
-      MenuBottomTopCommands: "menuBottom-top-commands",
-      MenuBottomBottomCommands: "menuBottom-bottom-commands",
-      MenuTop: "menuTop",
-      MenuBottom: "menuBottom",
-      MenuTopHeader: "menuTop-header",
-      MenuBottomHeader: "menuBottom-header",
-      LoginHeader: "login-header",
-      RegisterHeader: "register-header",
-      UsersListHeader: "usersList-header",
-      UserDetailsHeader: "userDetails-header",
-      MessageHeader: "message-header",
-      MapPointsHeader: "mapPoints-header",
-      MapPointDetailsHeader: "mapPointDetails-header",
-      SettingsHeader: "settings-header",
-      AboutHeader: "about-header",
-      UsersTbody: "users-tbody",
-      UsersTable: "users-table",
-      UsersEmpty: "users-empty",
-      MpsTbody: "mps-tbody",
-      MpsTable: "mps-table",
-      MpsEmpty: "mps-empty",
-      MessageText: "message-text",
-      Message: "message",
+    {
+      name: "show.about",
+      caption: "Show About",
+      menu: { location: "menu.top.top" },
+      action: function () {
+        showContent("about");
+      },
+      visible: true,
+      enabled: true,
     },
-    Attribute: {
-      DataOpenUser: "data-open-user",
-      DataOpenPoint: "data-open-point",
-      DataCmd: "data-cmd",
-      DataPayload: "data-payload",
-      DataTheme: "data-theme",
-      DataFont: "data-font",
-    },
-    Theme: {
-      Light: "light",
-    },
-    FontSize: {
-      Medium: "medium",
-    },
-    CommandPrefix: {
-      Users: "users.",
-      Points: "points.",
-    },
+  ],
   },
 };
 
@@ -590,347 +919,6 @@ export function resetAll() {
   location.reload();
 }
 
-/* ===== Commands model ===== */
-Config.Commands.LIST = {
-  login: [
-    {
-      name: "login.ok",
-      caption: "OK",
-      menu: { location: "menu.bottom.title" },
-      action: function () {
-        handleLogin();
-      },
-      visible: true,
-      enabled: true,
-    },
-    {
-      name: "login.cancel",
-      caption: "Cancel",
-      menu: { location: "menu.bottom.title" },
-      action: function () {
-        showContent(null);
-      },
-      visible: true,
-      enabled: true,
-    },
-    {
-      name: "login.register",
-      caption: "Register",
-      menu: { location: "menu.bottom.title" },
-      action: function () {
-        showContent("register");
-      },
-      visible: true,
-      enabled: true,
-    },
-  ],
-  register: [
-    {
-      name: "register.ok",
-      caption: "OK",
-      menu: { location: "menu.bottom.title" },
-      action: function () {
-        registerUser();
-      },
-      visible: true,
-      enabled: true,
-    },
-    {
-      name: "register.cancel",
-      caption: "Cancel",
-      menu: { location: "menu.bottom.title" },
-      action: function () {
-        showContent("login");
-      },
-      visible: true,
-      enabled: true,
-    },
-  ],
-  usersList: [
-    {
-      name: "users.add",
-      caption: "Add user",
-      menu: { location: "menu.bottom.title" },
-      action: function () {
-        showContent("register");
-      },
-      visible: true,
-      enabled: true,
-    },
-    {
-      name: "users.refresh",
-      caption: "Refresh",
-      menu: { location: "menu.bottom.title" },
-      action: function () {
-        refreshUsersTable();
-      },
-      visible: true,
-      enabled: true,
-    },
-    {
-      name: "users.deleteRow",
-      caption: "Delete",
-      menu: { location: "list.row" },
-      action: function (username) {
-        removeUserByUsername(username);
-        refreshUsersTable();
-      },
-      visible: true,
-      enabled: true,
-    },
-    {
-      name: "users.editRow",
-      caption: "Edit",
-      menu: { location: "list.row" },
-      action: function (username) {
-        openUserDetails(username);
-      },
-      visible: true,
-      enabled: true,
-    },
-    {
-      name: "users.cancel",
-      caption: "Cancel",
-      menu: { location: "menu.bottom.title" },
-      action: function () {
-        showContent(null);
-      },
-      visible: true,
-      enabled: true,
-    },
-  ],
-  userDetails: [
-    {
-      name: "user.save",
-      caption: "Save",
-      menu: { location: "menu.bottom.title" },
-      action: function () {
-        saveUserDetails();
-      },
-      visible: true,
-      enabled: true,
-    },
-    {
-      name: "user.delete",
-      caption: "Delete",
-      menu: { location: "menu.bottom.title" },
-      action: function () {
-        deleteUser();
-      },
-      visible: true,
-      enabled: true,
-    },
-    {
-      name: "user.cancel",
-      caption: "Cancel",
-      menu: { location: "menu.bottom.title" },
-      action: function () {
-        cancelUserDetails();
-      },
-      visible: true,
-      enabled: true,
-    },
-  ],
-  message: [
-    {
-      name: "message.ok",
-      caption: "OK",
-      menu: { location: "menu.bottom.title" },
-      action: function () {
-        closeMessage();
-      },
-      visible: true,
-      enabled: true,
-    },
-  ],
-  mapPoints: [
-    {
-      name: "points.add",
-      caption: "Add map point",
-      menu: { location: "menu.bottom.title" },
-      action: function () {
-        clearMapPointForm();
-      },
-      visible: true,
-      enabled: true,
-    },
-    {
-      name: "points.refresh",
-      caption: "Refresh",
-      menu: { location: "menu.bottom.title" },
-      action: function () {
-        refreshMapPointsTable();
-      },
-      visible: true,
-      enabled: true,
-    },
-    {
-      name: "points.deleteRow",
-      caption: "Delete",
-      menu: { location: "list.row" },
-      action: function (id) {
-        State.mapPoints = State.mapPoints.filter(function (p) {
-          return Number(p.id) !== Number(id);
-        });
-        savePoints();
-        refreshMapPointsTable();
-      },
-      visible: true,
-      enabled: true,
-    },
-    {
-      name: "points.editRow",
-      caption: "Edit",
-      menu: { location: "list.row" },
-      action: function (id) {
-        openMapPointDetails(id);
-        editMapPointFromDetails();
-      },
-      visible: true,
-      enabled: true,
-    },
-  ],
-  mapPointDetails: [
-    {
-      name: "mpd.save",
-      caption: "Save",
-      menu: { location: "menu.bottom.title" },
-      action: function () {
-        saveMapPoint();
-      },
-      visible: true,
-      enabled: true,
-    },
-    {
-      name: "mpd.delete",
-      caption: "Delete",
-      menu: { location: "menu.bottom.title" },
-      action: function () {
-        deleteMapPointFromDetails();
-      },
-      visible: true,
-      enabled: true,
-    },
-    {
-      name: "mpd.cancel",
-      caption: "Cancel",
-      menu: { location: "menu.bottom.title" },
-      action: function () {
-        showContent("mapPoints");
-      },
-      visible: true,
-      enabled: true,
-    },
-  ],
-  settings: [
-    {
-      name: "settings.apply",
-      caption: "Apply",
-      menu: { location: "menu.bottom.title" },
-      action: function () {
-        applySettings();
-      },
-      visible: true,
-      enabled: true,
-    },
-    {
-      name: "settings.reset",
-      caption: "Reset",
-      menu: { location: "menu.bottom.title" },
-      action: function () {
-        resetAll();
-      },
-      visible: true,
-      enabled: true,
-    },
-    {
-      name: "settings.close",
-      caption: "Close",
-      menu: { location: "menu.bottom.title" },
-      action: function () {
-        showContent(null);
-      },
-      visible: true,
-      enabled: true,
-    },
-  ],
-  about: [
-    {
-      name: "about.ok",
-      caption: "OK",
-      menu: { location: "menu.bottom.title" },
-      action: function () {
-        showContent(null);
-      },
-      visible: true,
-      enabled: true,
-    },
-  ],
-};
-
-Config.Commands.DEFAULT_MENU_TOP = [
-  {
-    name: "show.login",
-    caption: "Show Login",
-    menu: { location: "menu.top.top" },
-    action: function () {
-      showContent("login");
-    },
-    visible: true,
-    enabled: true,
-  },
-  {
-    name: "show.register",
-    caption: "Show Register",
-    menu: { location: "menu.top.top" },
-    action: function () {
-      showContent("register");
-    },
-    visible: true,
-    enabled: true,
-  },
-  {
-    name: "show.users",
-    caption: "Show Users List",
-    menu: { location: "menu.top.top" },
-    action: function () {
-      showContent("usersList");
-    },
-    visible: true,
-    enabled: true,
-  },
-  {
-    name: "show.points",
-    caption: "Show Map Points",
-    menu: { location: "menu.top.top" },
-    action: function () {
-      showContent("mapPoints");
-    },
-    visible: true,
-    enabled: true,
-  },
-  {
-    name: "show.settings",
-    caption: "Show Settings",
-    menu: { location: "menu.top.top" },
-    action: function () {
-      showContent("settings");
-    },
-    visible: true,
-    enabled: true,
-  },
-  {
-    name: "show.about",
-    caption: "Show About",
-    menu: { location: "menu.top.top" },
-    action: function () {
-      showContent("about");
-    },
-    visible: true,
-    enabled: true,
-  },
-];
-
 /* ===== Command rendering ===== */
 function on_before_command_added(target_menu, cmd) {
   // This function is called before adding a command to a menu
@@ -939,9 +927,17 @@ function on_before_command_added(target_menu, cmd) {
   
   if (!cmd || cmd.visible === false) return null;
   
-  // If no user is logged in, only show "Show Login" and "Show About" commands
+  // If no user is logged in, only show specific commands
   if (!State.currentUser) {
-    if (cmd.name !== Config.Constants.CommandName.ShowLogin && cmd.name !== Config.Constants.CommandName.ShowAbout) {
+    // Allow: Show Login, Show About, and all login page bottom commands
+    var allowedCommands = [
+      Config.Constants.CommandName.ShowLogin,
+      Config.Constants.CommandName.ShowAbout,
+      Config.Constants.CommandName.LoginOk,
+      Config.Constants.CommandName.LoginCancel
+    ];
+    
+    if (allowedCommands.indexOf(cmd.name) === -1) {
       return null; // Skip all other commands when not logged in
     }
   }
