@@ -48,6 +48,7 @@ const Constants = {
     PointsRefresh: "points.refresh",
     PointsDeleteRow: "points.deleteRow",
     PointsEditRow: "points.editRow",
+    PointsCancel: "points.cancel",
     // Map point details commands
     MpdSave: "mpd.save",
     MpdDelete: "mpd.delete",
@@ -377,6 +378,16 @@ const Config = {
         visible: true,
         enabled: true,
       },
+      {
+        name: "points.cancel",
+        caption: "Cancel",
+        menu: { location: "menu.bottom.title" },
+        action: function () {
+          showContent(null);
+        },
+        visible: true,
+        enabled: true,
+      },
     ],
     [Constants.ContentSection.MapPointDetails]: [
       {
@@ -526,7 +537,11 @@ const State = {
   users: [],
   mapPoints: [],
   currentUser: null,
-  settings: { theme: Config.Constants.Theme.Light, font: Config.Constants.FontSize.Medium },
+  settings: { 
+    theme: Config.Constants.Theme.Light, 
+    font: Config.Constants.FontSize.Medium,
+    autoHideTopMenu: true 
+  },
   afterMessageShowId: null, // target section to show after closing the message
 };
 
@@ -614,11 +629,25 @@ export function showContent(id) {
     setSectionVisible(State.currentContentId, true);
     setCollapsed(State.currentContentId, false);
     
+    // Auto-hide top menu if enabled and showing content
+    if (State.settings.autoHideTopMenu) {
+      setSectionVisible(Config.Constants.ElementId.MenuTop, false);
+    }
+    
     // Auto-fill login credentials for debugging
     if (State.currentContentId === Constants.ContentSection.Login && 
         Config.Debug.UseDefaultCredentials) {
       setVal("login-username", Config.Debug.DefaultUser);
       setVal("login-password", Config.Debug.DefaultPassword);
+    }
+  } else {
+    // No content shown, ensure top menu is visible
+    var topHas =
+      hasAnyChild(Config.Constants.ElementId.MenuTopTitleCommands) ||
+      hasAnyChild(Config.Constants.ElementId.MenuTopTopCommands) ||
+      hasAnyChild(Config.Constants.ElementId.MenuTopBottomCommands);
+    if (topHas) {
+      setSectionVisible(Config.Constants.ElementId.MenuTop, true);
     }
   }
   renderMenusFor(State.currentContentId);
@@ -1095,11 +1124,13 @@ export function openSettings() {
   showContent(Config.Constants.ContentSection.Settings);
   setVal("set-theme", State.settings.theme || Config.Constants.Theme.Light);
   setVal("set-font", State.settings.font || Config.Constants.FontSize.Medium);
+  $("set-autoHideTopMenu").checked = State.settings.autoHideTopMenu || false;
 }
 export async function applySettings() {
   State.settings = {
     theme: getVal("set-theme"),
     font: getVal("set-font") || Config.Constants.FontSize.Medium,
+    autoHideTopMenu: $("set-autoHideTopMenu").checked || false,
   };
   
   var result = await DB.saveSettings(State.settings);
@@ -1209,7 +1240,10 @@ function setMenusVisibility() {
     hasAnyChild(Config.Constants.ElementId.MenuBottomTitleCommands) ||
     hasAnyChild(Config.Constants.ElementId.MenuBottomTopCommands) ||
     hasAnyChild(Config.Constants.ElementId.MenuBottomBottomCommands);
-  setSectionVisible(Config.Constants.ElementId.MenuTop, topHas);
+  
+  // Hide top menu if autoHideTopMenu is enabled and we're showing content
+  var hideTopMenu = State.settings.autoHideTopMenu && State.currentContentId;
+  setSectionVisible(Config.Constants.ElementId.MenuTop, topHas && !hideTopMenu);
   setSectionVisible(Config.Constants.ElementId.MenuBottom, bottomHas);
   setCollapsed(Config.Constants.ElementId.MenuTop, false);
   setCollapsed(Config.Constants.ElementId.MenuBottom, false);
@@ -1386,9 +1420,17 @@ async function loadAll() {
   // Load settings from DB
   var settingsResult = await DB.getSettings();
   if (settingsResult.success) {
-    State.settings = settingsResult.data || { theme: Config.Constants.Theme.Light, font: Config.Constants.FontSize.Medium };
+    State.settings = settingsResult.data || { 
+      theme: Config.Constants.Theme.Light, 
+      font: Config.Constants.FontSize.Medium,
+      autoHideTopMenu: true 
+    };
   } else {
-    State.settings = { theme: Config.Constants.Theme.Light, font: Config.Constants.FontSize.Medium };
+    State.settings = { 
+      theme: Config.Constants.Theme.Light, 
+      font: Config.Constants.FontSize.Medium,
+      autoHideTopMenu: true 
+    };
   }
   applyThemeFont();
 
