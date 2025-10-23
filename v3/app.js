@@ -1,5 +1,6 @@
 import { SAMPLE_USERS, SAMPLE_POINTS } from "./data.js";
 import { syncArrayWithTemplate } from "./dataUtils.js";
+import DB from "./db.js";
 
 const Constants = {
   HtmlElement: {
@@ -140,6 +141,29 @@ const Config = {
     DefaultUser: "alice",
     DefaultPassword: "1234"
   },
+  AutoLoadCachedUser: false, // Set to true to auto-login with previously logged-in user
+  Database: {
+    mode: "LOCAL", // "LOCAL" or "REMOTE"
+    remote: {
+      baseUrl: "http://localhost:3000/api",
+      endpoints: {
+        users: "/users",
+        points: "/points",
+        auth: "/auth",
+      },
+      headers: {
+        "Content-Type": "application/json",
+      },
+    },
+    local: {
+      storageKeys: {
+        users: "app.users",
+        points: "app.mapPoints",
+        currentUser: "app.currentUser",
+        settings: "app.settings",
+      },
+    },
+  },
   CONTENT_SECTIONS: [
     Constants.ContentSection.Login,
     Constants.ContentSection.Register,
@@ -159,8 +183,8 @@ const Config = {
         name: "login.ok",
         caption: "OK",
         menu: { location: "menu.bottom.title" },
-        action: function () {
-          handleLogin();
+        action: async function () {
+          await handleLogin();
         },
         visible: true,
         enabled: true,
@@ -191,8 +215,8 @@ const Config = {
         name: "register.ok",
         caption: "OK",
         menu: { location: "menu.bottom.title" },
-        action: function () {
-          registerUser();
+        action: async function () {
+          await registerUser();
         },
         visible: true,
         enabled: true,
@@ -233,8 +257,8 @@ const Config = {
         name: "users.deleteRow",
         caption: "Delete",
         menu: { location: "list.row" },
-        action: function (username) {
-          removeUserByUsername(username);
+        action: async function (username) {
+          await removeUserByUsername(username);
           refreshUsersTable();
         },
         visible: true,
@@ -266,8 +290,8 @@ const Config = {
         name: "user.save",
         caption: "Save",
         menu: { location: "menu.bottom.title" },
-        action: function () {
-          saveUserDetails();
+        action: async function () {
+          await saveUserDetails();
         },
         visible: true,
         enabled: true,
@@ -276,8 +300,8 @@ const Config = {
         name: "user.delete",
         caption: "Delete",
         menu: { location: "menu.bottom.title" },
-        action: function () {
-          deleteUser();
+        action: async function () {
+          await deleteUser();
         },
         visible: true,
         enabled: true,
@@ -330,12 +354,14 @@ const Config = {
         name: "points.deleteRow",
         caption: "Delete",
         menu: { location: "list.row" },
-        action: function (id) {
-          State.mapPoints = State.mapPoints.filter(function (p) {
-            return Number(p.id) !== Number(id);
-          });
-          savePoints();
-          refreshMapPointsTable();
+        action: async function (id) {
+          var result = await DB.deletePoint(Number(id));
+          if (result.success) {
+            State.mapPoints = State.mapPoints.filter(function (p) {
+              return Number(p.id) !== Number(id);
+            });
+            refreshMapPointsTable();
+          }
         },
         visible: true,
         enabled: true,
@@ -357,8 +383,8 @@ const Config = {
         name: "mpd.save",
         caption: "Save",
         menu: { location: "menu.bottom.title" },
-        action: function () {
-          saveMapPoint();
+        action: async function () {
+          await saveMapPoint();
         },
         visible: true,
         enabled: true,
@@ -367,8 +393,8 @@ const Config = {
         name: "mpd.delete",
         caption: "Delete",
         menu: { location: "menu.bottom.title" },
-        action: function () {
-          deleteMapPointFromDetails();
+        action: async function () {
+          await deleteMapPointFromDetails();
         },
         visible: true,
         enabled: true,
@@ -389,8 +415,8 @@ const Config = {
         name: "settings.apply",
         caption: "Apply",
         menu: { location: "menu.bottom.title" },
-        action: function () {
-          applySettings();
+        action: async function () {
+          await applySettings();
         },
         visible: true,
         enabled: true,
@@ -399,8 +425,8 @@ const Config = {
         name: "settings.reset",
         caption: "Reset",
         menu: { location: "menu.bottom.title" },
-        action: function () {
-          resetAll();
+        action: async function () {
+          await resetAll();
         },
         visible: true,
         enabled: true,
@@ -685,15 +711,21 @@ export function removeRole(user, roleName) {
 }
 
 /* ===== Users ===== */
-export function addUser(u) {
-  State.users.push(u);
-  save(Config.LS.users, State.users);
+export async function addUser(u) {
+  var result = await DB.addUser(u);
+  if (result.success) {
+    State.users.push(u);
+  }
+  return result;
 }
-export function removeUserByUsername(username) {
-  State.users = State.users.filter(function (u) {
-    return u.username !== username;
-  });
-  save(Config.LS.users, State.users);
+export async function removeUserByUsername(username) {
+  var result = await DB.deleteUser(username);
+  if (result.success) {
+    State.users = State.users.filter(function (u) {
+      return u.username !== username;
+    });
+  }
+  return result;
 }
 export function findUser(username) {
   for (var i = 0; i < State.users.length; i++) {
@@ -759,7 +791,7 @@ export function openUserDetails(username) {
   fillUserDetails(u);
   showContent("userDetails");
 }
-export function saveUserDetails() {
+export async function saveUserDetails() {
   var oldU = getVal("ud-username-old"),
     newU = getVal("ud-username"),
     newName = getVal("ud-name"),
@@ -782,46 +814,73 @@ export function saveUserDetails() {
   if ($("ud-role-seeker").checked) newRoles.push("seeker");
   if ($("ud-role-hider").checked) newRoles.push("hider");
   
-  for (var i = 0; i < State.users.length; i++) {
-    if (State.users[i].username === oldU) {
-      State.users[i].username = newU;
-      State.users[i].name = newName;
-      State.users[i].password = newPassword;
-      setRolesArray(State.users[i], newRoles);
+  // Update user via DB
+  var userData = {
+    username: newU,
+    name: newName,
+    password: newPassword,
+    roles: newRoles
+  };
+  
+  var result = await DB.updateUser(oldU, userData);
+  if (result.success) {
+    // Update local state
+    for (var i = 0; i < State.users.length; i++) {
+      if (State.users[i].username === oldU) {
+        State.users[i] = { ...State.users[i], ...userData };
+      }
     }
+    
+    // Update current user if needed
+    if (State.currentUser === oldU) {
+      State.currentUser = newU;
+      await DB.setCurrentUser(newU);
+    }
+    
+    refreshUsersTable();
+    showContent("usersList");
+  } else {
+    showMessage("Failed to save user: " + result.error, "userDetails");
   }
-  save(Config.LS.users, State.users);
-  if (State.currentUser === oldU) State.currentUser = newU;
-  refreshUsersTable();
-  showContent("usersList");
 }
-export function deleteUser() {
+export async function deleteUser() {
   var username = getVal("ud-username-old");
   if (!username) return;
-  removeUserByUsername(username);
-  if (State.currentUser === username) State.currentUser = null;
-  refreshUsersTable();
-  showContent("usersList");
+  
+  var result = await removeUserByUsername(username);
+  if (result.success) {
+    if (State.currentUser === username) {
+      State.currentUser = null;
+      await DB.clearCurrentUser();
+    }
+    refreshUsersTable();
+    showContent("usersList");
+  } else {
+    showMessage("Failed to delete user: " + result.error, "userDetails");
+  }
 }
 export function cancelUserDetails() {
   showContent("usersList");
 }
 
 /* ===== Auth ===== §kamen_20251010_180801 */
-export function handleLogin() {
+export async function handleLogin() {
   var user = getVal("login-username"),
     pass = $("login-password").value;
-  var found = findUser(user);
-  if (found && found.password === pass) {
-    State.currentUser = found.username;
+  
+  var result = await DB.authenticateUser(user, pass);
+  if (result.success && result.data) {
+    State.currentUser = result.data.username;
+    await DB.setCurrentUser(State.currentUser);
     updateStatusBar();
     showMessage("Login successful. Welcome, " + State.currentUser + "!", "usersList");
   } else {
     showMessage("Login failed. Wrong username or password.", "login");
   }
 }
-export function logout() {
+export async function logout() {
   State.currentUser = null;
+  await DB.clearCurrentUser();
   updateStatusBar();
   showMessage("You have been logged out.", null);
 }
@@ -834,7 +893,7 @@ export function clearRegisterForm() {
   setVal("reg-surname", ""),
   setVal("reg-gender", "");
 }
-export function registerUser() {
+export async function registerUser() {
   var username = getVal("reg-username"),
     password = $("reg-password").value,
     name = getVal("reg-name"),
@@ -844,17 +903,24 @@ export function registerUser() {
     return showMessage("Please enter username and password.", "register");
   if (findUser(username))
     return showMessage("This username already exists.", "register");
-  addUser({
+  
+  var newUser = {
     username: username,
     password: password,
     name: name,
     surname: surname,
     gender: gender,
     roles: [], // Initialize with empty roles array
-  });
-  refreshUsersTable();
-  clearRegisterForm();
-  showMessage("Registration successful for: " + username, "login");
+  };
+  
+  var result = await addUser(newUser);
+  if (result.success) {
+    refreshUsersTable();
+    clearRegisterForm();
+    showMessage("Registration successful for: " + username, "login");
+  } else {
+    showMessage("Registration failed: " + result.error, "register");
+  }
 }
 
 /* ===== Map Points ===== */
@@ -866,8 +932,9 @@ function nextPointId() {
   }
   return max + 1;
 }
-function savePoints() {
-  save(Config.LS.points, State.mapPoints);
+async function savePoints() {
+  // Not used anymore - DB operations happen directly in functions
+  // Keeping for backward compatibility
 }
 function renderPointsRow(p, i) {
   var actionsHTML = [
@@ -914,7 +981,7 @@ export function clearMapPointForm() {
     setVal("mp-lng", ""),
     setVal("mp-desc", "");
 }
-export function saveMapPoint() {
+export async function saveMapPoint() {
   var idStr = getVal("mp-id"),
     username = getVal("mp-username"),
     title = getVal("mp-title"),
@@ -923,37 +990,51 @@ export function saveMapPoint() {
     desc = getVal("mp-desc");
   if (!isFinite(lat) || !isFinite(lng))
     return showMessage("Latitude and Longitude must be numbers.", "mapPoints");
+  
   if (idStr) {
+    // Update existing point
     var id = Number(idStr);
-    for (var i = 0; i < State.mapPoints.length; i++) {
-      if (State.mapPoints[i].id === id) {
-        State.mapPoints[i] = {
-          id: id,
-          username: username,
-          title: title,
-          lat: lat,
-          lng: lng,
-          desc: desc,
-        };
-      }
-    }
-    savePoints();
-    refreshMapPointsTable();
-    showContent("mapPoints");
-  } else {
-    var nid = nextPointId();
-    State.mapPoints.push({
-      id: nid,
+    var pointData = {
+      id: id,
       username: username,
       title: title,
       lat: lat,
       lng: lng,
       desc: desc,
-    });
-    savePoints();
-    refreshMapPointsTable();
-    clearMapPointForm();
-    showMessage("Map point added.", "mapPoints");
+    };
+    
+    var result = await DB.updatePoint(id, pointData);
+    if (result.success) {
+      // Update local state
+      for (var i = 0; i < State.mapPoints.length; i++) {
+        if (State.mapPoints[i].id === id) {
+          State.mapPoints[i] = pointData;
+        }
+      }
+      refreshMapPointsTable();
+      showContent("mapPoints");
+    } else {
+      showMessage("Failed to update point: " + result.error, "mapPoints");
+    }
+  } else {
+    // Add new point
+    var newPoint = {
+      username: username,
+      title: title,
+      lat: lat,
+      lng: lng,
+      desc: desc,
+    };
+    
+    var result = await DB.addPoint(newPoint);
+    if (result.success) {
+      State.mapPoints.push(result.data);
+      refreshMapPointsTable();
+      clearMapPointForm();
+      showMessage("Map point added.", "mapPoints");
+    } else {
+      showMessage("Failed to add point: " + result.error, "mapPoints");
+    }
   }
 }
 export function openMapPointDetails(id) {
@@ -985,14 +1066,19 @@ export function editMapPointFromDetails() {
   setVal("mp-desc", p.desc || "");
   showContent("mapPoints");
 }
-export function deleteMapPointFromDetails() {
+export async function deleteMapPointFromDetails() {
   var id = Number(getVal("mpd-id"));
-  State.mapPoints = State.mapPoints.filter(function (x) {
-    return Number(x.id) !== id;
-  });
-  savePoints();
-  refreshMapPointsTable();
-  showContent("mapPoints");
+  
+  var result = await DB.deletePoint(id);
+  if (result.success) {
+    State.mapPoints = State.mapPoints.filter(function (x) {
+      return Number(x.id) !== id;
+    });
+    refreshMapPointsTable();
+    showContent("mapPoints");
+  } else {
+    showMessage("Failed to delete point: " + result.error, "mapPointDetails");
+  }
 }
 
 /* ===== Settings ===== */
@@ -1005,18 +1091,30 @@ export function openSettings() {
   setVal("set-theme", State.settings.theme || Config.Constants.Theme.Light);
   setVal("set-font", State.settings.font || Config.Constants.FontSize.Medium);
 }
-export function applySettings() {
+export async function applySettings() {
   State.settings = {
     theme: getVal("set-theme"),
     font: getVal("set-font") || Config.Constants.FontSize.Medium,
   };
-  save(Config.LS.settings, State.settings);
-  applyThemeFont();
-  showMessage("Settings applied.", Config.Constants.ContentSection.Settings);
+  
+  var result = await DB.saveSettings(State.settings);
+  if (result.success) {
+    applyThemeFont();
+    showMessage("Settings applied.", Config.Constants.ContentSection.Settings);
+  } else {
+    showMessage("Failed to save settings: " + result.error, Config.Constants.ContentSection.Settings);
+  }
 }
-export function resetAll() {
-  localStorage.clear();
-  location.reload();
+export async function resetAll() {
+  var result = await DB.resetAllData();
+  if (result.success) {
+    location.reload();
+  } else {
+    console.error("Failed to reset data:", result.error);
+    // Fallback to localStorage clear
+    localStorage.clear();
+    location.reload();
+  }
 }
 
 /* ===== Command rendering ===== */
@@ -1216,31 +1314,44 @@ function bindListDelegates() {
 }
 
 /* ===== Init ===== */
-function loadAll() {
-  // users = load(Config.LS.users, null);
-  // if (!users || users.length === 0) {
-  //   users = typeof SAMPLE_USERS !== "undefined" ? SAMPLE_USERS.slice() : [];
-  //   save(Config.LS.users, users);
-  // }
+async function loadAll() {
+  // Initialize the database with configuration
+  DB.initDB(Config.Database);
+  console.log("Database initialized in mode:", DB.getDBMode());
+  
+  // Load users from DB
+  var usersResult = await DB.getAllUsers();
+  if (usersResult.success) {
+    State.users = usersResult.data || [];
+  } else {
+    console.error("Failed to load users:", usersResult.error);
+    State.users = [];
+  }
 
-  State.users = syncArrayWithTemplate(
-    Config.LS.users,
-    typeof SAMPLE_USERS !== "undefined" ? SAMPLE_USERS : []
-  );
+  // Load map points from DB
+  var pointsResult = await DB.getAllPoints();
+  if (pointsResult.success) {
+    State.mapPoints = pointsResult.data || [];
+  } else {
+    console.error("Failed to load points:", pointsResult.error);
+    State.mapPoints = [];
+  }
 
-  // State.mapPoints = load(Config.LS.points, null);
-  // if (!State.mapPoints || State.mapPoints.length === 0) {
-  //   State.mapPoints =
-  //     typeof SAMPLE_POINTS !== "undefined" ? SAMPLE_POINTS.slice() : [];
-  //   save(Config.LS.points, State.mapPoints);
-  // }
-  State.mapPoints = syncArrayWithTemplate(
-    Config.LS.points,
-    typeof SAMPLE_POINTS !== "undefined" ? SAMPLE_POINTS : []
-  );
+  // Load current user from DB
+  var currentUserResult = await DB.getCurrentUser();
+  if (currentUserResult.success && Config.AutoLoadCachedUser) {
+    State.currentUser = currentUserResult.data;
+  } else {
+    State.currentUser = null;
+  }
 
-  State.currentUser = null;
-  State.settings = load(Config.LS.settings, { theme: Config.Constants.Theme.Light, font: Config.Constants.FontSize.Medium });
+  // Load settings from DB
+  var settingsResult = await DB.getSettings();
+  if (settingsResult.success) {
+    State.settings = settingsResult.data || { theme: Config.Constants.Theme.Light, font: Config.Constants.FontSize.Medium };
+  } else {
+    State.settings = { theme: Config.Constants.Theme.Light, font: Config.Constants.FontSize.Medium };
+  }
   applyThemeFont();
 
   // Initialize status bar
