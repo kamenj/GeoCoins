@@ -579,6 +579,18 @@ export function setStatusBarTitle(title) {
 }
 export function setStatusBarUser(username) {
   var userText = username ? "User: " + username : "Not logged in";
+  
+  // Add roles if user is logged in
+  if (username) {
+    var user = findUser(username);
+    if (user) {
+      var rolesDisplay = getRolesDisplay(user);
+      if (rolesDisplay) {
+        userText += " [" + rolesDisplay + "]";
+      }
+    }
+  }
+  
   setText(Config.Constants.ElementId.StatusBarUser, userText);
 }
 export function updateStatusBar() {
