@@ -153,6 +153,9 @@ tr.selected { background: var(--highlight); }
   width: 100%;
   text-align: left;
   padding: 8px;
+  white-space: nowrap;
+  overflow: visible;
+  min-width: fit-content;
 }
 
 /* Hide/show helpers (JS sets display property) */
