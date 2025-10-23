@@ -627,6 +627,51 @@ function closeMessage() {
   State.message_BefireDisplayContentID = null;
 }
 
+/* ===== Role Management API ===== */
+export function getRolesArray(user) {
+  // Ensure roles is always an array
+  if (!user) return [];
+  if (Array.isArray(user.roles)) return user.roles;
+  return [];
+}
+export function setRolesArray(user, rolesArray) {
+  if (!user) return;
+  user.roles = Array.isArray(rolesArray) ? rolesArray : [];
+}
+export function getRolesDisplay(user) {
+  // Display roles as first letters in uppercase (e.g., "A, S, H")
+  var roles = getRolesArray(user);
+  if (roles.length === 0) return "";
+  var letters = [];
+  for (var i = 0; i < roles.length; i++) {
+    var role = roles[i];
+    if (role && role.length > 0) {
+      letters.push(role.charAt(0).toUpperCase());
+    }
+  }
+  return letters.join(", ");
+}
+export function hasRole(user, roleName) {
+  var roles = getRolesArray(user);
+  return roles.indexOf(roleName) !== -1;
+}
+export function addRole(user, roleName) {
+  if (!user || !roleName) return;
+  var roles = getRolesArray(user);
+  if (roles.indexOf(roleName) === -1) {
+    roles.push(roleName);
+    setRolesArray(user, roles);
+  }
+}
+export function removeRole(user, roleName) {
+  if (!user || !roleName) return;
+  var roles = getRolesArray(user);
+  var newRoles = roles.filter(function (r) {
+    return r !== roleName;
+  });
+  setRolesArray(user, newRoles);
+}
+
 /* ===== Users ===== */
 export function addUser(u) {
   State.users.push(u);
@@ -650,6 +695,7 @@ function renderUsersRow(u, i) {
     renderCommandHTML({ payload: u.username }, Config.Constants.CommandName.UsersDeleteRow),
     renderCommandHTML({ payload: u.username }, Config.Constants.CommandName.UsersEditRow),
   ].join(" ");
+  var rolesDisplay = getRolesDisplay(u);
   var html = `
     <tr>
       <td>${i + 1}</td>
@@ -657,7 +703,7 @@ function renderUsersRow(u, i) {
     u.username
   }</button></td>
       <td>${u.name || ""}</td>
-      <td>${u.role || ""}</td>
+      <td>${rolesDisplay}</td>
       <td>${actionsHTML}</td>
     </tr>`;
 
@@ -688,6 +734,12 @@ function fillUserDetails(u) {
   setVal("ud-name", u.name || "");
   // setVal("ud-surname", u.surname || "");§kamen_20251010_175213
   setVal("ud-password", u.password || "");
+  
+  // Set role checkboxes
+  var roles = getRolesArray(u);
+  $("ud-role-admin").checked = roles.indexOf("admin") !== -1;
+  $("ud-role-seeker").checked = roles.indexOf("seeker") !== -1;
+  $("ud-role-hider").checked = roles.indexOf("hider") !== -1;
 }
 export function openUserDetails(username) {
   var u = findUser(username);
@@ -711,11 +763,19 @@ export function saveUserDetails() {
   }
   if (oldU !== newU && findUser(newU))
     return showMessage("Username already exists.", "userDetails");
+  
+  // Get roles from checkboxes
+  var newRoles = [];
+  if ($("ud-role-admin").checked) newRoles.push("admin");
+  if ($("ud-role-seeker").checked) newRoles.push("seeker");
+  if ($("ud-role-hider").checked) newRoles.push("hider");
+  
   for (var i = 0; i < State.users.length; i++) {
     if (State.users[i].username === oldU) {
       State.users[i].username = newU;
       State.users[i].name = newName;
       State.users[i].password = newPassword;
+      setRolesArray(State.users[i], newRoles);
     }
   }
   save(Config.LS.users, State.users);
@@ -778,6 +838,7 @@ export function registerUser() {
     name: name,
     surname: surname,
     gender: gender,
+    roles: [], // Initialize with empty roles array
   });
   refreshUsersTable();
   clearRegisterForm();

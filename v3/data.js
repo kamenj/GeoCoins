@@ -7,7 +7,7 @@ export var SAMPLE_USERS = [
     // surname: "Anderson", //§kamen_20251010_175213
     gender: "female",
     // §kamen_20251010_180320
-    role: "admin"
+    roles: ["admin", "seeker"]
   },
   {
     username: "bob",
@@ -16,7 +16,14 @@ export var SAMPLE_USERS = [
     // surname: "Brown",//§kamen_20251010_175213
     gender: "male",
     //§kamen_20251010_180320
-    role: "hider"
+    roles: ["hider"]
+  },
+  {
+    username: "charlie",
+    password: "1234",
+    name: "Charlie",
+    gender: "male",
+    roles: ["admin", "seeker", "hider"]
   },
 ];
 
