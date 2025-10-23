@@ -655,8 +655,13 @@ function closeMessage() {
   if (State.afterMessageShowId) {
     showContent(State.afterMessageShowId);
   } else {
-    if (State.message_BefireDisplayContentID) {
+    // If user is logged in, don't show login content
+    if (State.message_BefireDisplayContentID && State.currentUser && State.message_BefireDisplayContentID === Config.Constants.ContentSection.Login) {
+      showContent(null);
+    } else if (State.message_BefireDisplayContentID) {
       showContent(State.message_BefireDisplayContentID);
+    } else {
+      showContent(null);
     }
   }
 
@@ -873,7 +878,7 @@ export async function handleLogin() {
     State.currentUser = result.data.username;
     await DB.setCurrentUser(State.currentUser);
     updateStatusBar();
-    showMessage("Login successful. Welcome, " + State.currentUser + "!", "usersList");
+    showMessage("Login successful. Welcome, " + State.currentUser + "!", null);
   } else {
     showMessage("Login failed. Wrong username or password.", "login");
   }
@@ -1144,6 +1149,22 @@ function on_before_command_added(target_menu, cmd) {
     }
   }
   
+  // If user is logged in, hide Login and Register buttons from top menu
+  if (State.currentUser) {
+    if (cmd.name === Config.Constants.CommandName.ShowLogin || 
+        cmd.name === Config.Constants.CommandName.ShowRegister) {
+      return null; // Skip Login and Register buttons when logged in
+    }
+    
+    // Only show Users List button if user is admin
+    if (cmd.name === Config.Constants.CommandName.ShowUsers) {
+      var currentUser = findUser(State.currentUser);
+      if (!currentUser || !hasRole(currentUser, "admin")) {
+        return null; // Skip Users List button if not admin
+      }
+    }
+  }
+  
   // Determine enabled state (can be modified based on State)
   var enabled = cmd.enabled !== false;
   // Apply any state-based modifications here
@@ -1195,6 +1216,23 @@ function setMenusVisibility() {
 }
 function renderMenusFor(contentId) {
   clearMenuBars();
+  
+  // Don't show top menu when displaying a message
+  if (contentId !== Config.Constants.ContentSection.Message && State.currentUser) {
+    // Always show top menu when user is logged in (except when showing message)
+    for (var j = 0; j < Config.Commands.DEFAULT_MENU_TOP.length; j++) {
+      var cmd = Config.Commands.DEFAULT_MENU_TOP[j];
+      var host = $(Config.Constants.ElementId.MenuTopTopCommands);
+      if (host) {
+        // Call on_before_command_added to get the HTML element
+        var btnElement = on_before_command_added(Config.Constants.ElementId.MenuTopTopCommands, cmd);
+        if (btnElement) {
+          host.appendChild(btnElement);
+        }
+      }
+    }
+  }
+  
   if (contentId && Config.Commands.LIST[contentId]) {
     var cmds = Config.Commands.LIST[contentId];
     for (var i = 0; i < cmds.length; i++) {
@@ -1226,8 +1264,8 @@ function renderMenusFor(contentId) {
         }
       }
     }
-  } else {
-    // No content visible -> default top menu commands
+  } else if (!State.currentUser) {
+    // No content visible and no user logged in -> default top menu commands
     for (var j = 0; j < Config.Commands.DEFAULT_MENU_TOP.length; j++) {
       var cmd = Config.Commands.DEFAULT_MENU_TOP[j];
       var host = $(Config.Constants.ElementId.MenuTopTopCommands);
