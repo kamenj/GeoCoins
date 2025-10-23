@@ -135,6 +135,11 @@ const Config = {
   },
   Constants: Constants,
   AppTitle: "Dani-Geo-Coins",
+  Debug: {
+    UseDefaultCredentials: true,
+    DefaultUser: "alice",
+    DefaultPassword: "1234"
+  },
   CONTENT_SECTIONS: [
     Constants.ContentSection.Login,
     Constants.ContentSection.Register,
@@ -582,6 +587,13 @@ export function showContent(id) {
   if (State.currentContentId) {
     setSectionVisible(State.currentContentId, true);
     setCollapsed(State.currentContentId, false);
+    
+    // Auto-fill login credentials for debugging
+    if (State.currentContentId === Constants.ContentSection.Login && 
+        Config.Debug.UseDefaultCredentials) {
+      setVal("login-username", Config.Debug.DefaultUser);
+      setVal("login-password", Config.Debug.DefaultPassword);
+    }
   }
   renderMenusFor(State.currentContentId);
 }
