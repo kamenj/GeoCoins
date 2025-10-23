@@ -33,7 +33,7 @@ body[data-font="large"] { font-size: 18px; }
 
 body {
   margin: 0;
-  padding: 88px 8px 72px; /* leave room for docked menus and status bar at top */
+  padding: 8px; /* no docked menus, all content flows naturally */
   background: var(--bg);
   color: var(--fg);
   font-family: system-ui, Arial, sans-serif;
@@ -51,7 +51,8 @@ body {
   padding: 0 16px;
   border-bottom: 2px solid var(--accent-hover);
   font-weight: 500;
-  border-radius: 0; /* override any section border-radius */
+  border-radius: 6px;
+  margin: 10px 0;
 }
 .status-bar-title {
   font-size: 1.1em;

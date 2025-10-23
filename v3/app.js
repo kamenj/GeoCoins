@@ -1017,7 +1017,7 @@ function on_before_command_added(target_menu, cmd) {
   
   // If no user is logged in, only show specific commands
   if (!State.currentUser) {
-    // Allow: Show Login, Show About, and all login/register page commands
+    // Allow: Show Login, Show About, and all login/register page commands, plus message OK
     var allowedCommands = [
       Config.Constants.CommandName.ShowLogin,
       Config.Constants.CommandName.ShowAbout,
@@ -1025,7 +1025,8 @@ function on_before_command_added(target_menu, cmd) {
       Config.Constants.CommandName.LoginCancel,
       Config.Constants.CommandName.LoginRegister,
       Config.Constants.CommandName.RegisterOk,
-      Config.Constants.CommandName.RegisterCancel
+      Config.Constants.CommandName.RegisterCancel,
+      Config.Constants.CommandName.MessageOk
     ];
     
     if (allowedCommands.indexOf(cmd.name) === -1) {
