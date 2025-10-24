@@ -724,6 +724,7 @@ export function showContent(id) {
       // Set initial visibility
       var listDiv = $("mapPointsList");
       var mapDiv = $("mapPointsGeoView");
+      var divider = $("mapPointsDivider");
       var container = $("mapPoints-container");
       
       if (State.mapPointsView.showList) {
@@ -736,6 +737,13 @@ export function showContent(id) {
         mapDiv.classList.remove("hidden");
       } else {
         mapDiv.classList.add("hidden");
+      }
+      
+      // Show divider only when both views are visible
+      if (State.mapPointsView.showList && State.mapPointsView.showMap) {
+        if (divider) divider.classList.remove("hidden");
+      } else {
+        if (divider) divider.classList.add("hidden");
       }
       
       // Update layout
@@ -1382,6 +1390,7 @@ export function toggleMapPointsView(mode) {
   // mode: 'list', 'map', or 'both'
   var listDiv = $("mapPointsList");
   var mapDiv = $("mapPointsGeoView");
+  var divider = $("mapPointsDivider");
   var container = $("mapPoints-container");
   
   if (mode === 'list') {
@@ -1389,6 +1398,7 @@ export function toggleMapPointsView(mode) {
     State.mapPointsView.showMap = false;
     listDiv.classList.remove("hidden");
     mapDiv.classList.add("hidden");
+    if (divider) divider.classList.add("hidden");
     container.classList.add("show-list-only");
     container.classList.remove("show-map-only");
   } else if (mode === 'map') {
@@ -1396,6 +1406,7 @@ export function toggleMapPointsView(mode) {
     State.mapPointsView.showMap = true;
     listDiv.classList.add("hidden");
     mapDiv.classList.remove("hidden");
+    if (divider) divider.classList.add("hidden");
     container.classList.add("show-map-only");
     container.classList.remove("show-list-only");
   } else if (mode === 'both') {
@@ -1403,6 +1414,7 @@ export function toggleMapPointsView(mode) {
     State.mapPointsView.showMap = true;
     listDiv.classList.remove("hidden");
     mapDiv.classList.remove("hidden");
+    if (divider) divider.classList.remove("hidden");
     container.classList.remove("show-list-only");
     container.classList.remove("show-map-only");
   }
@@ -1951,6 +1963,127 @@ function bindListDelegates() {
   }
 }
 
+/* ===== Draggable Divider for MapPoints ===== */
+export function setupMapPointsDivider() {
+  var divider = $("mapPointsDivider");
+  var container = $("mapPoints-container");
+  var listDiv = $("mapPointsList");
+  var mapDiv = $("mapPointsGeoView");
+  
+  if (!divider || !container || !listDiv || !mapDiv) return;
+  
+  var isDragging = false;
+  var startX = 0;
+  var startY = 0;
+  var startWidth = 0;
+  var startHeight = 0;
+  
+  function onMouseDown(e) {
+    // Only allow dragging when both views are visible
+    if (!State.mapPointsView.showList || !State.mapPointsView.showMap) {
+      return;
+    }
+    
+    isDragging = true;
+    divider.classList.add("dragging");
+    
+    var isHorizontal = container.classList.contains("layout-horizontal");
+    
+    if (isHorizontal) {
+      startX = e.clientX;
+      startWidth = listDiv.getBoundingClientRect().width;
+    } else {
+      startY = e.clientY;
+      startHeight = listDiv.getBoundingClientRect().height;
+    }
+    
+    e.preventDefault();
+  }
+  
+  function onMouseMove(e) {
+    if (!isDragging) return;
+    
+    var isHorizontal = container.classList.contains("layout-horizontal");
+    
+    if (isHorizontal) {
+      var deltaX = e.clientX - startX;
+      var newWidth = startWidth + deltaX;
+      
+      // Apply constraints
+      var minWidth = parseInt(getComputedStyle(container).getPropertyValue('--list-min-row-width')) || 300;
+      var containerWidth = container.getBoundingClientRect().width;
+      var maxWidth = containerWidth - 200; // Leave at least 200px for map
+      
+      newWidth = Math.max(minWidth, Math.min(newWidth, maxWidth));
+      
+      // Update the CSS variable
+      container.style.setProperty('--list-dock-left-width', newWidth + 'px');
+      listDiv.style.width = newWidth + 'px';
+    } else {
+      var deltaY = e.clientY - startY;
+      var newHeight = startHeight + deltaY;
+      
+      // Apply constraints
+      var minHeight = 200; // Minimum height for list
+      var containerHeight = container.getBoundingClientRect().height;
+      var maxHeight = containerHeight - 200; // Leave at least 200px for map
+      
+      newHeight = Math.max(minHeight, Math.min(newHeight, maxHeight));
+      
+      // Update the CSS variable
+      container.style.setProperty('--list-dock-top-height', newHeight + 'px');
+      listDiv.style.height = newHeight + 'px';
+    }
+    
+    // Invalidate map size
+    if (State.leafletMap) {
+      State.leafletMap.invalidateSize();
+    }
+    
+    e.preventDefault();
+  }
+  
+  function onMouseUp(e) {
+    if (!isDragging) return;
+    
+    isDragging = false;
+    divider.classList.remove("dragging");
+    
+    // Final map invalidation
+    if (State.leafletMap) {
+      setTimeout(function() {
+        State.leafletMap.invalidateSize();
+      }, 50);
+    }
+  }
+  
+  // Mouse events
+  divider.addEventListener("mousedown", onMouseDown);
+  document.addEventListener("mousemove", onMouseMove);
+  document.addEventListener("mouseup", onMouseUp);
+  
+  // Touch events for mobile
+  divider.addEventListener("touchstart", function(e) {
+    if (e.touches.length === 1) {
+      var touch = e.touches[0];
+      onMouseDown({ clientX: touch.clientX, clientY: touch.clientY, preventDefault: function() { e.preventDefault(); } });
+    }
+  });
+  
+  document.addEventListener("touchmove", function(e) {
+    if (isDragging && e.touches.length === 1) {
+      var touch = e.touches[0];
+      onMouseMove({ clientX: touch.clientX, clientY: touch.clientY, preventDefault: function() { e.preventDefault(); } });
+    }
+  });
+  
+  document.addEventListener("touchend", function(e) {
+    if (isDragging) {
+      onMouseUp({ preventDefault: function() { e.preventDefault(); } });
+    }
+  });
+}
+
 /* ===== Init ===== */
 async function loadAll() {
   // Initialize the database with configuration
@@ -2060,6 +2193,9 @@ async function loadAll() {
   // First render of tables
   refreshUsersTable();
   refreshMapPointsTable();
+  
+  // Set up draggable divider for MapPoints
+  setupMapPointsDivider();
   
   // Set up ResizeObserver for MapPoints container to handle dynamic layout
   var mapPointsContainer = $("mapPoints-container");
