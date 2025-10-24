@@ -45,6 +45,7 @@ const Constants = {
     MessageOk: "message.ok",
     // Points commands
     PointsAdd: "points.add",
+    PointsMyLoc: "points.myLoc",
     PointsRefresh: "points.refresh",
     PointsDeleteRow: "points.deleteRow",
     PointsEditRow: "points.editRow",
@@ -361,6 +362,19 @@ const Config = {
           openMapPointDetailsForAdd();
         },
         visible: true,
+        enabled: true,
+      },
+      {
+        name: "points.myLoc",
+        caption: "My Loc",
+        menu: { location: "menu.bottom.title" },
+        action: function () {
+          addPlaceholderAtMyLocation();
+        },
+        visible: function() {
+          // Only show when map view is visible
+          return State.mapPointsView.showMap;
+        },
         enabled: true,
       },
       {
@@ -1385,6 +1399,101 @@ export async function deleteMapPointFromDetails() {
   }
 }
 
+/* ===== Temporary Marker Popup ===== */
+function createTempMarkerPopupContent(lat, lng, title, accuracy) {
+  // title: optional string like "Your Location" or "Default coordinates for new point"
+  // accuracy: optional accuracy in meters
+  var titleText = title || "Marker";
+  var content = titleText + '<br>Lat: ' + lat.toFixed(6) + ', Lng: ' + lng.toFixed(6);
+  
+  // Add accuracy information if provided
+  if (accuracy !== undefined && accuracy !== null) {
+    content += '<br><small>Accuracy: ±' + Math.round(accuracy) + 'm</small>';
+  }
+  
+  content += '<br>Drag to adjust<br>' +
+         '<button onclick="window.appAddMapPoint()" style="margin-top:5px;margin-right:5px;">Add</button>' +
+         '<button onclick="window.appDeleteTempMarker()" style="margin-top:5px;">Delete</button>';
+  
+  return content;
+}
+
+/* ===== My Location ===== */
+export function addPlaceholderAtMyLocation() {
+  if (!navigator.geolocation) {
+    showMessage("Geolocation is not supported by your browser.", "mapPoints");
+    return;
+  }
+  
+  // Show loading message (optional)
+  showMessage("Getting your location...", null);
+  
+  navigator.geolocation.getCurrentPosition(
+    function(position) {
+      var lat = position.coords.latitude;
+      var lng = position.coords.longitude;
+      var accuracy = position.coords.accuracy; // Accuracy in meters
+      
+      // Store as default coords
+      Config.MapPointDetails.defaultCoords = { lat: lat, lng: lng };
+      
+      // Remove previous temp marker if any
+      if (State.tempPlacemark && State.leafletMap) {
+        State.leafletMap.removeLayer(State.tempPlacemark);
+        State.tempPlacemark = null;
+      }
+      
+      // Add a temporary marker at the device's location
+      if (State.leafletMap) {
+        State.tempPlacemark = L.marker([lat, lng], { 
+          draggable: true, 
+          title: 'My Location',
+          opacity: 0.6
+        }).addTo(State.leafletMap);
+        
+        // Create popup with action buttons including accuracy info
+        State.tempPlacemark.bindPopup(createTempMarkerPopupContent(lat, lng, 'Your Location', accuracy)).openPopup();
+        
+        // Center map on the marker
+        State.leafletMap.setView([lat, lng], 15);
+        
+        // If marker is dragged, update default coords
+        State.tempPlacemark.on('dragend', function(ev) {
+          var p = ev.target.getLatLng();
+          Config.MapPointDetails.defaultCoords = { lat: p.lat, lng: p.lng };
+          State.tempPlacemark.setPopupContent(createTempMarkerPopupContent(p.lat, p.lng, 'Your Location (adjusted)'));
+        });
+      }
+      
+      // Close the loading message
+      showContent("mapPoints");
+    },
+    function(error) {
+      var errorMsg = "Unable to get your location. ";
+      switch(error.code) {
+        case error.PERMISSION_DENIED:
+          errorMsg += "Permission denied.";
+          break;
+        case error.POSITION_UNAVAILABLE:
+          errorMsg += "Position unavailable.";
+          break;
+        case error.TIMEOUT:
+          errorMsg += "Request timed out.";
+          break;
+        default:
+          errorMsg += "Unknown error.";
+      }
+      showMessage(errorMsg, "mapPoints");
+    },
+    {
+      enableHighAccuracy: true,
+      timeout: 10000,
+      maximumAge: 0
+    }
+  );
+}
+
+
 /* ===== Map Points View Management ===== */
 export function toggleMapPointsView(mode) {
   // mode: 'list', 'map', or 'both'
@@ -1569,15 +1678,13 @@ function installMapLongPressHandler() {
     }).addTo(State.leafletMap);
     
     // Open popup with coordinates
-    var tempPopupContent = 'Default coordinates for new point<br>Lat: ' + latlng.lat.toFixed(6) + ', Lng: ' + latlng.lng.toFixed(6) + '<br>Drag to adjust<br><button onclick="window.appAddMapPoint()" style="margin-top:5px;margin-right:5px;">Add</button><button onclick="window.appDeleteTempMarker()" style="margin-top:5px;">Delete</button>';
-    State.tempPlacemark.bindPopup(tempPopupContent).openPopup();
+    State.tempPlacemark.bindPopup(createTempMarkerPopupContent(latlng.lat, latlng.lng, 'Default coordinates for new point')).openPopup();
     
     // If marker is dragged, update default coords
     State.tempPlacemark.on('dragend', function(ev) {
       var p = ev.target.getLatLng();
       Config.MapPointDetails.defaultCoords = { lat: p.lat, lng: p.lng };
-      var updatedPopupContent = 'Default coordinates for new point<br>Lat: ' + p.lat.toFixed(6) + ', Lng: ' + p.lng.toFixed(6) + '<br>Drag to adjust<br><button onclick="window.appAddMapPoint()" style="margin-top:5px;margin-right:5px;">Add</button><button onclick="window.appDeleteTempMarker()" style="margin-top:5px;">Delete</button>';
-      State.tempPlacemark.setPopupContent(updatedPopupContent);
+      State.tempPlacemark.setPopupContent(createTempMarkerPopupContent(p.lat, p.lng, 'Default coordinates for new point'));
     });
   }
   
@@ -1603,9 +1710,9 @@ function installMapLongPressHandler() {
 export function refreshMapMarkers() {
   if (!State.leafletMap) return;
   
-  // Clear existing markers (simple approach - could be optimized)
+  // Clear existing markers but preserve the temporary placeholder
   State.leafletMap.eachLayer(function(layer) {
-    if (layer instanceof L.Marker) {
+    if (layer instanceof L.Marker && layer !== State.tempPlacemark) {
       State.leafletMap.removeLayer(layer);
     }
   });
@@ -1623,6 +1730,12 @@ export function refreshMapMarkers() {
       marker.bindPopup(popupContent);
       bounds.push([point.lat, point.lng]);
     }
+  }
+  
+  // Add temp marker location to bounds if it exists
+  if (State.tempPlacemark) {
+    var tempLatLng = State.tempPlacemark.getLatLng();
+    bounds.push([tempLatLng.lat, tempLatLng.lng]);
   }
   
   // Fit map to show all markers if there are any
