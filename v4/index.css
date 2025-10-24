@@ -226,6 +226,14 @@ tr.selected { background: var(--highlight); }
   background: var(--bg);
 }
 
+/* Hide input form elements - accessible through Edit/View and Add New buttons */
+.mappoints-list input[id^="mp-"],
+.mappoints-list textarea[id^="mp-"],
+.mappoints-list label:has(input[id^="mp-"]),
+.mappoints-list label:has(textarea[id^="mp-"]) {
+  display: none;
+}
+
 .mappoints-geoview {
   border: 1px solid var(--border);
   border-radius: 4px;

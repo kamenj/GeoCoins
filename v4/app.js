@@ -158,6 +158,13 @@ const Config = {
     },
     ViewToggleButtonsLocation: "menu.bottom.title"  // Where to place List/Map/L+M buttons: "menu.bottom.title", "menu.bottom.top", or "menu.bottom.bottom"
   },
+  Map: {
+    longPressMs: 1000  // Duration in milliseconds to trigger long-press on map
+  },
+  MapPointDetails: {
+    mode: "view",  // "view", "edit", or "add" - controls whether fields are editable and which actions are available
+    defaultCoords: null  // {lat, lng} set by long-press on map
+  },
   Database: {
     mode: "LOCAL", // "LOCAL" or "REMOTE"
     remote: {
@@ -351,7 +358,7 @@ const Config = {
         caption: "Add map point",
         menu: { location: "menu.bottom.title" },
         action: function () {
-          clearMapPointForm();
+          openMapPointDetailsForAdd();
         },
         visible: true,
         enabled: true,
@@ -417,8 +424,7 @@ const Config = {
         caption: "Edit",
         menu: { location: "list.row" },
         action: function (id) {
-          openMapPointDetails(id);
-          editMapPointFromDetails();
+          openMapPointDetailsForEdit(id);
         },
         visible: true,
         enabled: true,
@@ -440,7 +446,7 @@ const Config = {
         caption: "Save",
         menu: { location: "menu.bottom.title" },
         action: async function () {
-          await saveMapPoint();
+          await saveMapPointFromDetails();
         },
         visible: true,
         enabled: true,
@@ -452,7 +458,9 @@ const Config = {
         action: async function () {
           await deleteMapPointFromDetails();
         },
-        visible: true,
+        visible: function() {
+          return Config.MapPointDetails.mode !== "add";
+        },
         enabled: true,
       },
       {
@@ -460,7 +468,10 @@ const Config = {
         caption: "Cancel",
         menu: { location: "menu.bottom.title" },
         action: function () {
+          // Don't refresh markers when canceling, just switch view
+          State.skipMapRefresh = true;
           showContent("mapPoints");
+          State.skipMapRefresh = false;
         },
         visible: true,
         enabled: true,
@@ -593,6 +604,7 @@ const State = {
     showMap: true,
   },
   leafletMap: null, // Store the Leaflet map instance
+  tempPlacemark: null, // Temporary marker for long-press default coordinates
 };
 
 
@@ -605,7 +617,7 @@ export function setText(id, txt) {
 }
 export function setVal(id, v) {
   var el = $(id);
-  if (el) el.value = v;
+  if (el) el.value = (v !== null && v !== undefined) ? v : "";
 }
 export function getVal(id) {
   var el = $(id);
@@ -1176,14 +1188,165 @@ export function openMapPointDetails(id) {
     if (Number(State.mapPoints[i].id) === Number(id)) p = State.mapPoints[i];
   }
   if (!p) return;
-  setVal("mpd-id", p.id);
-  setText("mpd-title", p.title || "");
-  setText("mpd-username", p.username || "");
-  setText("mpd-lat", "" + p.lat);
-  setText("mpd-lng", "" + p.lng);
-  setText("mpd-desc", p.desc || "");
+  
+  // Navigate map to this point if map is initialized and map view is visible
+  if (State.leafletMap && State.mapPointsView.showMap) {
+    navigateMapToPoint(p);
+  }
+  // Don't show details page - just navigate the map
+}
+
+export function navigateMapToPoint(point) {
+  if (!State.leafletMap || !point || !point.lat || !point.lng) return;
+  
+  // Set view to the point with a good zoom level
+  State.leafletMap.setView([point.lat, point.lng], 15);
+  
+  // Find and open the marker's popup for this point
+  State.leafletMap.eachLayer(function(layer) {
+    if (layer instanceof L.Marker) {
+      var latlng = layer.getLatLng();
+      if (latlng.lat === point.lat && latlng.lng === point.lng) {
+        layer.openPopup();
+      }
+    }
+  });
+}
+
+export function openMapPointDetailsForAdd() {
+  Config.MapPointDetails.mode = "add";
+  setText("mpd-mode-indicator", "(Add New)");
+  setVal("mpd-id", "");
+  
+  // State.currentUser is the username string, not an object
+  var currentUsername = State.currentUser || "";
+  setVal("mpd-username", currentUsername);
+  
+  setVal("mpd-title", "");
+  
+  // If a default coordinate was set by long-press, prefill them
+  if (Config.MapPointDetails.defaultCoords) {
+    setVal("mpd-lat", Config.MapPointDetails.defaultCoords.lat);
+    setVal("mpd-lng", Config.MapPointDetails.defaultCoords.lng);
+  } else {
+    setVal("mpd-lat", "");
+    setVal("mpd-lng", "");
+  }
+  
+  setVal("mpd-desc", "");
+  
+  // Remove the temp placemark (coords are already stored)
+  if (State.tempPlacemark && State.leafletMap) {
+    State.leafletMap.removeLayer(State.tempPlacemark);
+    State.tempPlacemark = null;
+  }
+  
   showContent("mapPointDetails");
 }
+
+export function openMapPointDetailsForEdit(id) {
+  var p = null;
+  for (var i = 0; i < State.mapPoints.length; i++) {
+    if (Number(State.mapPoints[i].id) === Number(id)) p = State.mapPoints[i];
+  }
+  if (!p) return;
+  
+  Config.MapPointDetails.mode = "edit";
+  setText("mpd-mode-indicator", "(Edit)");
+  setVal("mpd-id", p.id);
+  setVal("mpd-username", p.username || "");
+  setVal("mpd-title", p.title || "");
+  setVal("mpd-lat", "" + p.lat);
+  setVal("mpd-lng", "" + p.lng);
+  setVal("mpd-desc", p.desc || "");
+  showContent("mapPointDetails");
+}
+
+export async function saveMapPointFromDetails() {
+  var idStr = getVal("mpd-id");
+  var username = getVal("mpd-username") || State.currentUser || "";
+  var title = getVal("mpd-title").trim();
+  var lat = Number(getVal("mpd-lat"));
+  var lng = Number(getVal("mpd-lng"));
+  var desc = getVal("mpd-desc");
+  
+  // Validate title is non-empty
+  if (!title) {
+    return showMessage("Title cannot be empty.", "mapPointDetails");
+  }
+  
+  // Validate lat/lng are valid numbers
+  if (!isFinite(lat) || !isFinite(lng)) {
+    return showMessage("Latitude and Longitude must be valid numbers.", "mapPointDetails");
+  }
+  
+  // Validate lat/lng are in valid ranges
+  if (lat < -90 || lat > 90) {
+    return showMessage("Latitude must be between -90 and 90.", "mapPointDetails");
+  }
+  if (lng < -180 || lng > 180) {
+    return showMessage("Longitude must be between -180 and 180.", "mapPointDetails");
+  }
+  
+  // Check title uniqueness
+  var currentId = Config.MapPointDetails.mode === "edit" ? Number(idStr) : null;
+  for (var i = 0; i < State.mapPoints.length; i++) {
+    var point = State.mapPoints[i];
+    // Skip the current point when editing
+    if (currentId !== null && Number(point.id) === currentId) {
+      continue;
+    }
+    // Check if another point has the same title
+    if (point.title && point.title.trim().toLowerCase() === title.toLowerCase()) {
+      return showMessage("A map point with this title already exists. Please use a unique title.", "mapPointDetails");
+    }
+  }
+  
+  if (Config.MapPointDetails.mode === "add") {
+    // Add new point
+    var newPointData = {
+      username: username,
+      title: title,
+      lat: lat,
+      lng: lng,
+      desc: desc
+    };
+    
+    var result = await DB.addPoint(newPointData);
+    if (result.success) {
+      State.mapPoints.push(result.data);
+      refreshMapPointsTable();
+      showContent("mapPoints");
+    } else {
+      showMessage("Failed to add point: " + result.error, "mapPointDetails");
+    }
+  } else if (Config.MapPointDetails.mode === "edit") {
+    // Update existing point
+    var id = Number(idStr);
+    var pointData = {
+      username: username,
+      title: title,
+      lat: lat,
+      lng: lng,
+      desc: desc
+    };
+    
+    var result = await DB.updatePoint(id, pointData);
+    if (result.success) {
+      for (var i = 0; i < State.mapPoints.length; i++) {
+        if (Number(State.mapPoints[i].id) === id) {
+          State.mapPoints[i] = result.data;
+          break;
+        }
+      }
+      refreshMapPointsTable();
+      showContent("mapPoints");
+    } else {
+      showMessage("Failed to update point: " + result.error, "mapPointDetails");
+    }
+  }
+}
+
 export function editMapPointFromDetails() {
   var id = Number(getVal("mpd-id"));
   var p = null;
@@ -1339,6 +1502,9 @@ export function initializeLeafletMap() {
         attribution: '<a href="https://www.maptiler.com/license/maps/" target="_blank">© MapTiler</a> <a href="https://www.openstreetmap.org/copyright" target="_blank">© OpenStreetMap contributors</a>',
       }).addTo(State.leafletMap);
       
+      // Install long-press handler
+      installMapLongPressHandler();
+      
       // Add markers for existing points
       refreshMapMarkers();
     } catch (error) {
@@ -1347,8 +1513,75 @@ export function initializeLeafletMap() {
   } else {
     // Map already exists, just refresh its size and markers
     State.leafletMap.invalidateSize();
-    refreshMapMarkers();
+    if (!State.skipMapRefresh) {
+      refreshMapMarkers();
+    }
   }
+}
+
+function installMapLongPressHandler() {
+  if (!State.leafletMap) return;
+  
+  var pressTimer = null;
+  var pressEvent = null;
+  
+  function clearPress() {
+    if (pressTimer) {
+      clearTimeout(pressTimer);
+      pressTimer = null;
+      pressEvent = null;
+    }
+  }
+  
+  function onLongPress(e) {
+    // e has latlng for Leaflet mouse/touch events
+    var latlng = e.latlng;
+    if (!latlng) return;
+    
+    // Store default coords for Add mode
+    Config.MapPointDetails.defaultCoords = { lat: latlng.lat, lng: latlng.lng };
+    
+    // Remove previous temp marker
+    if (State.tempPlacemark) {
+      State.leafletMap.removeLayer(State.tempPlacemark);
+      State.tempPlacemark = null;
+    }
+    
+    // Add a temporary marker (styling optional)
+    State.tempPlacemark = L.marker(latlng, { 
+      draggable: true, 
+      title: 'Default new point',
+      opacity: 0.6
+    }).addTo(State.leafletMap);
+    
+    // Open popup with coordinates
+    State.tempPlacemark.bindPopup('Default coordinates for new point<br>Lat: ' + latlng.lat.toFixed(6) + ', Lng: ' + latlng.lng.toFixed(6) + '<br>Drag to adjust or click "Add map point"').openPopup();
+    
+    // If marker is dragged, update default coords
+    State.tempPlacemark.on('dragend', function(ev) {
+      var p = ev.target.getLatLng();
+      Config.MapPointDetails.defaultCoords = { lat: p.lat, lng: p.lng };
+      State.tempPlacemark.setPopupContent('Default coordinates for new point<br>Lat: ' + p.lat.toFixed(6) + ', Lng: ' + p.lng.toFixed(6) + '<br>Drag to adjust or click "Add map point"');
+    });
+  }
+  
+  // Mouse events
+  State.leafletMap.on('mousedown', function(e) {
+    clearPress();
+    pressEvent = e;
+    pressTimer = setTimeout(function() { onLongPress(pressEvent); }, Config.Map.longPressMs);
+  });
+  State.leafletMap.on('mouseup', clearPress);
+  State.leafletMap.on('mousemove', clearPress);
+  
+  // Touch events for mobile
+  State.leafletMap.on('touchstart', function(e) {
+    clearPress();
+    pressEvent = e;
+    pressTimer = setTimeout(function() { onLongPress(pressEvent); }, Config.Map.longPressMs);
+  });
+  State.leafletMap.on('touchend', clearPress);
+  State.leafletMap.on('touchmove', clearPress);
 }
 
 export function refreshMapMarkers() {
@@ -1425,7 +1658,17 @@ function on_before_command_added(target_menu, cmd) {
   // It can modify visibility/enabled state based on current State
   // Returns the HTML element if it should be added, or null to skip it
   
-  if (!cmd || cmd.visible === false) return null;
+  if (!cmd) return null;
+  
+  // Check visibility - can be boolean or function
+  var isVisible = true;
+  if (typeof cmd.visible === 'function') {
+    isVisible = cmd.visible();
+  } else if (cmd.visible === false) {
+    isVisible = false;
+  }
+  
+  if (!isVisible) return null;
   
   // If no user is logged in, only show specific commands
   if (!State.currentUser) {

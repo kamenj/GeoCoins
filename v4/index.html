@@ -182,19 +182,16 @@
       <div id="mapPointDetails-header" class="section-header">
         <div class="title-left">
           <span class="chev" id="chev-mapPointDetails">▼</span>
-          <span class="title-text">Map Point Details</span>
+          <span class="title-text">Map Point Details <span id="mpd-mode-indicator"></span></span>
         </div>
       </div>
       <div class="section-content">
         <input type="hidden" id="mpd-id" />
-        <div><b>Title:</b> <span id="mpd-title"></span></div>
-        <div><b>User:</b> <span id="mpd-username"></span></div>
-        <div><b>Lat:</b> <span id="mpd-lat"></span></div>
-        <div><b>Lng:</b> <span id="mpd-lng"></span></div>
-        <div>
-          <b>Description:</b>
-          <div id="mpd-desc"></div>
-        </div>
+        <input type="hidden" id="mpd-username" />
+        <label>Title <input id="mpd-title" /></label>
+        <label>Lat <input id="mpd-lat" /></label>
+        <label>Lng <input id="mpd-lng" /></label>
+        <label>Description <textarea id="mpd-desc"></textarea></label>
       </div>
     </div>
 
