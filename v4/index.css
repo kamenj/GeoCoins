@@ -140,6 +140,16 @@ tr.selected { background: var(--highlight); }
   margin-left: auto; /* push to far right in title row */
   display: inline-flex;
   gap: 6px;
+  align-items: center;
+}
+
+/* Separator for view toggle buttons */
+.cmd-separator {
+  display: inline-block;
+  margin: 0 8px;
+  color: var(--border);
+  font-size: 1.2em;
+  line-height: 1;
 }
 
 /* Command bars inside expanded content */
@@ -164,3 +174,91 @@ tr.selected { background: var(--highlight); }
 /* Links */
 .link-btn { background:none; border:none; color: var(--accent); cursor: pointer; padding:0; }
 .link-btn:hover { text-decoration: underline; }
+
+/* ===== Map Points Split View ===== */
+.mappoints-container {
+  display: flex;
+  width: 100%;
+  height: 500px; /* Default height, will be managed by layout */
+  min-height: 400px;
+  gap: 10px;
+  position: relative;
+}
+
+/* Horizontal layout (width > height): List on left, Map on right */
+.mappoints-container.layout-horizontal {
+  flex-direction: row;
+}
+
+.mappoints-container.layout-horizontal .mappoints-list {
+  width: var(--list-dock-left-width, 400px);
+  min-width: var(--list-min-row-width, 300px);
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+
+.mappoints-container.layout-horizontal .mappoints-geoview {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Vertical layout (height > width): List on top, Map on bottom */
+.mappoints-container.layout-vertical {
+  flex-direction: column;
+}
+
+.mappoints-container.layout-vertical .mappoints-list {
+  height: var(--list-dock-top-height, 250px);
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+
+.mappoints-container.layout-vertical .mappoints-geoview {
+  flex: 1;
+  min-height: 0;
+}
+
+/* Subview styling */
+.mappoints-list {
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 10px;
+  background: var(--bg);
+}
+
+.mappoints-geoview {
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+
+.mappoints-map {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+/* Hide subviews when needed */
+.mappoints-list.hidden,
+.mappoints-geoview.hidden {
+  display: none !important;
+}
+
+/* When only one view is shown, it takes full width/height */
+.mappoints-container.show-list-only .mappoints-list {
+  width: 100% !important;
+  height: 100% !important;
+  flex: 1;
+  min-width: 0;
+}
+
+.mappoints-container.show-map-only .mappoints-geoview {
+  width: 100% !important;
+  height: 100% !important;
+  flex: 1;
+}

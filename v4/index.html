@@ -4,6 +4,8 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Users & Map Points — v3 (Modules + Commands + Docked Menus)</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.3.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.3.4/dist/leaflet.js"></script>
     <link rel="stylesheet" href="index.css" />
   </head>
   <body data-theme="light" data-font="medium">
@@ -141,27 +143,37 @@
         </div>
       </div>
       <div class="section-content">
-        <input type="hidden" id="mp-id" />
-        <label>Owner Username <input id="mp-username" /></label>
-        <label>Title <input id="mp-title" /></label>
-        <label>Latitude <input id="mp-lat" /></label>
-        <label>Longitude <input id="mp-lng" /></label>
-        <label>Description <textarea id="mp-desc"></textarea></label>
+        <div id="mapPoints-container" class="mappoints-container">
+          <!-- Left/Top: Map Points List -->
+          <div id="mapPointsList" class="mappoints-list">
+            <input type="hidden" id="mp-id" />
+            <label>Owner Username <input id="mp-username" /></label>
+            <label>Title <input id="mp-title" /></label>
+            <label>Latitude <input id="mp-lat" /></label>
+            <label>Longitude <input id="mp-lng" /></label>
+            <label>Description <textarea id="mp-desc"></textarea></label>
 
-        <div id="mps-empty" style="display: none">No map points.</div>
-        <table id="mps-table" style="display: none">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Title</th>
-              <th>User</th>
-              <th>Lat</th>
-              <th>Lng</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody id="mps-tbody"></tbody>
-        </table>
+            <div id="mps-empty" style="display: none">No map points.</div>
+            <table id="mps-table" style="display: none">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Title</th>
+                  <th>User</th>
+                  <th>Lat</th>
+                  <th>Lng</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="mps-tbody"></tbody>
+            </table>
+          </div>
+          
+          <!-- Right/Bottom: Map View -->
+          <div id="mapPointsGeoView" class="mappoints-geoview">
+            <div id="mapPointsMap" class="mappoints-map"></div>
+          </div>
+        </div>
       </div>
     </div>
 

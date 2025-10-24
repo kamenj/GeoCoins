@@ -49,6 +49,9 @@ const Constants = {
     PointsDeleteRow: "points.deleteRow",
     PointsEditRow: "points.editRow",
     PointsCancel: "points.cancel",
+    PointsShowList: "points.showList",
+    PointsShowMap: "points.showMap",
+    PointsShowBoth: "points.showBoth",
     // Map point details commands
     MpdSave: "mpd.save",
     MpdDelete: "mpd.delete",
@@ -136,13 +139,25 @@ const Config = {
     settings: "app.settings",
   },
   Constants: Constants,
-  AppTitle: "Dani-Geo-Coins",
+  AppTitle: "Dani-Geo-Coins v4",
   Debug: {
     UseDefaultCredentials: true,
     DefaultUser: "alice",
     DefaultPassword: "1234"
   },
   AutoLoadCachedUser: false, // Set to true to auto-login with previously logged-in user
+  MapPointsList: {
+    DockLeftWidth: 400,      // Width when docked left (horizontal layout). 0 = auto-calculate
+    DockTopHeight: 0,        // Height when docked top (vertical layout). 0 = auto-calculate
+    MinRowsVisible: 5,       // Minimum rows to show for auto-calculating height
+    MinRowWidth: 300,        // Minimum width for list columns for auto-calculating width
+    ContainerHeight: 0,      // Height of the entire MapPoints container. 0 or negative = fit to viewport (so container + bottom menu are visible without scrolling)
+    InitialView: {
+      showList: true,        // Show list subview initially
+      showMap: true,         // Show map subview initially
+    },
+    ViewToggleButtonsLocation: "menu.bottom.title"  // Where to place List/Map/L+M buttons: "menu.bottom.title", "menu.bottom.top", or "menu.bottom.bottom"
+  },
   Database: {
     mode: "LOCAL", // "LOCAL" or "REMOTE"
     remote: {
@@ -352,6 +367,36 @@ const Config = {
         enabled: true,
       },
       {
+        name: "points.showList",
+        caption: "List",
+        menu: { location: "menu.bottom.title" },  // Will be configurable via Config.MapPointsList.ViewToggleButtonsLocation
+        action: function () {
+          toggleMapPointsView('list');
+        },
+        visible: true,
+        enabled: true,
+      },
+      {
+        name: "points.showMap",
+        caption: "Map",
+        menu: { location: "menu.bottom.title" },  // Will be configurable via Config.MapPointsList.ViewToggleButtonsLocation
+        action: function () {
+          toggleMapPointsView('map');
+        },
+        visible: true,
+        enabled: true,
+      },
+      {
+        name: "points.showBoth",
+        caption: "L+M",
+        menu: { location: "menu.bottom.title" },  // Will be configurable via Config.MapPointsList.ViewToggleButtonsLocation
+        action: function () {
+          toggleMapPointsView('both');
+        },
+        visible: true,
+        enabled: true,
+      },
+      {
         name: "points.deleteRow",
         caption: "Delete",
         menu: { location: "list.row" },
@@ -543,6 +588,11 @@ const State = {
     autoHideTopMenu: true 
   },
   afterMessageShowId: null, // target section to show after closing the message
+  mapPointsView: {
+    showList: true,
+    showMap: true,
+  },
+  leafletMap: null, // Store the Leaflet map instance
 };
 
 
@@ -651,6 +701,38 @@ export function showContent(id) {
         Config.Debug.UseDefaultCredentials) {
       setVal("login-username", Config.Debug.DefaultUser);
       setVal("login-password", Config.Debug.DefaultPassword);
+    }
+    
+    // Initialize map when MapPoints section is shown
+    if (State.currentContentId === Constants.ContentSection.MapPoints) {
+      // Apply initial view state from config
+      State.mapPointsView.showList = Config.MapPointsList.InitialView.showList;
+      State.mapPointsView.showMap = Config.MapPointsList.InitialView.showMap;
+      
+      // Set initial visibility
+      var listDiv = $("mapPointsList");
+      var mapDiv = $("mapPointsGeoView");
+      var container = $("mapPoints-container");
+      
+      if (State.mapPointsView.showList) {
+        listDiv.classList.remove("hidden");
+      } else {
+        listDiv.classList.add("hidden");
+      }
+      
+      if (State.mapPointsView.showMap) {
+        mapDiv.classList.remove("hidden");
+      } else {
+        mapDiv.classList.add("hidden");
+      }
+      
+      // Update layout
+      updateMapPointsLayout();
+      
+      // Initialize map after a short delay to ensure container is rendered
+      setTimeout(function() {
+        initializeLeafletMap();
+      }, 100);
     }
   } else {
     // No content shown, ensure top menu is visible
@@ -1008,15 +1090,20 @@ export function refreshMapPointsTable() {
   if (State.mapPoints.length === 0) {
     table.style.display = "none";
     empty.style.display = "block";
-    return;
+  } else {
+    table.style.display = "table";
+    empty.style.display = "none";
+    var rows = [];
+    for (var i = 0; i < State.mapPoints.length; i++) {
+      rows.push(renderPointsRow(State.mapPoints[i], i));
+    }
+    tbody.innerHTML = rows.join("");
   }
-  table.style.display = "table";
-  empty.style.display = "none";
-  var rows = [];
-  for (var i = 0; i < State.mapPoints.length; i++) {
-    rows.push(renderPointsRow(State.mapPoints[i], i));
+  
+  // Also refresh map markers if map is initialized
+  if (State.leafletMap) {
+    refreshMapMarkers();
   }
-  tbody.innerHTML = rows.join("");
 }
 
 export function clearMapPointForm() {
@@ -1127,6 +1214,173 @@ export async function deleteMapPointFromDetails() {
   }
 }
 
+/* ===== Map Points View Management ===== */
+export function toggleMapPointsView(mode) {
+  // mode: 'list', 'map', or 'both'
+  var listDiv = $("mapPointsList");
+  var mapDiv = $("mapPointsGeoView");
+  var container = $("mapPoints-container");
+  
+  if (mode === 'list') {
+    State.mapPointsView.showList = true;
+    State.mapPointsView.showMap = false;
+    listDiv.classList.remove("hidden");
+    mapDiv.classList.add("hidden");
+    container.classList.add("show-list-only");
+    container.classList.remove("show-map-only");
+  } else if (mode === 'map') {
+    State.mapPointsView.showList = false;
+    State.mapPointsView.showMap = true;
+    listDiv.classList.add("hidden");
+    mapDiv.classList.remove("hidden");
+    container.classList.add("show-map-only");
+    container.classList.remove("show-list-only");
+  } else if (mode === 'both') {
+    State.mapPointsView.showList = true;
+    State.mapPointsView.showMap = true;
+    listDiv.classList.remove("hidden");
+    mapDiv.classList.remove("hidden");
+    container.classList.remove("show-list-only");
+    container.classList.remove("show-map-only");
+  }
+  
+  // Update layout after visibility changes
+  updateMapPointsLayout();
+  
+  // Refresh map if it's now visible
+  if (State.mapPointsView.showMap && State.leafletMap) {
+    setTimeout(function() {
+      State.leafletMap.invalidateSize();
+      refreshMapMarkers();
+    }, 100);
+  }
+  
+  // Re-render menu to update button visibility
+  renderMenusFor(State.currentContentId);
+}
+
+export function updateMapPointsLayout() {
+  var container = $("mapPoints-container");
+  if (!container) return;
+  
+  // Set container height based on configuration
+  var containerHeight = Config.MapPointsList.ContainerHeight;
+  if (containerHeight <= 0) {
+    // Auto-calculate to fit viewport: ensure container + bottom menu are visible
+    var viewportHeight = window.innerHeight;
+    var containerTop = container.getBoundingClientRect().top;
+    var menuBottom = $("menuBottom");
+    var menuBottomHeight = menuBottom ? menuBottom.getBoundingClientRect().height : 100; // Default estimate if not found
+    
+    // Calculate available height: viewport - container top position - bottom menu height - some padding
+    var padding = 16; // Small padding at bottom
+    var availableHeight = viewportHeight - containerTop - menuBottomHeight - padding;
+    
+    // Set minimum height to avoid too small containers
+    var minHeight = 400;
+    containerHeight = Math.max(minHeight, availableHeight);
+    
+    container.style.height = containerHeight + 'px';
+  } else {
+    // Use fixed height from config
+    container.style.height = containerHeight + 'px';
+  }
+  
+  var rect = container.getBoundingClientRect();
+  var width = rect.width;
+  var height = rect.height;
+  
+  // Determine layout based on aspect ratio
+  if (width > height) {
+    // Horizontal layout: list on left, map on right
+    container.classList.remove("layout-vertical");
+    container.classList.add("layout-horizontal");
+    
+    // Apply dock left width
+    var dockLeftWidth = Config.MapPointsList.DockLeftWidth;
+    if (dockLeftWidth <= 0) {
+      // Auto-calculate based on MinRowWidth
+      dockLeftWidth = Config.MapPointsList.MinRowWidth || 300;
+    }
+    container.style.setProperty('--list-dock-left-width', dockLeftWidth + 'px');
+  } else {
+    // Vertical layout: list on top, map on bottom
+    container.classList.remove("layout-horizontal");
+    container.classList.add("layout-vertical");
+    
+    // Apply dock top height
+    var dockTopHeight = Config.MapPointsList.DockTopHeight;
+    if (dockTopHeight <= 0) {
+      // Auto-calculate based on MinRowsVisible
+      var rowHeight = 40; // Approximate height per row including borders
+      var formHeight = 350; // Approximate height of the form inputs
+      dockTopHeight = formHeight + (Config.MapPointsList.MinRowsVisible * rowHeight);
+    }
+    container.style.setProperty('--list-dock-top-height', dockTopHeight + 'px');
+  }
+  
+  // Apply min row width
+  var minRowWidth = Config.MapPointsList.MinRowWidth || 300;
+  container.style.setProperty('--list-min-row-width', minRowWidth + 'px');
+}
+
+export function initializeLeafletMap() {
+  var mapDiv = $("mapPointsMap");
+  if (!mapDiv) return;
+  
+  // Initialize map if not already done
+  if (!State.leafletMap) {
+    try {
+      // Default center - can be updated based on points
+      State.leafletMap = L.map('mapPointsMap').setView([51.5, -0.09], 13);
+      
+      // Add tile layer
+      L.tileLayer('https://api.maptiler.com/maps/streets/{z}/{x}/{y}.png?key=9Ul437Kx3uMsy4w6lOQN', {
+        attribution: '<a href="https://www.maptiler.com/license/maps/" target="_blank">© MapTiler</a> <a href="https://www.openstreetmap.org/copyright" target="_blank">© OpenStreetMap contributors</a>',
+      }).addTo(State.leafletMap);
+      
+      // Add markers for existing points
+      refreshMapMarkers();
+    } catch (error) {
+      console.error("Failed to initialize Leaflet map:", error);
+    }
+  } else {
+    // Map already exists, just refresh its size and markers
+    State.leafletMap.invalidateSize();
+    refreshMapMarkers();
+  }
+}
+
+export function refreshMapMarkers() {
+  if (!State.leafletMap) return;
+  
+  // Clear existing markers (simple approach - could be optimized)
+  State.leafletMap.eachLayer(function(layer) {
+    if (layer instanceof L.Marker) {
+      State.leafletMap.removeLayer(layer);
+    }
+  });
+  
+  // Add markers for all points
+  var bounds = [];
+  for (var i = 0; i < State.mapPoints.length; i++) {
+    var point = State.mapPoints[i];
+    if (point.lat && point.lng) {
+      var marker = L.marker([point.lat, point.lng]).addTo(State.leafletMap);
+      var popupContent = '<b>' + (point.title || 'Untitled') + '</b><br>' +
+                        'User: ' + (point.username || 'Unknown') + '<br>' +
+                        (point.desc || '');
+      marker.bindPopup(popupContent);
+      bounds.push([point.lat, point.lng]);
+    }
+  }
+  
+  // Fit map to show all markers if there are any
+  if (bounds.length > 0) {
+    State.leafletMap.fitBounds(bounds, { padding: [50, 50] });
+  }
+}
+
 /* ===== Settings ===== */
 export function applyThemeFont() {
   document.body.setAttribute(Config.Constants.Attribute.DataTheme, State.settings.theme || Config.Constants.Theme.Light);
@@ -1208,6 +1462,36 @@ function on_before_command_added(target_menu, cmd) {
     }
   }
   
+  // Handle MapPoints view toggle buttons visibility
+  // Only apply these rules when we're actually in the MapPoints section
+  if (State.currentContentId === Constants.ContentSection.MapPoints) {
+    var bothVisible = State.mapPointsView.showList && State.mapPointsView.showMap;
+    var onlyListVisible = State.mapPointsView.showList && !State.mapPointsView.showMap;
+    var onlyMapVisible = !State.mapPointsView.showList && State.mapPointsView.showMap;
+    
+    if (cmd.name === Config.Constants.CommandName.PointsShowList) {
+      // Show "List" button when we want to switch to list-only view
+      // Hide it when already showing only list
+      if (onlyListVisible) {
+        return null;
+      }
+    }
+    if (cmd.name === Config.Constants.CommandName.PointsShowMap) {
+      // Show "Map" button when we want to switch to map-only view
+      // Hide it when already showing only map
+      if (onlyMapVisible) {
+        return null;
+      }
+    }
+    if (cmd.name === Config.Constants.CommandName.PointsShowBoth) {
+      // Show "L+M" button when we want to show both views
+      // Hide it when already showing both
+      if (bothVisible) {
+        return null;
+      }
+    }
+  }
+  
   // Determine enabled state (can be modified based on State)
   var enabled = cmd.enabled !== false;
   // Apply any state-based modifications here
@@ -1281,6 +1565,10 @@ function renderMenusFor(contentId) {
   
   if (contentId && Config.Commands.LIST[contentId]) {
     var cmds = Config.Commands.LIST[contentId];
+    var viewToggleButtons = ["points.showList", "points.showMap", "points.showBoth"];
+    var lastWasViewToggle = false;
+    var lastWasNonViewToggle = false;
+    
     for (var i = 0; i < cmds.length; i++) {
       var c = cmds[i];
       var loc =
@@ -1302,10 +1590,33 @@ function renderMenusFor(contentId) {
       if (hostId) {
         var host = $(hostId);
         if (host) {
+          var isViewToggle = viewToggleButtons.indexOf(c.name) >= 0;
+          
           // Call on_before_command_added to get the HTML element
           var btnElement = on_before_command_added(hostId, c);
           if (btnElement) {
+            var needsSeparator = false;
+            
+            // Add separator before first view toggle button (after non-view-toggle buttons)
+            if (isViewToggle && lastWasNonViewToggle && hostId === Config.Constants.ElementId.MenuBottomTitleCommands) {
+              needsSeparator = true;
+            }
+            
+            // Add separator after last view toggle button (before non-view-toggle buttons)
+            if (!isViewToggle && lastWasViewToggle && hostId === Config.Constants.ElementId.MenuBottomTitleCommands) {
+              needsSeparator = true;
+            }
+            
+            if (needsSeparator) {
+              var separator = document.createElement("span");
+              separator.className = "cmd-separator";
+              separator.textContent = "|";
+              host.appendChild(separator);
+            }
+            
             host.appendChild(btnElement);
+            lastWasViewToggle = isViewToggle;
+            lastWasNonViewToggle = !isViewToggle;
           }
         }
       }
@@ -1454,6 +1765,17 @@ async function loadAll() {
     setSectionVisible(Config.CONTENT_SECTIONS[i], false);
   renderMenusFor(null);
 
+  // Update view toggle button locations after Config is initialized
+  const configLocation = Config.MapPointsList.ViewToggleButtonsLocation;
+  const commandNames = ["points.showList", "points.showMap", "points.showBoth"];
+  const mapPointsCommands = Config.Commands.LIST[Config.Constants.ContentSection.MapPoints];
+  commandNames.forEach(cmdName => {
+    const cmd = mapPointsCommands.find(c => c.name === cmdName);
+    if (cmd) {
+      cmd.menu.location = configLocation;
+    }
+  });
+
   // Collapse toggles
   $(Config.Constants.ElementId.MenuTopHeader).addEventListener("click", function () {
     toggleCollapse(Config.Constants.ElementId.MenuTop);
@@ -1495,6 +1817,37 @@ async function loadAll() {
   // First render of tables
   refreshUsersTable();
   refreshMapPointsTable();
+  
+  // Set up ResizeObserver for MapPoints container to handle dynamic layout
+  var mapPointsContainer = $("mapPoints-container");
+  if (mapPointsContainer && window.ResizeObserver) {
+    var resizeObserver = new ResizeObserver(function(entries) {
+      for (var i = 0; i < entries.length; i++) {
+        if (State.currentContentId === Constants.ContentSection.MapPoints) {
+          updateMapPointsLayout();
+          // Invalidate map size after layout change
+          if (State.leafletMap && State.mapPointsView.showMap) {
+            setTimeout(function() {
+              State.leafletMap.invalidateSize();
+            }, 50);
+          }
+        }
+      }
+    });
+    resizeObserver.observe(mapPointsContainer);
+  }
+  
+  // Also handle window resize for good measure
+  window.addEventListener('resize', function() {
+    if (State.currentContentId === Constants.ContentSection.MapPoints) {
+      updateMapPointsLayout();
+      if (State.leafletMap && State.mapPointsView.showMap) {
+        setTimeout(function() {
+          State.leafletMap.invalidateSize();
+        }, 50);
+      }
+    }
+  });
 }
 
 /* ===== Start ===== */
