@@ -1518,7 +1518,9 @@ export function initializeLeafletMap() {
       installMapLongPressHandler();
       
       // Add markers for existing points
-      refreshMapMarkers();
+      if (!State.skipMapRefresh) {
+        refreshMapMarkers();
+      }
     } catch (error) {
       console.error("Failed to initialize Leaflet map:", error);
     }
@@ -1567,13 +1569,15 @@ function installMapLongPressHandler() {
     }).addTo(State.leafletMap);
     
     // Open popup with coordinates
-    State.tempPlacemark.bindPopup('Default coordinates for new point<br>Lat: ' + latlng.lat.toFixed(6) + ', Lng: ' + latlng.lng.toFixed(6) + '<br>Drag to adjust or click "Add map point"').openPopup();
+    var tempPopupContent = 'Default coordinates for new point<br>Lat: ' + latlng.lat.toFixed(6) + ', Lng: ' + latlng.lng.toFixed(6) + '<br>Drag to adjust<br><button onclick="window.appAddMapPoint()" style="margin-top:5px;margin-right:5px;">Add</button><button onclick="window.appDeleteTempMarker()" style="margin-top:5px;">Delete</button>';
+    State.tempPlacemark.bindPopup(tempPopupContent).openPopup();
     
     // If marker is dragged, update default coords
     State.tempPlacemark.on('dragend', function(ev) {
       var p = ev.target.getLatLng();
       Config.MapPointDetails.defaultCoords = { lat: p.lat, lng: p.lng };
-      State.tempPlacemark.setPopupContent('Default coordinates for new point<br>Lat: ' + p.lat.toFixed(6) + ', Lng: ' + p.lng.toFixed(6) + '<br>Drag to adjust or click "Add map point"');
+      var updatedPopupContent = 'Default coordinates for new point<br>Lat: ' + p.lat.toFixed(6) + ', Lng: ' + p.lng.toFixed(6) + '<br>Drag to adjust<br><button onclick="window.appAddMapPoint()" style="margin-top:5px;margin-right:5px;">Add</button><button onclick="window.appDeleteTempMarker()" style="margin-top:5px;">Delete</button>';
+      State.tempPlacemark.setPopupContent(updatedPopupContent);
     });
   }
   
@@ -1614,7 +1618,8 @@ export function refreshMapMarkers() {
       var marker = L.marker([point.lat, point.lng]).addTo(State.leafletMap);
       var popupContent = '<b>' + (point.title || 'Untitled') + '</b><br>' +
                         'User: ' + (point.username || 'Unknown') + '<br>' +
-                        (point.desc || '');
+                        (point.desc || '') + '<br>' +
+                        '<button onclick="window.appDeleteMapPoint(' + point.id + ')" style="margin-top:5px;">Delete</button>';
       marker.bindPopup(popupContent);
       bounds.push([point.lat, point.lng]);
     }
@@ -2228,6 +2233,38 @@ async function loadAll() {
     }
   });
 }
+
+/* ===== Global functions for popup buttons ===== */
+// Add new map point from popup
+window.appAddMapPoint = function() {
+  openMapPointDetailsForAdd();
+};
+
+// Delete temporary new point marker
+window.appDeleteTempMarker = function() {
+  if (State.tempPlacemark) {
+    State.leafletMap.removeLayer(State.tempPlacemark);
+    State.tempPlacemark = null;
+  }
+};
+
+// Delete existing map point from popup
+window.appDeleteMapPoint = async function(pointId) {
+  if (!confirm('Delete this map point?')) {
+    return;
+  }
+  
+  var result = await DB.deletePoint(pointId);
+  if (result.success) {
+    State.mapPoints = State.mapPoints.filter(function (x) {
+      return Number(x.id) !== Number(pointId);
+    });
+    refreshMapPointsTable();
+    refreshMapMarkers();
+  } else {
+    alert('Failed to delete point: ' + result.error);
+  }
+};
 
 /* ===== Start ===== */
 window.addEventListener("load", loadAll);
