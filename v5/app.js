@@ -46,6 +46,8 @@ const Constants = {
     PointsAdd: "points.add",
     PointsMyLoc: "points.myLoc",
     PointsRefresh: "points.refresh",
+    PointsViewDetails: "points.viewDetails",
+    PointsViewCompact: "points.viewCompact",
     PointsDeleteRow: "points.deleteRow",
     PointsEditRow: "points.editRow",
     PointsCancel: "points.cancel",
@@ -163,6 +165,19 @@ const Config = {
     // Column definitions will be created by getTableColumns() function
     initialSort: [           // Default sort configuration
       { column: "username", dir: "asc" }
+    ],
+    rowAlternating: true     // Enable alternating row colors (handled by CSS)
+  },
+  PointsTable: {
+    view: "details",         // Current view mode: "details" or "compact"
+    layout: "fitDataStretch", // Tabulator layout mode
+    height: "auto",          // Table height (auto fits to content)
+    maxHeight: "500px",      // Maximum table height before scrolling
+    pagination: false,       // Enable pagination
+    paginationSize: 10,      // Rows per page
+    // Column definitions will be created by getPointsTableColumns() function
+    initialSort: [           // Default sort configuration
+      { column: "title", dir: "asc" }
     ],
     rowAlternating: true     // Enable alternating row colors (handled by CSS)
   },
@@ -452,6 +467,50 @@ const Config = {
           refreshMapPointsTable();
         },
         visible: true,
+        enabled: true,
+      },
+      {
+        name: "points.viewDetails",
+        caption: "Details",
+        menu: { location: "menu.bottom.title" },
+        action: function () {
+          var menuBottomEl = $(Config.Constants.ElementId.MenuBottom);
+          var wasCollapsed = menuBottomEl ? menuBottomEl.classList.contains(Config.Constants.ClassName.Collapsed) : true;
+          
+          Config.PointsTable.view = "details";
+          refreshMapPointsTable();
+          renderMenusFor(State.currentContentId);
+          
+          // Force restore collapse state after render completes
+          setTimeout(function() {
+            setCollapsed(Config.Constants.ElementId.MenuBottom, wasCollapsed);
+          }, 0);
+        },
+        visible: function() {
+          return Config.PointsTable.view !== "details";
+        },
+        enabled: true,
+      },
+      {
+        name: "points.viewCompact",
+        caption: "Compact",
+        menu: { location: "menu.bottom.title" },
+        action: function () {
+          var menuBottomEl = $(Config.Constants.ElementId.MenuBottom);
+          var wasCollapsed = menuBottomEl ? menuBottomEl.classList.contains(Config.Constants.ClassName.Collapsed) : true;
+          
+          Config.PointsTable.view = "compact";
+          refreshMapPointsTable();
+          renderMenusFor(State.currentContentId);
+          
+          // Force restore collapse state after render completes
+          setTimeout(function() {
+            setCollapsed(Config.Constants.ElementId.MenuBottom, wasCollapsed);
+          }, 0);
+        },
+        visible: function() {
+          return Config.PointsTable.view !== "compact";
+        },
         enabled: true,
       },
       {
@@ -762,6 +821,8 @@ const State = {
   jsonEditorFontSize: 14, // Default font size for JSON editor
   usersTable: null, // Tabulator instance for Users table
   usersTableFilters: null, // Store table filter state
+  pointsTable: null, // Tabulator instance for Points table
+  pointsTableFilters: null, // Store table filter state
 };
 
 
@@ -920,6 +981,11 @@ export function showContent(id) {
   // Save filter state when leaving Users List
   if (State.currentContentId === Constants.ContentSection.UsersList && State.usersTable) {
     State.usersTableFilters = State.usersTable.getHeaderFilters();
+  }
+  
+  // Save filter state when leaving Map Points
+  if (State.currentContentId === Constants.ContentSection.MapPoints && State.pointsTable) {
+    State.pointsTableFilters = State.pointsTable.getHeaderFilters();
   }
   
   State.currentContentId = id || null;
@@ -1165,6 +1231,68 @@ function getTableColumns(viewMode) {
         var user = cell.getRow().getData();
         return renderCommandHTML({ payload: user.username }, Config.Constants.CommandName.UsersDeleteRow) + " " +
                renderCommandHTML({ payload: user.username }, Config.Constants.CommandName.UsersEditRow);
+      }}
+    ]
+  };
+  
+  return columns[viewMode] || columns.details;
+}
+
+function getPointsTableColumns(viewMode) {
+  // Returns column definitions for Tabulator for the points table based on view mode
+  
+  var columns = {
+    details: [
+      { title: "#", field: "index", width: 60, headerSort: false, formatter: function(cell) { 
+        return cell.getRow().getPosition(); 
+      }},
+      { title: "Title", field: "title", headerFilter: "input", sorter: "string", formatter: function(cell) {
+        var point = cell.getRow().getData();
+        return '<button class="' + Config.Constants.ClassName.LinkBtn + '" ' + 
+               Config.Constants.Attribute.DataOpenPoint + '="' + point.id + '">' +
+               (point.title || "(no title)") + '</button>';
+      }},
+      { title: "User", field: "username", headerFilter: "input", sorter: "string" },
+      { title: "Latitude", field: "lat", headerFilter: "input", sorter: "number", formatter: function(cell) {
+        return Number(cell.getValue()).toFixed(6);
+      }},
+      { title: "Longitude", field: "lng", headerFilter: "input", sorter: "number", formatter: function(cell) {
+        return Number(cell.getValue()).toFixed(6);
+      }},
+      { title: "Actions", field: "actions", headerSort: false, width: 150, formatter: function(cell) {
+        var point = cell.getRow().getData();
+        return renderCommandHTML({ payload: point.id }, Config.Constants.CommandName.PointsDeleteRow) + " " +
+               renderCommandHTML({ payload: point.id }, Config.Constants.CommandName.PointsEditRow);
+      }}
+    ],
+    compact: [
+      { 
+        title: "Point", 
+        field: "title", 
+        headerFilter: "input", 
+        sorter: "string",
+        headerFilterFunc: function(headerValue, rowValue, rowData, filterParams) {
+          // Custom filter that searches in title, username, and coordinates
+          var searchTerm = headerValue.toLowerCase();
+          var title = (rowData.title || '').toLowerCase();
+          var username = (rowData.username || '').toLowerCase();
+          var coords = (rowData.lat + ', ' + rowData.lng).toLowerCase();
+          
+          return title.indexOf(searchTerm) >= 0 || 
+                 username.indexOf(searchTerm) >= 0 || 
+                 coords.indexOf(searchTerm) >= 0;
+        },
+        formatter: function(cell) {
+          var point = cell.getRow().getData();
+          var coords = Number(point.lat).toFixed(4) + ', ' + Number(point.lng).toFixed(4);
+          var userBadge = point.username ? ' <span class="role-badge">' + point.username + '</span>' : '';
+          return '<strong>' + (point.title || '(no title)') + '</strong> - ' + coords + userBadge;
+        }
+      },
+      { title: "Actions", field: "actions", headerSort: false, width: 150, formatter: function(cell) {
+        var point = cell.getRow().getData();
+        return renderCommandHTML({ payload: point.id }, Config.Constants.CommandName.PointsDeleteRow) + " " +
+               renderCommandHTML({ payload: point.id }, Config.Constants.CommandName.PointsEditRow);
       }}
     ]
   };
@@ -1499,6 +1627,8 @@ async function savePoints() {
   // Keeping for backward compatibility
 }
 function renderPointsRow(p, i) {
+  // Deprecated - kept for backward compatibility but not used anymore
+  // Points table now uses Tabulator
   var actionsHTML = [
     renderCommandHTML({ payload: p.id }, Config.Constants.CommandName.PointsDeleteRow),
     renderCommandHTML({ payload: p.id }, Config.Constants.CommandName.PointsEditRow),
@@ -1517,21 +1647,84 @@ function renderPointsRow(p, i) {
   return html;
 }
 export function refreshMapPointsTable() {
-  var tbody = $(Config.Constants.ElementId.MpsTbody),
-    table = $(Config.Constants.ElementId.MpsTable),
-    empty = $(Config.Constants.ElementId.MpsEmpty);
-  tbody.innerHTML = "";
+  var tableDiv = $(Config.Constants.ElementId.MpsTable);
+  var empty = $(Config.Constants.ElementId.MpsEmpty);
+  
   if (State.mapPoints.length === 0) {
-    table.style.display = "none";
+    tableDiv.style.display = "none";
     empty.style.display = "block";
-  } else {
-    table.style.display = "table";
-    empty.style.display = "none";
-    var rows = [];
-    for (var i = 0; i < State.mapPoints.length; i++) {
-      rows.push(renderPointsRow(State.mapPoints[i], i));
+    if (State.pointsTable) {
+      State.pointsTable.destroy();
+      State.pointsTable = null;
     }
-    tbody.innerHTML = rows.join("");
+    
+    // Also refresh map markers if map is initialized
+    if (State.leafletMap) {
+      refreshMapMarkers();
+    }
+    return;
+  }
+  
+  tableDiv.style.display = "block";
+  empty.style.display = "none";
+  
+  // Save current filter state before updating
+  if (State.pointsTable) {
+    State.pointsTableFilters = State.pointsTable.getHeaderFilters();
+  }
+  
+  // Get current view mode from config
+  var viewMode = Config.PointsTable.view || "details";
+  var columns = getPointsTableColumns(viewMode);
+  
+  // Initialize or update the Tabulator table
+  if (!State.pointsTable) {
+    // Create new Tabulator instance
+    State.pointsTable = new Tabulator("#" + Config.Constants.ElementId.MpsTable, {
+      data: State.mapPoints,
+      layout: Config.PointsTable.layout,
+      height: Config.PointsTable.height,
+      maxHeight: Config.PointsTable.maxHeight,
+      columns: columns,
+      initialSort: Config.PointsTable.initialSort,
+      pagination: Config.PointsTable.pagination,
+      paginationSize: Config.PointsTable.paginationSize,
+      rowFormatter: function(row) {
+        // Add alternating row colors
+        if (Config.PointsTable.rowAlternating) {
+          var rowIndex = row.getPosition();
+          if (rowIndex % 2 === 0) {
+            row.getElement().classList.add("tabulator-row-even");
+          } else {
+            row.getElement().classList.add("tabulator-row-odd");
+          }
+        }
+      }
+    });
+    
+    // Restore filter state after table is initialized
+    if (State.pointsTableFilters && State.pointsTableFilters.length > 0) {
+      setTimeout(function() {
+        for (var i = 0; i < State.pointsTableFilters.length; i++) {
+          var filter = State.pointsTableFilters[i];
+          State.pointsTable.setHeaderFilterValue(filter.field, filter.value);
+        }
+      }, 100);
+    }
+  } else {
+    // Update existing table with new data and columns
+    State.pointsTable.setColumns(columns);
+    State.pointsTable.setData(State.mapPoints);
+    
+    // Restore filter state after update
+    if (State.pointsTableFilters && State.pointsTableFilters.length > 0) {
+      setTimeout(function() {
+        for (var i = 0; i < State.pointsTableFilters.length; i++) {
+          var filter = State.pointsTableFilters[i];
+          State.pointsTable.setHeaderFilterValue(filter.field, filter.value);
+        }
+      }, 100);
+    }
   }
   
   // Also refresh map markers if map is initialized
@@ -2617,9 +2810,9 @@ function bindListDelegates() {
       }
     });
   }
-  var pBody = $(Config.Constants.ElementId.MpsTbody);
-  if (pBody) {
-    pBody.addEventListener("click", function (e) {
+  var pTable = $(Config.Constants.ElementId.MpsTable);
+  if (pTable) {
+    pTable.addEventListener("click", function (e) {
       var t = e.target;
       if (t && t.classList && t.classList.contains(Config.Constants.ClassName.LinkBtn)) {
         var id = t.getAttribute(Config.Constants.Attribute.DataOpenPoint);
