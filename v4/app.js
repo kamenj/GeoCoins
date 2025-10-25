@@ -2181,8 +2181,20 @@ function setMenusVisibility() {
   var hideTopMenu = State.settings.autoHideTopMenu && State.currentContentId;
   setSectionVisible(Config.Constants.ElementId.MenuTop, topHas && !hideTopMenu);
   setSectionVisible(Config.Constants.ElementId.MenuBottom, bottomHas);
-  setCollapsed(Config.Constants.ElementId.MenuTop, false);
-  setCollapsed(Config.Constants.ElementId.MenuBottom, false);
+  
+  // Auto-collapse top menu if it only has title buttons (no top/bottom submenu buttons)
+  var topHasOnlyTitle = 
+    hasAnyChild(Config.Constants.ElementId.MenuTopTitleCommands) &&
+    !hasAnyChild(Config.Constants.ElementId.MenuTopTopCommands) &&
+    !hasAnyChild(Config.Constants.ElementId.MenuTopBottomCommands);
+  setCollapsed(Config.Constants.ElementId.MenuTop, topHasOnlyTitle);
+  
+  // Auto-collapse bottom menu if it only has title buttons (no top/bottom submenu buttons)
+  var bottomHasOnlyTitle = 
+    hasAnyChild(Config.Constants.ElementId.MenuBottomTitleCommands) &&
+    !hasAnyChild(Config.Constants.ElementId.MenuBottomTopCommands) &&
+    !hasAnyChild(Config.Constants.ElementId.MenuBottomBottomCommands);
+  setCollapsed(Config.Constants.ElementId.MenuBottom, bottomHasOnlyTitle);
 }
 function renderMenusFor(contentId) {
   clearMenuBars();
