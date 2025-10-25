@@ -646,6 +646,16 @@ const Config = {
       visible: true,
       enabled: true,
     },
+    {
+      name: "logout",
+      caption: "Logout",
+      menu: { location: "menu.top.bottom" },
+      action: function () {
+        logout();
+      },
+      visible: true,
+      enabled: true,
+    },
   ],
   },
 };
