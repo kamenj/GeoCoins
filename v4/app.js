@@ -14,7 +14,6 @@ const Constants = {
   },
   ContentSection: {
     Login: "login",
-    Register: "register",
     UsersList: "usersList",
     UserDetails: "userDetails",
     Message: "message",
@@ -22,15 +21,13 @@ const Constants = {
     MapPointDetails: "mapPointDetails",
     Settings: "settings",
     About: "about",
+    DeveloperTools: "developerTools",
   },
   CommandName: {
     // Login commands
     LoginOk: "login.ok",
     LoginCancel: "login.cancel",
     LoginRegister: "login.register",
-    // Register commands
-    RegisterOk: "register.ok",
-    RegisterCancel: "register.cancel",
     // Users commands
     UsersAdd: "users.add",
     UsersRefresh: "users.refresh",
@@ -63,6 +60,12 @@ const Constants = {
     SettingsClose: "settings.close",
     // About commands
     AboutOk: "about.ok",
+    // Developer Tools commands
+    DevToolsShowDb: "devtools.showDb",
+    DevToolsSaveDb: "devtools.saveDb",
+    DevToolsFontIncrease: "devtools.fontIncrease",
+    DevToolsFontDecrease: "devtools.fontDecrease",
+    DevToolsClose: "devtools.close",
     // Show commands
     ShowLogin: "show.login",
     ShowRegister: "show.register",
@@ -70,6 +73,7 @@ const Constants = {
     ShowPoints: "show.points",
     ShowSettings: "show.settings",
     ShowAbout: "show.about",
+    ShowDeveloperTools: "show.developerTools",
   },
   MenuLocation: {
     TopTitle: "menu.top.title",
@@ -92,7 +96,6 @@ const Constants = {
     MenuTopHeader: "menuTop-header",
     MenuBottomHeader: "menuBottom-header",
     LoginHeader: "login-header",
-    RegisterHeader: "register-header",
     UsersListHeader: "usersList-header",
     UserDetailsHeader: "userDetails-header",
     MessageHeader: "message-header",
@@ -100,6 +103,7 @@ const Constants = {
     MapPointDetailsHeader: "mapPointDetails-header",
     SettingsHeader: "settings-header",
     AboutHeader: "about-header",
+    DeveloperToolsHeader: "developerTools-header",
     UsersTbody: "users-tbody",
     UsersTable: "users-table",
     UsersEmpty: "users-empty",
@@ -166,6 +170,9 @@ const Config = {
     mode: "view",  // "view", "edit", or "add" - controls whether fields are editable and which actions are available
     defaultCoords: null  // {lat, lng} set by long-press on map
   },
+  UserDetails: {
+    mode: "view"  // "view", "edit", "add", or "register" - controls whether fields are editable and which actions are available
+  },
   Database: {
     mode: "LOCAL", // "LOCAL" or "REMOTE"
     remote: {
@@ -190,7 +197,6 @@ const Config = {
   },
   CONTENT_SECTIONS: [
     Constants.ContentSection.Login,
-    Constants.ContentSection.Register,
     Constants.ContentSection.UsersList,
     Constants.ContentSection.UserDetails,
     Constants.ContentSection.Message,
@@ -198,6 +204,7 @@ const Config = {
     Constants.ContentSection.MapPointDetails,
     Constants.ContentSection.Settings,
     Constants.ContentSection.About,
+    Constants.ContentSection.DeveloperTools,
   ],
 
   Commands: {
@@ -228,29 +235,7 @@ const Config = {
         caption: "Register",
         menu: { location: "menu.bottom.title" },
         action: function () {
-          showContent("register");
-        },
-        visible: true,
-        enabled: true,
-      },
-    ],
-    [Constants.ContentSection.Register]: [
-      {
-        name: "register.ok",
-        caption: "OK",
-        menu: { location: "menu.bottom.title" },
-        action: async function () {
-          await registerUser();
-        },
-        visible: true,
-        enabled: true,
-      },
-      {
-        name: "register.cancel",
-        caption: "Cancel",
-        menu: { location: "menu.bottom.title" },
-        action: function () {
-          showContent("login");
+          openUserDetailsForRegister();
         },
         visible: true,
         enabled: true,
@@ -262,7 +247,7 @@ const Config = {
         caption: "Add user",
         menu: { location: "menu.bottom.title" },
         action: function () {
-          showContent("register");
+          openUserDetailsForAdd();
         },
         visible: true,
         enabled: true,
@@ -327,7 +312,9 @@ const Config = {
         action: async function () {
           await deleteUser();
         },
-        visible: true,
+        visible: function() {
+          return Config.UserDetails.mode === "edit";
+        },
         enabled: true,
       },
       {
@@ -535,6 +522,58 @@ const Config = {
         enabled: true,
       },
     ],
+    [Constants.ContentSection.DeveloperTools]: [
+      {
+        name: "devtools.showDb",
+        caption: "Show DB",
+        menu: { location: "menu.bottom.title" },
+        action: function () {
+          showDbInEditor();
+        },
+        visible: true,
+        enabled: true,
+      },
+      {
+        name: "devtools.saveDb",
+        caption: "Save DB",
+        menu: { location: "menu.bottom.title" },
+        action: async function () {
+          await saveDbFromEditor();
+        },
+        visible: true,
+        enabled: true,
+      },
+      {
+        name: "devtools.fontIncrease",
+        caption: "A+",
+        menu: { location: "menu.bottom.title" },
+        action: function () {
+          adjustEditorFontSize(2);
+        },
+        visible: true,
+        enabled: true,
+      },
+      {
+        name: "devtools.fontDecrease",
+        caption: "A-",
+        menu: { location: "menu.bottom.title" },
+        action: function () {
+          adjustEditorFontSize(-2);
+        },
+        visible: true,
+        enabled: true,
+      },
+      {
+        name: "devtools.close",
+        caption: "Close",
+        menu: { location: "menu.bottom.title" },
+        action: function () {
+          showContent(null);
+        },
+        visible: true,
+        enabled: true,
+      },
+    ],
   },
   DEFAULT_MENU_TOP: [
     {
@@ -552,7 +591,7 @@ const Config = {
       caption: "Register",
       menu: { location: "menu.top.top" },
       action: function () {
-        showContent("register");
+        openUserDetailsForRegister();
       },
       visible: true,
       enabled: true,
@@ -597,6 +636,16 @@ const Config = {
       visible: true,
       enabled: true,
     },
+    {
+      name: "show.developerTools",
+      caption: "Developer Tools",
+      menu: { location: "menu.top.top" },
+      action: function () {
+        showContent("developerTools");
+      },
+      visible: true,
+      enabled: true,
+    },
   ],
   },
 };
@@ -619,6 +668,8 @@ const State = {
   },
   leafletMap: null, // Store the Leaflet map instance
   tempPlacemark: null, // Temporary marker for long-press default coordinates
+  jsonEditor: null, // JSONEditor instance for Developer Tools
+  jsonEditorFontSize: 14, // Default font size for JSON editor
 };
 
 
@@ -684,8 +735,11 @@ export function setSectionVisible(id, visible) {
 export function setCollapsed(id, collapsed) {
   var el = $(id);
   if (!el) return;
-  if (collapsed) el.classList.add(Config.Constants.ClassName.Collapsed);
-  else el.classList.remove(Config.Constants.ClassName.Collapsed);
+  if (collapsed) {
+    el.classList.add(Config.Constants.ClassName.Collapsed);
+  } else {
+    el.classList.remove(Config.Constants.ClassName.Collapsed);
+  }
   updateChevron(id);
 }
 export function toggleCollapse(id) {
@@ -766,6 +820,13 @@ export function showContent(id) {
       // Initialize map after a short delay to ensure container is rendered
       setTimeout(function() {
         initializeLeafletMap();
+      }, 100);
+    }
+    
+    // Initialize JSON editor when Developer Tools section is shown
+    if (State.currentContentId === Constants.ContentSection.DeveloperTools) {
+      setTimeout(function() {
+        initializeJsonEditor();
       }, 100);
     }
   } else {
@@ -934,11 +995,17 @@ export function refreshUsersTable() {
   tbody.innerHTML = rows.join(""); // delegate events below
 }
 
-function fillUserDetails(u) {
-  setVal("ud-username-old", u.username);
-  setVal("ud-username", u.username);
+function fillUserDetails(u, mode) {
+  // mode: "edit", "add", or "register"
+  Config.UserDetails.mode = mode || "edit";
+  
+  // Update mode indicator
+  var modeText = mode === "add" ? "(Add New)" : mode === "register" ? "(Register)" : "(Edit)";
+  setText("ud-mode-indicator", modeText);
+  
+  setVal("ud-username-old", u.username || "");
+  setVal("ud-username", u.username || "");
   setVal("ud-name", u.name || "");
-  // setVal("ud-surname", u.surname || "");§kamen_20251010_175213
   setVal("ud-password", u.password || "");
   
   // Set role checkboxes
@@ -946,33 +1013,71 @@ function fillUserDetails(u) {
   $("ud-role-admin").checked = roles.indexOf("admin") !== -1;
   $("ud-role-seeker").checked = roles.indexOf("seeker") !== -1;
   $("ud-role-hider").checked = roles.indexOf("hider") !== -1;
+  
+  // Hide admin checkbox in register mode
+  var adminLabel = $("ud-role-admin").closest("label");
+  if (adminLabel) {
+    if (mode === "register") {
+      adminLabel.style.display = "none";
+      $("ud-role-admin").checked = false; // Ensure admin is false
+    } else {
+      adminLabel.style.display = "inline-block";
+    }
+  }
 }
 export function openUserDetails(username) {
   var u = findUser(username);
   if (!u) return;
-  fillUserDetails(u);
   showContent("userDetails");
+  fillUserDetails(u, "edit");
+}
+export function openUserDetailsForAdd() {
+  var emptyUser = {
+    username: "",
+    name: "",
+    password: "",
+    roles: []
+  };
+  showContent("userDetails");
+  fillUserDetails(emptyUser, "add");
+}
+export function openUserDetailsForRegister() {
+  var emptyUser = {
+    username: "",
+    name: "",
+    password: "",
+    roles: []
+  };
+  showContent("userDetails");
+  fillUserDetails(emptyUser, "register");
 }
 export async function saveUserDetails() {
-  var oldU = getVal("ud-username-old"),
-    newU = getVal("ud-username"),
-    newName = getVal("ud-name"),
-    // newSurname = getVal("ud-surname");
-    newPassword = getVal("ud-password");
+  var mode = Config.UserDetails.mode;
+  var oldU = getVal("ud-username-old");
+  var newU = getVal("ud-username");
+  var newName = getVal("ud-name");
+  var newPassword = getVal("ud-password");
+  
   if (!newU) return showMessage("Username cannot be empty.", "userDetails");
 
-  // console.log(`newU.length = ${newU.length}`);
   if (newU.length > 20) {
-    //§kamen_20251010_175547
     showMessage("Username must be maximum 20 characters.", "userDetails");
     return;
   }
-  if (oldU !== newU && findUser(newU))
-    return showMessage("Username already exists.", "userDetails");
+  
+  // Check if username already exists (skip check if editing the same user)
+  if (mode !== "edit" || oldU !== newU) {
+    if (findUser(newU)) {
+      return showMessage("Username already exists.", "userDetails");
+    }
+  }
   
   // Get roles from checkboxes
   var newRoles = [];
-  if ($("ud-role-admin").checked) newRoles.push("admin");
+  // In register mode, admin checkbox is hidden and should be false
+  if (mode !== "register" && $("ud-role-admin").checked) {
+    newRoles.push("admin");
+  }
   if ($("ud-role-seeker").checked) newRoles.push("seeker");
   if ($("ud-role-hider").checked) newRoles.push("hider");
   
@@ -984,25 +1089,58 @@ export async function saveUserDetails() {
     roles: newRoles
   };
   
-  var result = await DB.updateUser(oldU, userData);
-  if (result.success) {
-    // Update local state
-    for (var i = 0; i < State.users.length; i++) {
-      if (State.users[i].username === oldU) {
-        State.users[i] = { ...State.users[i], ...userData };
+  if (mode === "edit") {
+    // Update existing user
+    var result = await DB.updateUser(oldU, userData);
+    if (result.success) {
+      // Update local state
+      for (var i = 0; i < State.users.length; i++) {
+        if (State.users[i].username === oldU) {
+          State.users[i] = { ...State.users[i], ...userData };
+        }
       }
+      
+      // Update current user if needed
+      if (State.currentUser === oldU) {
+        State.currentUser = newU;
+        await DB.setCurrentUser(newU);
+      }
+      
+      refreshUsersTable();
+      showContent("usersList");
+    } else {
+      showMessage("Failed to save user: " + result.error, "userDetails");
+    }
+  } else if (mode === "add" || mode === "register") {
+    // Add new user
+    if (!newPassword) {
+      return showMessage("Please enter a password.", "userDetails");
     }
     
-    // Update current user if needed
-    if (State.currentUser === oldU) {
-      State.currentUser = newU;
-      await DB.setCurrentUser(newU);
-    }
+    var newUser = {
+      username: newU,
+      password: newPassword,
+      name: newName,
+      roles: newRoles
+    };
     
-    refreshUsersTable();
-    showContent("usersList");
-  } else {
-    showMessage("Failed to save user: " + result.error, "userDetails");
+    var result = await addUser(newUser);
+    if (result.success) {
+      refreshUsersTable();
+      
+      if (mode === "register") {
+        // Auto-login after registration
+        State.currentUser = newU;
+        await DB.setCurrentUser(State.currentUser);
+        updateStatusBar();
+        showMessage("Registration successful. Welcome, " + State.currentUser + "!", null);
+      } else {
+        // mode === "add" - admin adding a user
+        showMessage("User added successfully.", "usersList");
+      }
+    } else {
+      showMessage("Failed to add user: " + result.error, "userDetails");
+    }
   }
 }
 export async function deleteUser() {
@@ -1022,7 +1160,15 @@ export async function deleteUser() {
   }
 }
 export function cancelUserDetails() {
-  showContent("usersList");
+  var mode = Config.UserDetails.mode;
+  
+  if (mode === "register") {
+    // If canceling registration, go back to login
+    showContent("login");
+  } else {
+    // If canceling add or edit, go back to users list
+    showContent("usersList");
+  }
 }
 
 /* ===== Auth ===== §kamen_20251010_180801 */
@@ -1045,44 +1191,6 @@ export async function logout() {
   await DB.clearCurrentUser();
   updateStatusBar();
   showMessage("You have been logged out.", null);
-}
-
-/* ===== Registration ===== */
-export function clearRegisterForm() {
-  setVal("reg-username", ""),
-  setVal("reg-password", ""),
-  setVal("reg-name", ""),
-  setVal("reg-surname", ""),
-  setVal("reg-gender", "");
-}
-export async function registerUser() {
-  var username = getVal("reg-username"),
-    password = $("reg-password").value,
-    name = getVal("reg-name"),
-    surname = getVal("reg-surname"),
-    gender = getVal("reg-gender");
-  if (!username || !password)
-    return showMessage("Please enter username and password.", "register");
-  if (findUser(username))
-    return showMessage("This username already exists.", "register");
-  
-  var newUser = {
-    username: username,
-    password: password,
-    name: name,
-    surname: surname,
-    gender: gender,
-    roles: [], // Initialize with empty roles array
-  };
-  
-  var result = await addUser(newUser);
-  if (result.success) {
-    refreshUsersTable();
-    clearRegisterForm();
-    showMessage("Registration successful for: " + username, "login");
-  } else {
-    showMessage("Registration failed: " + result.error, "register");
-  }
 }
 
 /* ===== Map Points ===== */
@@ -1782,6 +1890,155 @@ export async function resetAll() {
   }
 }
 
+/* ===== Developer Tools ===== */
+function initializeJsonEditor() {
+  if (State.jsonEditor) return; // Already initialized
+  
+  var container = $("jsoneditor");
+  if (!container) return;
+  
+  var options = {
+    mode: 'code',
+    modes: ['code', 'tree', 'view'],
+    onError: function (err) {
+      showMessage("JSON Editor Error: " + err.toString(), "developerTools");
+    }
+  };
+  
+  State.jsonEditor = new JSONEditor(container, options);
+  applyEditorFontSize(); // Apply initial font size
+}
+
+export function adjustEditorFontSize(delta) {
+  State.jsonEditorFontSize += delta;
+  
+  // Keep font size within reasonable bounds
+  if (State.jsonEditorFontSize < 8) State.jsonEditorFontSize = 8;
+  if (State.jsonEditorFontSize > 32) State.jsonEditorFontSize = 32;
+  
+  applyEditorFontSize();
+}
+
+function applyEditorFontSize() {
+  var container = $("jsoneditor");
+  if (!container) return;
+  
+  // Apply font size to the editor container
+  container.style.fontSize = State.jsonEditorFontSize + "px";
+  
+  // Also apply to ACE editor if it exists (code mode)
+  var aceEditor = container.querySelector('.ace_editor');
+  if (aceEditor) {
+    aceEditor.style.fontSize = State.jsonEditorFontSize + "px";
+  }
+  
+  // Apply to textarea in code mode
+  var textarea = container.querySelector('.jsoneditor-text');
+  if (textarea) {
+    textarea.style.fontSize = State.jsonEditorFontSize + "px";
+  }
+}
+
+export function showDbInEditor() {
+  // Initialize editor if needed
+  initializeJsonEditor();
+  
+  // Prepare database data
+  var dbData = {
+    users: State.users,
+    points: State.mapPoints
+  };
+  
+  // Set the data in the editor
+  if (State.jsonEditor) {
+    State.jsonEditor.set(dbData);
+  }
+}
+
+export async function saveDbFromEditor() {
+  if (!State.jsonEditor) {
+    showMessage("JSON Editor not initialized.", "developerTools");
+    return;
+  }
+  
+  try {
+    // Get the data from the editor
+    var dbData = State.jsonEditor.get();
+    
+    // Validate structure
+    if (!dbData || typeof dbData !== 'object') {
+      showMessage("Invalid data format. Expected an object with 'users' and 'points' properties.", "developerTools");
+      return;
+    }
+    
+    if (!Array.isArray(dbData.users)) {
+      showMessage("Invalid data: 'users' must be an array.", "developerTools");
+      return;
+    }
+    
+    if (!Array.isArray(dbData.points)) {
+      showMessage("Invalid data: 'points' must be an array.", "developerTools");
+      return;
+    }
+    
+    // Clear existing data
+    await DB.resetAllData();
+    
+    // Save users
+    var userErrors = [];
+    for (var i = 0; i < dbData.users.length; i++) {
+      var user = dbData.users[i];
+      var result = await DB.addUser(user);
+      if (!result.success) {
+        userErrors.push("User '" + (user.username || 'unknown') + "': " + result.error);
+      }
+    }
+    
+    // Save points
+    var pointErrors = [];
+    for (var j = 0; j < dbData.points.length; j++) {
+      var point = dbData.points[j];
+      var result = await DB.addPoint(point);
+      if (!result.success) {
+        pointErrors.push("Point ID " + (point.id || 'unknown') + ": " + result.error);
+      }
+    }
+    
+    // Reload data from DB
+    var usersResult = await DB.getAllUsers();
+    var pointsResult = await DB.getAllPoints();
+    
+    if (usersResult.success) {
+      State.users = usersResult.data;
+    }
+    if (pointsResult.success) {
+      State.mapPoints = pointsResult.data;
+    }
+    
+    // Refresh UI
+    refreshUsersTable();
+    refreshMapPointsTable();
+    
+    // Show result message
+    var errorMsg = "";
+    if (userErrors.length > 0) {
+      errorMsg += "User errors:\n" + userErrors.join("\n") + "\n\n";
+    }
+    if (pointErrors.length > 0) {
+      errorMsg += "Point errors:\n" + pointErrors.join("\n");
+    }
+    
+    if (errorMsg) {
+      showMessage("Database partially saved with errors:\n\n" + errorMsg, "developerTools");
+    } else {
+      showMessage("Database saved successfully!", "developerTools");
+    }
+    
+  } catch (error) {
+    showMessage("Error parsing JSON: " + error.toString(), "developerTools");
+  }
+}
+
 /* ===== Command rendering ===== */
 function on_before_command_added(target_menu, cmd) {
   // This function is called before adding a command to a menu
@@ -1802,15 +2059,16 @@ function on_before_command_added(target_menu, cmd) {
   
   // If no user is logged in, only show specific commands
   if (!State.currentUser) {
-    // Allow: Show Login, Show About, and all login/register page commands, plus message OK
+    // Allow: Show Login, Show Register, Show About, and all login/userDetails (register mode) page commands, plus message OK
     var allowedCommands = [
       Config.Constants.CommandName.ShowLogin,
+      Config.Constants.CommandName.ShowRegister,
       Config.Constants.CommandName.ShowAbout,
       Config.Constants.CommandName.LoginOk,
       Config.Constants.CommandName.LoginCancel,
       Config.Constants.CommandName.LoginRegister,
-      Config.Constants.CommandName.RegisterOk,
-      Config.Constants.CommandName.RegisterCancel,
+      Config.Constants.CommandName.UserSave,
+      Config.Constants.CommandName.UserCancel,
       Config.Constants.CommandName.MessageOk
     ];
     
@@ -1831,6 +2089,14 @@ function on_before_command_added(target_menu, cmd) {
       var currentUser = findUser(State.currentUser);
       if (!currentUser || !hasRole(currentUser, "admin")) {
         return null; // Skip Users List button if not admin
+      }
+    }
+    
+    // Only show Developer Tools button if user is admin
+    if (cmd.name === Config.Constants.CommandName.ShowDeveloperTools) {
+      var currentUser = findUser(State.currentUser);
+      if (!currentUser || !hasRole(currentUser, "admin")) {
+        return null; // Skip Developer Tools button if not admin
       }
     }
   }
@@ -2279,9 +2545,6 @@ async function loadAll() {
   });
   $(Config.Constants.ElementId.LoginHeader).addEventListener("click", function () {
     toggleCollapse(Config.Constants.ContentSection.Login);
-  });
-  $(Config.Constants.ElementId.RegisterHeader).addEventListener("click", function () {
-    toggleCollapse(Config.Constants.ContentSection.Register);
   });
   $(Config.Constants.ElementId.UsersListHeader).addEventListener("click", function () {
     toggleCollapse(Config.Constants.ContentSection.UsersList);
