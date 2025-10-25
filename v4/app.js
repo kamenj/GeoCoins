@@ -161,17 +161,20 @@ const Config = {
       showList: true,        // Show list subview initially
       showMap: true,         // Show map subview initially
     },
-    ViewToggleButtonsLocation: "menu.bottom.title"  // Where to place List/Map/L+M buttons: "menu.bottom.title", "menu.bottom.top", or "menu.bottom.bottom"
+    ViewToggleButtonsLocation: "menu.bottom.title",  // Where to place List/Map/L+M buttons: "menu.bottom.title", "menu.bottom.top", or "menu.bottom.bottom"
+    FitToViewport: true      // If true, auto-adjust container height to fit viewport
   },
   Map: {
     longPressMs: 1000  // Duration in milliseconds to trigger long-press on map
   },
   MapPointDetails: {
     mode: "view",  // "view", "edit", or "add" - controls whether fields are editable and which actions are available
-    defaultCoords: null  // {lat, lng} set by long-press on map
+    defaultCoords: null,  // {lat, lng} set by long-press on map
+    FitToViewport: false   // If true, auto-adjust container height to fit viewport
   },
   UserDetails: {
-    mode: "view"  // "view", "edit", "add", or "register" - controls whether fields are editable and which actions are available
+    mode: "view",  // "view", "edit", "add", or "register" - controls whether fields are editable and which actions are available
+    FitToViewport: false   // If true, auto-adjust container height to fit viewport
   },
   Database: {
     mode: "LOCAL", // "LOCAL" or "REMOTE"
@@ -206,6 +209,24 @@ const Config = {
     Constants.ContentSection.About,
     Constants.ContentSection.DeveloperTools,
   ],
+  
+  // Generic viewport fitting configuration per content section
+  ViewportFitting: {
+    [Constants.ContentSection.Login]: { enabled: false },
+    [Constants.ContentSection.UsersList]: { enabled: false },
+    [Constants.ContentSection.UserDetails]: { enabled: false },
+    [Constants.ContentSection.Message]: { enabled: false },
+    [Constants.ContentSection.MapPoints]: { 
+      enabled: true,
+      containerSelector: "#mapPoints-container", // The element to resize
+      minHeight: 400,                            // Minimum height in pixels
+      paddingBottom: 20                          // Extra padding at bottom (increased from 16)
+    },
+    [Constants.ContentSection.MapPointDetails]: { enabled: false },
+    [Constants.ContentSection.Settings]: { enabled: false },
+    [Constants.ContentSection.About]: { enabled: false },
+    [Constants.ContentSection.DeveloperTools]: { enabled: false },
+  },
 
   Commands: {
     LIST: {
@@ -769,6 +790,66 @@ export function updateChevron(id) {
       : "";
 }
 
+/* ===== Generic Viewport Fitting ===== */
+/**
+ * Adjusts the height of a content section's container to fit within the viewport.
+ * Ensures the container and bottom menu are visible without scrolling.
+ * 
+ * @param {string} contentId - The ID of the content section (e.g., "mapPoints")
+ */
+export function fitContentToViewport(contentId) {
+  if (!contentId) return;
+  
+  // Check if viewport fitting is enabled for this content section
+  var viewportConfig = Config.ViewportFitting && Config.ViewportFitting[contentId];
+  if (!viewportConfig || !viewportConfig.enabled) {
+    return; // Viewport fitting not enabled for this section
+  }
+  
+  // Get the container element
+  var containerSelector = viewportConfig.containerSelector;
+  if (!containerSelector) return;
+  
+  var container = document.querySelector(containerSelector);
+  if (!container) return;
+  
+  // Get configuration values
+  var minHeight = viewportConfig.minHeight || 400;
+  var paddingBottom = viewportConfig.paddingBottom || 16;
+  
+  // Calculate available height
+  var viewportHeight = window.innerHeight;
+  var containerTop = container.getBoundingClientRect().top;
+  
+  // Get bottom menu height (including its margins)
+  var menuBottom = $(Config.Constants.ElementId.MenuBottom);
+  var menuBottomHeight = 0;
+  if (menuBottom && menuBottom.style.display !== 'none') {
+    var menuBottomRect = menuBottom.getBoundingClientRect();
+    menuBottomHeight = menuBottomRect.height;
+    
+    // Add bottom menu's margins (10px top + 10px bottom = 20px from CSS)
+    var menuBottomStyles = window.getComputedStyle(menuBottom);
+    var menuBottomMarginTop = parseFloat(menuBottomStyles.marginTop) || 0;
+    var menuBottomMarginBottom = parseFloat(menuBottomStyles.marginBottom) || 0;
+    menuBottomHeight += menuBottomMarginTop + menuBottomMarginBottom;
+  }
+  
+  // Account for body padding bottom (8px from CSS)
+  var bodyPaddingBottom = 8;
+  
+  // Calculate available height: viewport - container top position - bottom menu height (with margins) - body padding - extra padding
+  var availableHeight = viewportHeight - containerTop - menuBottomHeight - bodyPaddingBottom - paddingBottom;
+  
+  // Apply minimum height constraint
+  var finalHeight = Math.max(minHeight, availableHeight);
+  
+  // Set the container height
+  container.style.height = finalHeight + 'px';
+  
+  console.log("fitContentToViewport(" + contentId + "): set height to " + finalHeight + "px (viewport=" + viewportHeight + ", top=" + Math.round(containerTop) + ", menuBottom=" + Math.round(menuBottomHeight) + ", bodyPadding=" + bodyPaddingBottom + ", extraPadding=" + paddingBottom + ")");
+}
+
 /* ===== Show one content at a time ===== */
 function hideAllContent() {
   for (var i = 0; i < Config.CONTENT_SECTIONS.length; i++)
@@ -845,6 +926,13 @@ export function showContent(id) {
     }
   }
   renderMenusFor(State.currentContentId);
+  
+  // Apply generic viewport fitting after menus are rendered and a short delay to ensure rendering is complete
+  if (State.currentContentId) {
+    setTimeout(function() {
+      fitContentToViewport(State.currentContentId);
+    }, 200);
+  }
 }
 
 /* ===== Message helpers ===== */
@@ -1679,27 +1767,34 @@ export function updateMapPointsLayout() {
   var container = $("mapPoints-container");
   if (!container) return;
   
-  // Set container height based on configuration
-  var containerHeight = Config.MapPointsList.ContainerHeight;
-  if (containerHeight <= 0) {
-    // Auto-calculate to fit viewport: ensure container + bottom menu are visible
-    var viewportHeight = window.innerHeight;
-    var containerTop = container.getBoundingClientRect().top;
-    var menuBottom = $("menuBottom");
-    var menuBottomHeight = menuBottom ? menuBottom.getBoundingClientRect().height : 100; // Default estimate if not found
-    
-    // Calculate available height: viewport - container top position - bottom menu height - some padding
-    var padding = 16; // Small padding at bottom
-    var availableHeight = viewportHeight - containerTop - menuBottomHeight - padding;
-    
-    // Set minimum height to avoid too small containers
-    var minHeight = 400;
-    containerHeight = Math.max(minHeight, availableHeight);
-    
-    container.style.height = containerHeight + 'px';
+  // Use the generic viewport fitting function if enabled
+  if (Config.ViewportFitting && 
+      Config.ViewportFitting[Constants.ContentSection.MapPoints] && 
+      Config.ViewportFitting[Constants.ContentSection.MapPoints].enabled) {
+    fitContentToViewport(Constants.ContentSection.MapPoints);
   } else {
-    // Use fixed height from config
-    container.style.height = containerHeight + 'px';
+    // Fallback: Set container height based on configuration (old behavior)
+    var containerHeight = Config.MapPointsList.ContainerHeight;
+    if (containerHeight <= 0 && Config.MapPointsList.FitToViewport) {
+      // Auto-calculate to fit viewport: ensure container + bottom menu are visible
+      var viewportHeight = window.innerHeight;
+      var containerTop = container.getBoundingClientRect().top;
+      var menuBottom = $("menuBottom");
+      var menuBottomHeight = menuBottom ? menuBottom.getBoundingClientRect().height : 100; // Default estimate if not found
+      
+      // Calculate available height: viewport - container top position - bottom menu height - some padding
+      var padding = 16; // Small padding at bottom
+      var availableHeight = viewportHeight - containerTop - menuBottomHeight - padding;
+      
+      // Set minimum height to avoid too small containers
+      var minHeight = 400;
+      containerHeight = Math.max(minHeight, availableHeight);
+      
+      container.style.height = containerHeight + 'px';
+    } else if (containerHeight > 0) {
+      // Use fixed height from config
+      container.style.height = containerHeight + 'px';
+    }
   }
   
   var rect = container.getBoundingClientRect();
@@ -2584,6 +2679,9 @@ async function loadAll() {
   $(Config.Constants.ElementId.AboutHeader).addEventListener("click", function () {
     toggleCollapse(Config.Constants.ContentSection.About);
   });
+  $(Config.Constants.ElementId.DeveloperToolsHeader).addEventListener("click", function () {
+    toggleCollapse(Config.Constants.ContentSection.DeveloperTools);
+  });
 
   // Delegates for list row actions
   bindListDelegates();
@@ -2614,14 +2712,20 @@ async function loadAll() {
     resizeObserver.observe(mapPointsContainer);
   }
   
-  // Also handle window resize for good measure
+  // Also handle window resize for viewport fitting
   window.addEventListener('resize', function() {
-    if (State.currentContentId === Constants.ContentSection.MapPoints) {
-      updateMapPointsLayout();
-      if (State.leafletMap && State.mapPointsView.showMap) {
-        setTimeout(function() {
-          State.leafletMap.invalidateSize();
-        }, 50);
+    if (State.currentContentId) {
+      // Apply viewport fitting for the current content section
+      fitContentToViewport(State.currentContentId);
+      
+      // Special handling for MapPoints
+      if (State.currentContentId === Constants.ContentSection.MapPoints) {
+        updateMapPointsLayout();
+        if (State.leafletMap && State.mapPointsView.showMap) {
+          setTimeout(function() {
+            State.leafletMap.invalidateSize();
+          }, 50);
+        }
       }
     }
   });
