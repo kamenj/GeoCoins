@@ -31,6 +31,8 @@ const Constants = {
     // Users commands
     UsersAdd: "users.add",
     UsersRefresh: "users.refresh",
+    UsersViewDetails: "users.viewDetails",
+    UsersViewCompact: "users.viewCompact",
     UsersDeleteRow: "users.deleteRow",
     UsersEditRow: "users.editRow",
     UsersCancel: "users.cancel",
@@ -151,6 +153,19 @@ const Config = {
     DefaultPassword: "1234"
   },
   AutoLoadCachedUser: false, // Set to true to auto-login with previously logged-in user
+  UsersTable: {
+    view: "details",         // Current view mode: "details" or "compact"
+    layout: "fitDataStretch", // Tabulator layout mode
+    height: "auto",          // Table height (auto fits to content)
+    maxHeight: "500px",      // Maximum table height before scrolling
+    pagination: false,       // Enable pagination
+    paginationSize: 10,      // Rows per page
+    // Column definitions will be created by getTableColumns() function
+    initialSort: [           // Default sort configuration
+      { column: "username", dir: "asc" }
+    ],
+    rowAlternating: true     // Enable alternating row colors (handled by CSS)
+  },
   MapPointsList: {
     DockLeftWidth: 400,      // Width when docked left (horizontal layout). 0 = auto-calculate
     DockTopHeight: 0,        // Height when docked top (vertical layout). 0 = auto-calculate
@@ -281,6 +296,50 @@ const Config = {
           refreshUsersTable();
         },
         visible: true,
+        enabled: true,
+      },
+      {
+        name: "users.viewDetails",
+        caption: "Details",
+        menu: { location: "menu.bottom.title" },
+        action: function () {
+          var menuBottomEl = $(Config.Constants.ElementId.MenuBottom);
+          var wasCollapsed = menuBottomEl ? menuBottomEl.classList.contains(Config.Constants.ClassName.Collapsed) : true;
+          
+          Config.UsersTable.view = "details";
+          refreshUsersTable();
+          renderMenusFor(State.currentContentId);
+          
+          // Force restore collapse state after render completes
+          setTimeout(function() {
+            setCollapsed(Config.Constants.ElementId.MenuBottom, wasCollapsed);
+          }, 0);
+        },
+        visible: function() {
+          return Config.UsersTable.view !== "details";
+        },
+        enabled: true,
+      },
+      {
+        name: "users.viewCompact",
+        caption: "Compact",
+        menu: { location: "menu.bottom.title" },
+        action: function () {
+          var menuBottomEl = $(Config.Constants.ElementId.MenuBottom);
+          var wasCollapsed = menuBottomEl ? menuBottomEl.classList.contains(Config.Constants.ClassName.Collapsed) : true;
+          
+          Config.UsersTable.view = "compact";
+          refreshUsersTable();
+          renderMenusFor(State.currentContentId);
+          
+          // Force restore collapse state after render completes
+          setTimeout(function() {
+            setCollapsed(Config.Constants.ElementId.MenuBottom, wasCollapsed);
+          }, 0);
+        },
+        visible: function() {
+          return Config.UsersTable.view !== "compact";
+        },
         enabled: true,
       },
       {
@@ -701,6 +760,8 @@ const State = {
   tempPlacemark: null, // Temporary marker for long-press default coordinates
   jsonEditor: null, // JSONEditor instance for Developer Tools
   jsonEditorFontSize: 14, // Default font size for JSON editor
+  usersTable: null, // Tabulator instance for Users table
+  usersTableFilters: null, // Store table filter state
 };
 
 
@@ -856,6 +917,11 @@ function hideAllContent() {
     setSectionVisible(Config.CONTENT_SECTIONS[i], false);
 }
 export function showContent(id) {
+  // Save filter state when leaving Users List
+  if (State.currentContentId === Constants.ContentSection.UsersList && State.usersTable) {
+    State.usersTableFilters = State.usersTable.getHeaderFilters();
+  }
+  
   State.currentContentId = id || null;
   hideAllContent();
   if (State.currentContentId) {
@@ -1050,6 +1116,62 @@ export function findUser(username) {
   return null;
 }
 
+function getTableColumns(viewMode) {
+  // Returns column definitions for Tabulator based on view mode
+  // This function is defined here so it can access getRolesDisplay and renderCommandHTML
+  
+  var columns = {
+    details: [
+      { title: "#", field: "index", width: 60, headerSort: false, formatter: function(cell) { 
+        return cell.getRow().getPosition(); 
+      }},
+      { title: "Username", field: "username", headerFilter: "input", sorter: "string" },
+      { title: "Name", field: "name", headerFilter: "input", sorter: "string" },
+      { title: "Role", field: "roles", headerFilter: "input", sorter: "string", formatter: function(cell) {
+        var user = cell.getRow().getData();
+        return getRolesDisplay(user);
+      }},
+      { title: "Actions", field: "actions", headerSort: false, width: 150, formatter: function(cell) {
+        var user = cell.getRow().getData();
+        return renderCommandHTML({ payload: user.username }, Config.Constants.CommandName.UsersDeleteRow) + " " +
+               renderCommandHTML({ payload: user.username }, Config.Constants.CommandName.UsersEditRow);
+      }}
+    ],
+    compact: [
+      { 
+        title: "User", 
+        field: "username", 
+        headerFilter: "input", 
+        sorter: "string",
+        headerFilterFunc: function(headerValue, rowValue, rowData, filterParams) {
+          // Custom filter that searches in username, name, and roles
+          var searchTerm = headerValue.toLowerCase();
+          var username = (rowData.username || '').toLowerCase();
+          var name = (rowData.name || '').toLowerCase();
+          var rolesDisplay = getRolesDisplay(rowData).toLowerCase();
+          
+          return username.indexOf(searchTerm) >= 0 || 
+                 name.indexOf(searchTerm) >= 0 || 
+                 rolesDisplay.indexOf(searchTerm) >= 0;
+        },
+        formatter: function(cell) {
+          var user = cell.getRow().getData();
+          var rolesDisplay = getRolesDisplay(user);
+          var rolesBadge = rolesDisplay ? ' <span class="role-badge">' + rolesDisplay + '</span>' : '';
+          return '<strong>' + user.username + '</strong> - ' + (user.name || '') + rolesBadge;
+        }
+      },
+      { title: "Actions", field: "actions", headerSort: false, width: 150, formatter: function(cell) {
+        var user = cell.getRow().getData();
+        return renderCommandHTML({ payload: user.username }, Config.Constants.CommandName.UsersDeleteRow) + " " +
+               renderCommandHTML({ payload: user.username }, Config.Constants.CommandName.UsersEditRow);
+      }}
+    ]
+  };
+  
+  return columns[viewMode] || columns.details;
+}
+
 function renderUsersRow(u, i) {
   var actionsHTML = [
     renderCommandHTML({ payload: u.username }, Config.Constants.CommandName.UsersDeleteRow),
@@ -1070,22 +1192,80 @@ function renderUsersRow(u, i) {
   return html;
 }
 export function refreshUsersTable() {
-  var tbody = $(Config.Constants.ElementId.UsersTbody),
-    table = $(Config.Constants.ElementId.UsersTable),
-    empty = $(Config.Constants.ElementId.UsersEmpty);
-  tbody.innerHTML = "";
+  var tableDiv = $(Config.Constants.ElementId.UsersTable);
+  var empty = $(Config.Constants.ElementId.UsersEmpty);
+  
   if (State.users.length === 0) {
-    table.style.display = "none";
+    tableDiv.style.display = "none";
     empty.style.display = "block";
+    if (State.usersTable) {
+      State.usersTable.destroy();
+      State.usersTable = null;
+    }
     return;
   }
-  table.style.display = "table";
+  
+  tableDiv.style.display = "block";
   empty.style.display = "none";
-  var rows = [];
-  for (var i = 0; i < State.users.length; i++) {
-    rows.push(renderUsersRow(State.users[i], i));
+  
+  // Save current filter state before updating
+  if (State.usersTable) {
+    State.usersTableFilters = State.usersTable.getHeaderFilters();
   }
-  tbody.innerHTML = rows.join(""); // delegate events below
+  
+  // Get current view mode from config
+  var viewMode = Config.UsersTable.view || "details";
+  var columns = getTableColumns(viewMode);
+  
+  // Initialize or update the Tabulator table
+  if (!State.usersTable) {
+    // Create new Tabulator instance
+    State.usersTable = new Tabulator("#" + Config.Constants.ElementId.UsersTable, {
+      data: State.users,
+      layout: Config.UsersTable.layout,
+      height: Config.UsersTable.height,
+      maxHeight: Config.UsersTable.maxHeight,
+      columns: columns,
+      initialSort: Config.UsersTable.initialSort,
+      pagination: Config.UsersTable.pagination,
+      paginationSize: Config.UsersTable.paginationSize,
+      rowFormatter: function(row) {
+        // Add alternating row colors
+        if (Config.UsersTable.rowAlternating) {
+          var rowIndex = row.getPosition();
+          if (rowIndex % 2 === 0) {
+            row.getElement().classList.add("tabulator-row-even");
+          } else {
+            row.getElement().classList.add("tabulator-row-odd");
+          }
+        }
+      }
+    });
+    
+    // Restore filter state after table is initialized
+    if (State.usersTableFilters && State.usersTableFilters.length > 0) {
+      setTimeout(function() {
+        for (var i = 0; i < State.usersTableFilters.length; i++) {
+          var filter = State.usersTableFilters[i];
+          State.usersTable.setHeaderFilterValue(filter.field, filter.value);
+        }
+      }, 100);
+    }
+  } else {
+    // Update existing table with new data and columns
+    State.usersTable.setColumns(columns);
+    State.usersTable.setData(State.users);
+    
+    // Restore filter state after update
+    if (State.usersTableFilters && State.usersTableFilters.length > 0) {
+      setTimeout(function() {
+        for (var i = 0; i < State.usersTableFilters.length; i++) {
+          var filter = State.usersTableFilters[i];
+          State.usersTable.setHeaderFilterValue(filter.field, filter.value);
+        }
+      }, 100);
+    }
+  }
 }
 
 function fillUserDetails(u, mode) {
@@ -2291,6 +2471,7 @@ function setMenusVisibility() {
     !hasAnyChild(Config.Constants.ElementId.MenuBottomBottomCommands);
   setCollapsed(Config.Constants.ElementId.MenuBottom, bottomHasOnlyTitle);
 }
+
 function renderMenusFor(contentId) {
   clearMenuBars();
   
@@ -2419,9 +2600,9 @@ function executeCommandByName(name, payload) {
 
 /* ===== Delegates, headers ===== */
 function bindListDelegates() {
-  var uBody = $(Config.Constants.ElementId.UsersTbody);
-  if (uBody) {
-    uBody.addEventListener("click", function (e) {
+  var uTable = $(Config.Constants.ElementId.UsersTable);
+  if (uTable) {
+    uTable.addEventListener("click", function (e) {
       var t = e.target;
       if (t && t.classList && t.classList.contains(Config.Constants.ClassName.LinkBtn)) {
         var username = t.getAttribute(Config.Constants.Attribute.DataOpenUser);
