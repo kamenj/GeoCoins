@@ -1,6 +1,7 @@
 // Sample starter data (used when localStorage is empty)
 export var SAMPLE_USERS = [
   {
+    id: 1,
     username: "alice",
     password: "1234",
     name: "Alice",
@@ -11,6 +12,7 @@ export var SAMPLE_USERS = [
     roles: ["admin", "seeker"]
   },
   {
+    id: 2,
     username: "bob",
     password: "1234",
     name: "Bob",
@@ -20,6 +22,7 @@ export var SAMPLE_USERS = [
     roles: ["hider"]
   },
   {
+    id: 3,
     username: "charlie",
     password: "1234",
     name: "Charlie",
@@ -30,7 +33,7 @@ export var SAMPLE_USERS = [
 
 export var SAMPLE_POINTS = [
   {
-    id: 0,
+    id: 1,
     username: "alice",
     title: "Home",
     lat: 42.6977,
@@ -38,7 +41,7 @@ export var SAMPLE_POINTS = [
     desc: "Alice's home in Sofia",
   },
   {
-    id: 1,
+    id: 2,
     username: "bob",
     title: "Work",
     lat: 42.1354,

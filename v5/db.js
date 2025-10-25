@@ -166,6 +166,12 @@ export async function addUser(user) {
       return { success: false, error: "User already exists" };
     }
     
+    // Auto-assign unique ID if not provided
+    if (user.id === undefined || user.id === null) {
+      const maxId = users.reduce((max, u) => Math.max(max, u.id || 0), 0);
+      user.id = maxId + 1;
+    }
+    
     users.push(user);
     const result = saveToLocalStorage(dbConfig.local.storageKeys.users, users);
     return result.success ? { success: true, data: user } : result;
