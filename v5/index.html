@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Users & Map Points — v3 (Modules + Commands + Docked Menus)</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.3.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.3.4/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jsoneditor@9.10.4/dist/jsoneditor.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/jsoneditor@9.10.4/dist/jsoneditor.min.js"></script>
+    <link rel="stylesheet" href="index.css" />
+  </head>
+  <body data-theme="light" data-font="medium">
+    <!-- 0.0) STATUS BAR (no longer docked) -->
+    <div id="statusBar" class="status-bar">
+      <div id="statusBar-title" class="status-bar-title">Dani-Geo-Coins</div>
+      <div id="statusBar-user" class="status-bar-user">Not logged in</div>
+    </div>
+
+    <!-- 0.1) MENU TOP (no longer docked) -->
+    <div id="menuTop" class="section">
+      <div id="menuTop-header" class="section-header">
+        <div class="title-left">
+          <span class="chev" id="chev-menuTop">▼</span>
+          <span class="title-text">Menu (Top)</span>
+        </div>
+        <div id="menuTop-title-commands" class="cmd-bar title-cmds"></div>
+      </div>
+      <div class="section-content">
+        <div id="menuTop-top-commands" class="cmd-bar"></div>
+        <div id="menuTop-bottom-commands" class="cmd-bar"></div>
+      </div>
+    </div>
+
+    <!-- 1.1) LOGIN -->
+    <div id="login" class="section">
+      <div id="login-header" class="section-header">
+        <div class="title-left">
+          <span class="chev" id="chev-login">▼</span>
+          <span class="title-text">Login</span>
+        </div>
+      </div>
+      <div class="section-content">
+        <label>Username <input id="login-username" /></label>
+        <label>Password <input id="login-password" type="password" /></label>
+      </div>
+    </div>
+
+    <!-- 1.2) USERS LIST -->
+    <div id="usersList" class="section">
+      <div id="usersList-header" class="section-header">
+        <div class="title-left">
+          <span class="chev" id="chev-usersList">▼</span>
+          <span class="title-text">Users</span>
+        </div>
+      </div>
+      <div class="section-content">
+        <div id="users-empty" style="display: none">No registered users.</div>
+        <table id="users-table" style="display: none">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Username</th>
+              <th>Name</th>
+              <!-- <th>Surname</th> -->
+               <th>Role</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="users-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 1.3) USER DETAILS -->
+    <div id="userDetails" class="section">
+      <div id="userDetails-header" class="section-header">
+        <div class="title-left">
+          <span class="chev" id="chev-userDetails">▼</span>
+          <span class="title-text">User Details <span id="ud-mode-indicator"></span></span>
+        </div>
+      </div>
+      <div class="section-content">
+        <input type="hidden" id="ud-username-old" />
+        <label>Username <input id="ud-username" /></label>
+        <label>Name <input id="ud-name" /></label>
+        <!-- <label>Surname <input id="ud-surname" /></label> -->
+        <label>Password <input id="ud-password" /></label>
+        <!-- §kamen_20251010_175213-->
+
+        <!-- §kamen_20251010_180320  -->
+        <fieldset>
+          <legend>Roles</legend>
+          <label><input type="checkbox" id="ud-role-admin" value="admin" />Admin</label>
+          <label><input type="checkbox" id="ud-role-seeker" value="seeker" />Seeker</label>
+          <label><input type="checkbox" id="ud-role-hider" value="hider" />Hider</label>
+        </fieldset>
+      </div>
+    </div>
+
+    <!-- 1.4) MESSAGE -->
+    <div id="message" class="section">
+      <div id="message-header" class="section-header">
+        <div class="title-left">
+          <span class="chev" id="chev-message">▼</span>
+          <span class="title-text">Message</span>
+        </div>
+      </div>
+      <div class="section-content">
+        <div id="message-text"></div>
+      </div>
+    </div>
+
+    <!-- 1.5) MAP POINTS -->
+    <div id="mapPoints" class="section">
+      <div id="mapPoints-header" class="section-header">
+        <div class="title-left">
+          <span class="chev" id="chev-mapPoints">▼</span>
+          <span class="title-text">Map Points</span>
+        </div>
+      </div>
+      <div class="section-content">
+        <div id="mapPoints-container" class="mappoints-container">
+          <!-- Left/Top: Map Points List -->
+          <div id="mapPointsList" class="mappoints-list">
+            <input type="hidden" id="mp-id" />
+            <label>Owner Username <input id="mp-username" /></label>
+            <label>Title <input id="mp-title" /></label>
+            <label>Latitude <input id="mp-lat" /></label>
+            <label>Longitude <input id="mp-lng" /></label>
+            <label>Description <textarea id="mp-desc"></textarea></label>
+
+            <div id="mps-empty" style="display: none">No map points.</div>
+            <table id="mps-table" style="display: none">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Title</th>
+                  <th>User</th>
+                  <th>Lat</th>
+                  <th>Lng</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="mps-tbody"></tbody>
+            </table>
+          </div>
+          
+          <!-- Resizable Divider -->
+          <div id="mapPointsDivider" class="mappoints-divider"></div>
+          
+          <!-- Right/Bottom: Map View -->
+          <div id="mapPointsGeoView" class="mappoints-geoview">
+            <div id="mapPointsMap" class="mappoints-map"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 1.6) MAP POINT DETAILS -->
+    <div id="mapPointDetails" class="section">
+      <div id="mapPointDetails-header" class="section-header">
+        <div class="title-left">
+          <span class="chev" id="chev-mapPointDetails">▼</span>
+          <span class="title-text">Map Point Details <span id="mpd-mode-indicator"></span></span>
+        </div>
+      </div>
+      <div class="section-content">
+        <input type="hidden" id="mpd-id" />
+        <input type="hidden" id="mpd-username" />
+        <label>Title <input id="mpd-title" /></label>
+        <label>Lat <input id="mpd-lat" /></label>
+        <label>Lng <input id="mpd-lng" /></label>
+        <label>Description <textarea id="mpd-desc"></textarea></label>
+      </div>
+    </div>
+
+    <!-- 1.7) SETTINGS -->
+    <div id="settings" class="section">
+      <div id="settings-header" class="section-header">
+        <div class="title-left">
+          <span class="chev" id="chev-settings">▼</span>
+          <span class="title-text">Settings</span>
+        </div>
+      </div>
+      <div class="section-content">
+        <label
+          >Theme
+          <select id="set-theme">
+            <option value="light">light</option>
+            <option value="dark">dark</option>
+          </select>
+        </label>
+        <label
+          >Font Size
+          <select id="set-font">
+            <option value="small">small</option>
+            <option value="medium" selected>medium</option>
+            <option value="large">large</option>
+          </select>
+        </label>
+        <label style="display: flex; align-items: center; gap: 8px;">
+          <input type="checkbox" id="set-autoHideTopMenu" style="width: auto; margin: 0;" />
+          Auto-hide top menu when viewing content
+        </label>
+      </div>
+    </div>
+
+    <!-- 1.8) ABOUT -->
+    <div id="about" class="section">
+      <div id="about-header" class="section-header">
+        <div class="title-left">
+          <span class="chev" id="chev-about">▼</span>
+          <span class="title-text">About</span>
+        </div>
+      </div>
+      <div class="section-content">
+        <p>Simple demo app for users and map points.</p>
+        <p>Author: You 🙂</p>
+      </div>
+    </div>
+
+    <!-- 1.9) DEVELOPER TOOLS -->
+    <div id="developerTools" class="section">
+      <div id="developerTools-header" class="section-header">
+        <div class="title-left">
+          <span class="chev" id="chev-developerTools">▼</span>
+          <span class="title-text">Developer Tools</span>
+        </div>
+      </div>
+      <div class="section-content">
+        <div id="jsoneditor" style="width: 100%; height: 400px; max-height: 60vh;"></div>
+      </div>
+    </div>
+
+    <!-- 0.2) MENU BOTTOM (no longer docked) -->
+    <div id="menuBottom" class="section">
+      <div id="menuBottom-header" class="section-header">
+        <div class="title-left">
+          <span class="chev" id="chev-menuBottom">▼</span>
+          <span class="title-text">Menu (Bottom)</span>
+        </div>
+        <div id="menuBottom-title-commands" class="cmd-bar title-cmds"></div>
+      </div>
+      <div class="section-content">
+        <div id="menuBottom-top-commands" class="cmd-bar"></div>
+        <div id="menuBottom-bottom-commands" class="cmd-bar"></div>
+      </div>
+    </div>
+
+    <script type="module" src="app.js"></script>
+  </body>
+</html>
