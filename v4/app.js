@@ -781,11 +781,6 @@ export function showContent(id) {
     setSectionVisible(State.currentContentId, true);
     setCollapsed(State.currentContentId, false);
     
-    // Auto-hide top menu if enabled and showing content
-    if (State.settings.autoHideTopMenu) {
-      setSectionVisible(Config.Constants.ElementId.MenuTop, false);
-    }
-    
     // Auto-fill login credentials for debugging
     if (State.currentContentId === Constants.ContentSection.Login && 
         Config.Debug.UseDefaultCredentials) {
@@ -1020,6 +1015,12 @@ function fillUserDetails(u, mode) {
   
   // Set role checkboxes
   var roles = getRolesArray(u);
+  
+  // For register or add mode, default to seeker if no roles are set
+  if ((mode === "register" || mode === "add") && roles.length === 0) {
+    roles = ["seeker"];
+  }
+  
   $("ud-role-admin").checked = roles.indexOf("admin") !== -1;
   $("ud-role-seeker").checked = roles.indexOf("seeker") !== -1;
   $("ud-role-hider").checked = roles.indexOf("hider") !== -1;
@@ -1068,17 +1069,29 @@ export async function saveUserDetails() {
   var newName = getVal("ud-name");
   var newPassword = getVal("ud-password");
   
+  // Validate username is not empty
   if (!newU) return showMessage("Username cannot be empty.", "userDetails");
 
+  // Validate username length
   if (newU.length > 20) {
     showMessage("Username must be maximum 20 characters.", "userDetails");
     return;
   }
   
+  // Validate name is not empty (for register and add modes)
+  if ((mode === "register" || mode === "add") && !newName) {
+    return showMessage("Name cannot be empty.", "userDetails");
+  }
+  
+  // Validate password is not empty (for register and add modes)
+  if ((mode === "register" || mode === "add") && !newPassword) {
+    return showMessage("Password cannot be empty.", "userDetails");
+  }
+  
   // Check if username already exists (skip check if editing the same user)
   if (mode !== "edit" || oldU !== newU) {
     if (findUser(newU)) {
-      return showMessage("Username already exists.", "userDetails");
+      return showMessage("Username already exists. Please choose a different username.", "userDetails");
     }
   }
   
@@ -1090,6 +1103,11 @@ export async function saveUserDetails() {
   }
   if ($("ud-role-seeker").checked) newRoles.push("seeker");
   if ($("ud-role-hider").checked) newRoles.push("hider");
+  
+  // Validate at least one role is selected
+  if (newRoles.length === 0) {
+    return showMessage("Please select at least one role.", "userDetails");
+  }
   
   // Update user via DB
   var userData = {
@@ -1123,10 +1141,6 @@ export async function saveUserDetails() {
     }
   } else if (mode === "add" || mode === "register") {
     // Add new user
-    if (!newPassword) {
-      return showMessage("Please enter a password.", "userDetails");
-    }
-    
     var newUser = {
       username: newU,
       password: newPassword,
@@ -1143,7 +1157,7 @@ export async function saveUserDetails() {
         State.currentUser = newU;
         await DB.setCurrentUser(State.currentUser);
         updateStatusBar();
-        showMessage("Registration successful. Welcome, " + State.currentUser + "!", null);
+        showMessage("Registration successful. Welcome, " + State.currentUser + "!", "login");
       } else {
         // mode === "add" - admin adding a user
         showMessage("User added successfully.", "usersList");
@@ -1991,30 +2005,19 @@ export async function saveDbFromEditor() {
       return;
     }
     
-    // Clear existing data
-    await DB.resetAllData();
+    // Clear existing data in State first
+    State.users = [];
+    State.mapPoints = [];
     
-    // Save users
-    var userErrors = [];
-    for (var i = 0; i < dbData.users.length; i++) {
-      var user = dbData.users[i];
-      var result = await DB.addUser(user);
-      if (!result.success) {
-        userErrors.push("User '" + (user.username || 'unknown') + "': " + result.error);
-      }
-    }
+    // Clear localStorage directly to avoid default SAMPLE data being loaded
+    localStorage.removeItem(Config.LS.users);
+    localStorage.removeItem(Config.LS.points);
     
-    // Save points
-    var pointErrors = [];
-    for (var j = 0; j < dbData.points.length; j++) {
-      var point = dbData.points[j];
-      var result = await DB.addPoint(point);
-      if (!result.success) {
-        pointErrors.push("Point ID " + (point.id || 'unknown') + ": " + result.error);
-      }
-    }
+    // Now save the new data directly to localStorage
+    localStorage.setItem(Config.LS.users, JSON.stringify(dbData.users));
+    localStorage.setItem(Config.LS.points, JSON.stringify(dbData.points));
     
-    // Reload data from DB
+    // Reload data from DB to update State
     var usersResult = await DB.getAllUsers();
     var pointsResult = await DB.getAllPoints();
     
@@ -2029,20 +2032,8 @@ export async function saveDbFromEditor() {
     refreshUsersTable();
     refreshMapPointsTable();
     
-    // Show result message
-    var errorMsg = "";
-    if (userErrors.length > 0) {
-      errorMsg += "User errors:\n" + userErrors.join("\n") + "\n\n";
-    }
-    if (pointErrors.length > 0) {
-      errorMsg += "Point errors:\n" + pointErrors.join("\n");
-    }
-    
-    if (errorMsg) {
-      showMessage("Database partially saved with errors:\n\n" + errorMsg, "developerTools");
-    } else {
-      showMessage("Database saved successfully!", "developerTools");
-    }
+    // Show success message
+    showMessage("Database saved successfully! (" + dbData.users.length + " users, " + dbData.points.length + " points)", "developerTools");
     
   } catch (error) {
     showMessage("Error parsing JSON: " + error.toString(), "developerTools");
@@ -2518,6 +2509,10 @@ async function loadAll() {
       font: Config.Constants.FontSize.Medium,
       autoHideTopMenu: true 
     };
+    // Ensure autoHideTopMenu has a default value if undefined
+    if (State.settings.autoHideTopMenu === undefined) {
+      State.settings.autoHideTopMenu = true;
+    }
   } else {
     State.settings = { 
       theme: Config.Constants.Theme.Light, 

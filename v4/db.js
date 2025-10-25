@@ -420,7 +420,7 @@ export async function getSettings() {
   if (dbConfig.mode === DB_MODE.LOCAL) {
     const settings = loadFromLocalStorage(
       dbConfig.local.storageKeys.settings,
-      { theme: "light", font: "medium" }
+      { theme: "light", font: "medium", autoHideTopMenu: true }
     );
     return { success: true, data: settings };
   } else {
