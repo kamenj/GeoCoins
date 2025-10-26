@@ -1,12 +1,12 @@
 {
 	"files": [
 		{
-			"path": "tests/table.html",
+			"path": "v5/app.js",
 			"bookmarks": [
 				{
-					"line": 4,
+					"line": 154,
 					"column": 0,
-					"label": "TODO:1"
+					"label": "Default user name"
 				}
 			]
 		}

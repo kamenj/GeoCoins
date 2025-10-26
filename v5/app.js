@@ -148,10 +148,12 @@ const Config = {
     settings: "app.settings",
   },
   Constants: Constants,
-  AppTitle: "Dani-Geo-Coins v4",
+  AppTitle: "Dani-Geo-Coins v5",
   Debug: {
     UseDefaultCredentials: true,
-    DefaultUser: "alice",
+    //  DefaultUser: "bob", //hider
+    DefaultUser: "diana", //seeker
+    
     DefaultPassword: "1234"
   },
   AutoLoadCachedUser: false, // Set to true to auto-login with previously logged-in user
@@ -481,7 +483,10 @@ const Config = {
         action: function () {
           openMapPointDetailsForAdd();
         },
-        visible: true,
+        visible: function() {
+          // Only show if user can add points (not hider-only)
+          return canCurrentUserAddPoints();
+        },
         enabled: true,
       },
       {
@@ -586,6 +591,26 @@ const Config = {
         caption: "Delete",
         menu: { location: "list.row" },
         action: async function (id) {
+          // Find the point to check permissions
+          var point = null;
+          for (var i = 0; i < State.mapPoints.length; i++) {
+            if (Number(State.mapPoints[i].id) === Number(id)) {
+              point = State.mapPoints[i];
+              break;
+            }
+          }
+          
+          if (!point) {
+            showMessage('Point not found', 'mapPoints');
+            return;
+          }
+          
+          // Check permission
+          if (!canCurrentUserEditPoint(point)) {
+            showMessage('You do not have permission to delete this point', 'mapPoints');
+            return;
+          }
+          
           var result = await DB.deletePoint(Number(id));
           if (result.success) {
             State.mapPoints = State.mapPoints.filter(function (p) {
@@ -1195,6 +1220,45 @@ export function removeRole(user, roleName) {
   });
   setRolesArray(user, newRoles);
 }
+export function canCurrentUserSeekPoints() {
+  // Check if current user has seeker or admin role
+  if (!State.currentUser) return false;
+  var user = findUser(State.currentUser);
+  if (!user) return false;
+  return hasRole(user, 'seeker') || hasRole(user, 'admin');
+}
+export function canCurrentUserAddPoints() {
+  // Check if current user can add points (not seeker-only)
+  // Users who are ONLY seekers cannot add points
+  if (!State.currentUser) return false;
+  var user = findUser(State.currentUser);
+  if (!user) return false;
+  var roles = getRolesArray(user);
+  
+  // If user has no roles, they can't add points
+  if (roles.length === 0) return false;
+  
+  // If user only has 'seeker' role, they can't add points
+  if (roles.length === 1 && roles[0] === 'seeker') return false;
+  
+  // Otherwise they can add points
+  return true;
+}
+export function canCurrentUserEditPoint(point) {
+  // Check if current user can edit/delete a point
+  // Only the owner or an admin can edit/delete a point
+  if (!State.currentUser || !point) return false;
+  var user = findUser(State.currentUser);
+  if (!user) return false;
+  
+  // Admins can edit any point
+  if (hasRole(user, 'admin')) return true;
+  
+  // Owners can edit their own points
+  if (point.username === State.currentUser) return true;
+  
+  return false;
+}
 
 /* ===== Users ===== */
 export async function addUser(u) {
@@ -1302,16 +1366,35 @@ function getPointsTableColumns(viewMode) {
         var isOwner = State.currentUser && point.username === State.currentUser;
         return isOwner ? (point.code || "") : "•••••";
       }},
+      { title: "Found By", field: "foundBy", headerFilter: "input", sorter: "string", formatter: function(cell) {
+        return cell.getValue() || "";
+      }},
       { title: "Latitude", field: "lat", headerFilter: "input", sorter: "number", formatter: function(cell) {
         return Number(cell.getValue()).toFixed(6);
       }},
       { title: "Longitude", field: "lng", headerFilter: "input", sorter: "number", formatter: function(cell) {
         return Number(cell.getValue()).toFixed(6);
       }},
-      { title: "Actions", field: "actions", headerSort: false, width: 150, formatter: function(cell) {
+      { title: "Actions", field: "actions", headerSort: false, width: 200, formatter: function(cell) {
         var point = cell.getRow().getData();
-        return renderCommandHTML({ payload: point.id }, Config.Constants.CommandName.PointsDeleteRow) + " " +
-               renderCommandHTML({ payload: point.id }, Config.Constants.CommandName.PointsEditRow);
+        var isOwner = State.currentUser && point.username === State.currentUser;
+        var canEnterCode = canCurrentUserSeekPoints() && !isOwner && point.status !== 'found' && point.status !== 'pending';
+        var canEdit = canCurrentUserEditPoint(point);
+        
+        var buttons = '';
+        
+        // Add Enter Code button for seekers/admins on unfound, non-pending points they don't own
+        if (canEnterCode) {
+          buttons += '<button class="' + Config.Constants.ClassName.CmdBtn + '" onclick="window.appEnterPointCode(' + point.id + ')">Enter Code</button> ';
+        }
+        
+        // Only show Edit/Delete buttons if user has permission
+        if (canEdit) {
+          buttons += renderCommandHTML({ payload: point.id }, Config.Constants.CommandName.PointsDeleteRow) + " " +
+                     renderCommandHTML({ payload: point.id }, Config.Constants.CommandName.PointsEditRow);
+        }
+        
+        return buttons;
       }}
     ],
     compact: [
@@ -1343,13 +1426,32 @@ function getPointsTableColumns(viewMode) {
           var isOwner = State.currentUser && point.username === State.currentUser;
           var codeBadge = isOwner && point.code ? ' <span class="role-badge">Code: ' + point.code + '</span>' : '';
           
-          return '<strong>' + (point.title || '(no title)') + '</strong> - ' + coords + userBadge + statusBadge + codeBadge;
+          // Show foundBy if available
+          var foundByBadge = point.foundBy ? ' <span class="role-badge">Found by: ' + point.foundBy + '</span>' : '';
+          
+          return '<strong>' + (point.title || '(no title)') + '</strong> - ' + coords + userBadge + statusBadge + codeBadge + foundByBadge;
         }
       },
-      { title: "Actions", field: "actions", headerSort: false, width: 150, formatter: function(cell) {
+      { title: "Actions", field: "actions", headerSort: false, width: 200, formatter: function(cell) {
         var point = cell.getRow().getData();
-        return renderCommandHTML({ payload: point.id }, Config.Constants.CommandName.PointsDeleteRow) + " " +
-               renderCommandHTML({ payload: point.id }, Config.Constants.CommandName.PointsEditRow);
+        var isOwner = State.currentUser && point.username === State.currentUser;
+        var canEnterCode = canCurrentUserSeekPoints() && !isOwner && point.status !== 'found' && point.status !== 'pending';
+        var canEdit = canCurrentUserEditPoint(point);
+        
+        var buttons = '';
+        
+        // Add Enter Code button for seekers/admins on unfound, non-pending points they don't own
+        if (canEnterCode) {
+          buttons += '<button class="' + Config.Constants.ClassName.CmdBtn + '" onclick="window.appEnterPointCode(' + point.id + ')">Enter Code</button> ';
+        }
+        
+        // Only show Edit/Delete buttons if user has permission
+        if (canEdit) {
+          buttons += renderCommandHTML({ payload: point.id }, Config.Constants.CommandName.PointsDeleteRow) + " " +
+                     renderCommandHTML({ payload: point.id }, Config.Constants.CommandName.PointsEditRow);
+        }
+        
+        return buttons;
       }}
     ]
   };
@@ -1929,6 +2031,12 @@ export function openMapPointDetailsForEdit(id) {
   }
   if (!p) return;
   
+  // Check if user has permission to edit
+  if (!canCurrentUserEditPoint(p)) {
+    showMessage('You do not have permission to edit this point', 'mapPoints');
+    return;
+  }
+  
   Config.MapPointDetails.mode = "edit";
   setText("mpd-mode-indicator", "(Edit)");
   setVal("mpd-id", p.id);
@@ -2006,7 +2114,11 @@ export async function saveMapPointFromDetails() {
     
     var result = await DB.addPoint(newPointData);
     if (result.success) {
-      State.mapPoints.push(result.data);
+      // Reload points from DB to get the updated list
+      var pointsResult = await DB.getAllPoints();
+      if (pointsResult.success) {
+        State.mapPoints = pointsResult.data || [];
+      }
       refreshMapPointsTable();
       showContent("mapPoints");
     } else {
@@ -2435,10 +2547,26 @@ export function refreshMapMarkers() {
       // Build popup content with status badge
       var statusBadge = getStatusBadgeHTML(status);
       
+      // Check if current user can enter code (seeker/admin, not owner, not found yet, not pending)
+      var isOwner = State.currentUser && point.username === State.currentUser;
+      var canEnterCode = canCurrentUserSeekPoints() && !isOwner && point.status !== 'found' && point.status !== 'pending';
+      var canEdit = canCurrentUserEditPoint(point);
+      
       var popupContent = '<b>' + (point.title || 'Untitled') + '</b>' + statusBadge + '<br>' +
                         'User: ' + (point.username || 'Unknown') + '<br>' +
-                        (point.desc || '') + '<br>' +
-                        '<button onclick="window.appDeleteMapPoint(' + point.id + ')" style="margin-top:5px;">Delete</button>';
+                        (point.foundBy ? 'Found by: ' + point.foundBy + '<br>' : '') +
+                        (point.desc || '') + '<br>';
+      
+      // Add Enter Code button for seekers/admins on unfound, non-pending points they don't own
+      if (canEnterCode) {
+        popupContent += '<button onclick="window.appEnterPointCode(' + point.id + ')" style="margin-top:5px;">Enter Code</button> ';
+      }
+      
+      // Only show Delete button if user has permission
+      if (canEdit) {
+        popupContent += '<button onclick="window.appDeleteMapPoint(' + point.id + ')" style="margin-top:5px;">Delete</button>';
+      }
+      
       marker.bindPopup(popupContent);
       bounds.push([point.lat, point.lng]);
     }
@@ -3115,6 +3243,9 @@ async function loadAll() {
   }
   applyThemeFont();
 
+  // Set document title
+  document.title = Config.AppTitle;
+
   // Initialize status bar
   updateStatusBar();
 
@@ -3233,6 +3364,26 @@ window.appDeleteTempMarker = function() {
 
 // Delete existing map point from popup
 window.appDeleteMapPoint = async function(pointId) {
+  // Find the point first to check permissions
+  var point = null;
+  for (var i = 0; i < State.mapPoints.length; i++) {
+    if (Number(State.mapPoints[i].id) === Number(pointId)) {
+      point = State.mapPoints[i];
+      break;
+    }
+  }
+  
+  if (!point) {
+    alert('Point not found');
+    return;
+  }
+  
+  // Check if user has permission to delete
+  if (!canCurrentUserEditPoint(point)) {
+    alert('You do not have permission to delete this point');
+    return;
+  }
+  
   if (!confirm('Delete this map point?')) {
     return;
   }
@@ -3246,6 +3397,67 @@ window.appDeleteMapPoint = async function(pointId) {
     refreshMapMarkers();
   } else {
     alert('Failed to delete point: ' + result.error);
+  }
+};
+
+// Enter code to find a point
+window.appEnterPointCode = async function(pointId) {
+  // Find the point
+  var point = null;
+  for (var i = 0; i < State.mapPoints.length; i++) {
+    if (Number(State.mapPoints[i].id) === Number(pointId)) {
+      point = State.mapPoints[i];
+      break;
+    }
+  }
+  
+  if (!point) {
+    alert('Point not found');
+    return;
+  }
+  
+  // Check if point is already found
+  if (point.status === 'found') {
+    alert('This point has already been found by ' + (point.foundBy || 'someone'));
+    return;
+  }
+  
+  // Prompt for code
+  var enteredCode = prompt(Config.AppTitle + ' - Enter the code for this point:');
+  
+  if (!enteredCode) {
+    return; // User cancelled
+  }
+  
+  // Trim the entered code
+  enteredCode = enteredCode.trim();
+  
+  // Check if code matches
+  if (enteredCode === point.code) {
+    // Code is correct - mark as found
+    point.status = 'found';
+    point.foundBy = State.currentUser;
+    
+    // Update in database
+    var result = await DB.updatePoint(point.id, point);
+    if (result.success) {
+      // Update local state
+      for (var i = 0; i < State.mapPoints.length; i++) {
+        if (Number(State.mapPoints[i].id) === Number(pointId)) {
+          State.mapPoints[i] = point;
+          break;
+        }
+      }
+      
+      // Refresh UI
+      refreshMapPointsTable();
+      refreshMapMarkers();
+      alert('Congratulations! You found the point!');
+    } else {
+      alert('Failed to update point: ' + result.error);
+    }
+  } else {
+    alert('Incorrect code. Try again!');
   }
 };
 

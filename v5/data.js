@@ -29,6 +29,22 @@ export var SAMPLE_USERS = [
     gender: "male",
     roles: ["admin", "seeker", "hider"]
   },
+  {
+    id: 4,
+    username: "diana",
+    password: "1234",
+    name: "Diana",
+    gender: "female",
+    roles: ["seeker"]
+  },
+  {
+    id: 5,
+    username: "evan",
+    password: "1234",
+    name: "Evan",
+    gender: "male",
+    roles: ["seeker", "hider"]
+  },
 ];
 
 export var SAMPLE_POINTS = [
@@ -41,6 +57,7 @@ export var SAMPLE_POINTS = [
     desc: "Alice's home in Sofia",
     status: "pending",
     code: "ALICE123",
+    foundBy: null,
   },
   {
     id: 2,
@@ -51,5 +68,39 @@ export var SAMPLE_POINTS = [
     desc: "Bob's office in Plovdiv",
     status: "found",
     code: "BOB456",
+    foundBy: "charlie",
+  },
+  {
+    id: 3,
+    username: "bob",
+    title: "Park Treasure",
+    lat: 42.6950,
+    lng: 23.3350,
+    desc: "Hidden treasure in the park",
+    status: "hidden",
+    code: "PARK777",
+    foundBy: null,
+  },
+  {
+    id: 4,
+    username: "evan",
+    title: "Mountain Cache",
+    lat: 42.7100,
+    lng: 23.3500,
+    desc: "Cache hidden in the mountains",
+    status: "hidden",
+    code: "MOUNT999",
+    foundBy: null,
+  },
+  {
+    id: 5,
+    username: "evan",
+    title: "River Spot",
+    lat: 42.6850,
+    lng: 23.3100,
+    desc: "Hidden spot by the river",
+    status: "hidden",
+    code: "RIVER555",
+    foundBy: null,
   },
 ];
