@@ -1176,6 +1176,72 @@ function closeMessage() {
   State.message_BefireDisplayContentID = null;
 }
 
+/* ===== Custom Prompt Modal ===== */
+/**
+ * Custom prompt dialog that returns a promise
+ * @param {string} title - The title of the modal
+ * @param {string} message - The message/label for the input
+ * @param {string} defaultValue - Default value for the input (optional)
+ * @returns {Promise<string|null>} - Returns the entered value or null if cancelled
+ */
+function customPrompt(title, message, defaultValue = '') {
+  return new Promise((resolve) => {
+    const modal = document.getElementById('customPromptModal');
+    const titleEl = document.getElementById('customPromptTitle');
+    const labelEl = document.getElementById('customPromptLabel');
+    const inputEl = document.getElementById('customPromptInput');
+    const okBtn = document.getElementById('customPromptOk');
+    const cancelBtn = document.getElementById('customPromptCancel');
+    
+    // Set content
+    titleEl.textContent = title;
+    labelEl.textContent = message;
+    inputEl.value = defaultValue;
+    
+    // Show modal
+    modal.classList.remove('hidden');
+    inputEl.focus();
+    inputEl.select();
+    
+    // Handle OK
+    const handleOk = () => {
+      const value = inputEl.value.trim();
+      cleanup();
+      resolve(value || null);
+    };
+    
+    // Handle Cancel
+    const handleCancel = () => {
+      cleanup();
+      resolve(null);
+    };
+    
+    // Handle Enter key
+    const handleKeyDown = (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        handleOk();
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        handleCancel();
+      }
+    };
+    
+    // Cleanup function
+    const cleanup = () => {
+      modal.classList.add('hidden');
+      okBtn.removeEventListener('click', handleOk);
+      cancelBtn.removeEventListener('click', handleCancel);
+      inputEl.removeEventListener('keydown', handleKeyDown);
+    };
+    
+    // Attach event listeners
+    okBtn.addEventListener('click', handleOk);
+    cancelBtn.addEventListener('click', handleCancel);
+    inputEl.addEventListener('keydown', handleKeyDown);
+  });
+}
+
 /* ===== Role Management API ===== */
 export function getRolesArray(user) {
   // Ensure roles is always an array
@@ -1360,12 +1426,13 @@ function getPointsTableColumns(viewMode) {
         var badge = '<span class="role-badge">' + status + '</span>';
         return badge;
       }},
-      { title: "Code", field: "code", headerFilter: "input", sorter: "string", formatter: function(cell) {
-        var point = cell.getRow().getData();
-        // Only show code if current user is the point owner
-        var isOwner = State.currentUser && point.username === State.currentUser;
-        return isOwner ? (point.code || "") : "•••••";
-      }},
+      // Code column hidden - users can enter code via "Enter Code" button
+      // { title: "Code", field: "code", headerFilter: "input", sorter: "string", formatter: function(cell) {
+      //   var point = cell.getRow().getData();
+      //   // Only show code if current user is the point owner
+      //   var isOwner = State.currentUser && point.username === State.currentUser;
+      //   return isOwner ? (point.code || "") : "•••••";
+      // }},
       { title: "Found By", field: "foundBy", headerFilter: "input", sorter: "string", formatter: function(cell) {
         return cell.getValue() || "";
       }},
@@ -3422,8 +3489,12 @@ window.appEnterPointCode = async function(pointId) {
     return;
   }
   
-  // Prompt for code
-  var enteredCode = prompt(Config.AppTitle + ' - Enter the code for this point:');
+  // Prompt for code using custom modal
+  var enteredCode = await customPrompt(
+    Config.AppTitle,
+    'Enter the code for this point:',
+    ''
+  );
   
   if (!enteredCode) {
     return; // User cancelled
