@@ -195,7 +195,45 @@ const Config = {
     FitToViewport: true      // If true, auto-adjust container height to fit viewport
   },
   Map: {
-    longPressMs: 1000  // Duration in milliseconds to trigger long-press on map
+    longPressMs: 1000,  // Duration in milliseconds to trigger long-press on map
+    markers: {
+      // Marker appearance configuration based on status
+      statusStyles: {
+        pending: {
+          color: 'yellow',
+          iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-yellow.png',
+          badgeColor: '#ffc107',
+          badgeTextColor: '#000',
+          badgeText: 'PENDING'
+        },
+        found: {
+          color: 'green',
+          iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+          badgeColor: '#28a745',
+          badgeTextColor: '#fff',
+          badgeText: 'FOUND'
+        },
+        hidden: {
+          color: 'blue',
+          iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+          badgeColor: '#007bff',
+          badgeTextColor: '#fff',
+          badgeText: 'HIDDEN'
+        },
+        default: {
+          color: 'grey',
+          iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-grey.png',
+          badgeColor: '#6c757d',
+          badgeTextColor: '#fff',
+          badgeText: 'UNKNOWN'
+        }
+      },
+      shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+      iconSize: [25, 41],
+      iconAnchor: [12, 41],
+      popupAnchor: [1, -34],
+      shadowSize: [41, 41]
+    }
   },
   MapPointDetails: {
     mode: "view",  // "view", "edit", or "add" - controls whether fields are editable and which actions are available
@@ -2348,6 +2386,30 @@ function installMapLongPressHandler() {
   State.leafletMap.on('touchmove', clearPress);
 }
 
+function getMarkerIconForStatus(status) {
+  // Get marker configuration from Config
+  var markerConfig = Config.Map.markers;
+  var statusStyle = markerConfig.statusStyles[status] || markerConfig.statusStyles.default;
+  
+  return new L.Icon({
+    iconUrl: statusStyle.iconUrl,
+    shadowUrl: markerConfig.shadowUrl,
+    iconSize: markerConfig.iconSize,
+    iconAnchor: markerConfig.iconAnchor,
+    popupAnchor: markerConfig.popupAnchor,
+    shadowSize: markerConfig.shadowSize
+  });
+}
+
+function getStatusBadgeHTML(status) {
+  // Get badge configuration from Config
+  var markerConfig = Config.Map.markers;
+  var statusStyle = markerConfig.statusStyles[status] || markerConfig.statusStyles.default;
+  
+  return '<span style="display:inline-block;padding:2px 6px;border-radius:3px;font-size:11px;font-weight:bold;margin-left:4px;background-color:' +
+         statusStyle.badgeColor + ';color:' + statusStyle.badgeTextColor + ';">' + statusStyle.badgeText + '</span>';
+}
+
 export function refreshMapMarkers() {
   if (!State.leafletMap) return;
   
@@ -2363,8 +2425,17 @@ export function refreshMapMarkers() {
   for (var i = 0; i < State.mapPoints.length; i++) {
     var point = State.mapPoints[i];
     if (point.lat && point.lng) {
-      var marker = L.marker([point.lat, point.lng]).addTo(State.leafletMap);
-      var popupContent = '<b>' + (point.title || 'Untitled') + '</b><br>' +
+      // Get appropriate icon based on status
+      var status = point.status || 'pending';
+      var icon = getMarkerIconForStatus(status);
+      
+      // Create marker with custom icon
+      var marker = L.marker([point.lat, point.lng], { icon: icon }).addTo(State.leafletMap);
+      
+      // Build popup content with status badge
+      var statusBadge = getStatusBadgeHTML(status);
+      
+      var popupContent = '<b>' + (point.title || 'Untitled') + '</b>' + statusBadge + '<br>' +
                         'User: ' + (point.username || 'Unknown') + '<br>' +
                         (point.desc || '') + '<br>' +
                         '<button onclick="window.appDeleteMapPoint(' + point.id + ')" style="margin-top:5px;">Delete</button>';
