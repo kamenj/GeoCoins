@@ -39,6 +39,8 @@ export var SAMPLE_POINTS = [
     lat: 42.6977,
     lng: 23.3219,
     desc: "Alice's home in Sofia",
+    status: "pending",
+    code: "ALICE123",
   },
   {
     id: 2,
@@ -47,5 +49,7 @@ export var SAMPLE_POINTS = [
     lat: 42.1354,
     lng: 24.7453,
     desc: "Bob's office in Plovdiv",
+    status: "found",
+    code: "BOB456",
   },
 ];

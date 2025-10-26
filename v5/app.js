@@ -969,7 +969,7 @@ export function fitContentToViewport(contentId) {
   // Set the container height
   container.style.height = finalHeight + 'px';
   
-  console.log("fitContentToViewport(" + contentId + "): set height to " + finalHeight + "px (viewport=" + viewportHeight + ", top=" + Math.round(containerTop) + ", menuBottom=" + Math.round(menuBottomHeight) + ", bodyPadding=" + bodyPaddingBottom + ", extraPadding=" + paddingBottom + ")");
+ // console.log("fitContentToViewport(" + contentId + "): set height to " + finalHeight + "px (viewport=" + viewportHeight + ", top=" + Math.round(containerTop) + ", menuBottom=" + Math.round(menuBottomHeight) + ", bodyPadding=" + bodyPaddingBottom + ", extraPadding=" + paddingBottom + ")");
 }
 
 /* ===== Show one content at a time ===== */
@@ -1253,6 +1253,17 @@ function getPointsTableColumns(viewMode) {
                (point.title || "(no title)") + '</button>';
       }},
       { title: "User", field: "username", headerFilter: "input", sorter: "string" },
+      { title: "Status", field: "status", headerFilter: "input", sorter: "string", formatter: function(cell) {
+        var status = cell.getValue() || "pending";
+        var badge = '<span class="role-badge">' + status + '</span>';
+        return badge;
+      }},
+      { title: "Code", field: "code", headerFilter: "input", sorter: "string", formatter: function(cell) {
+        var point = cell.getRow().getData();
+        // Only show code if current user is the point owner
+        var isOwner = State.currentUser && point.username === State.currentUser;
+        return isOwner ? (point.code || "") : "•••••";
+      }},
       { title: "Latitude", field: "lat", headerFilter: "input", sorter: "number", formatter: function(cell) {
         return Number(cell.getValue()).toFixed(6);
       }},
@@ -1272,21 +1283,29 @@ function getPointsTableColumns(viewMode) {
         headerFilter: "input", 
         sorter: "string",
         headerFilterFunc: function(headerValue, rowValue, rowData, filterParams) {
-          // Custom filter that searches in title, username, and coordinates
+          // Custom filter that searches in title, username, status, and coordinates
           var searchTerm = headerValue.toLowerCase();
           var title = (rowData.title || '').toLowerCase();
           var username = (rowData.username || '').toLowerCase();
+          var status = (rowData.status || '').toLowerCase();
           var coords = (rowData.lat + ', ' + rowData.lng).toLowerCase();
           
           return title.indexOf(searchTerm) >= 0 || 
                  username.indexOf(searchTerm) >= 0 || 
+                 status.indexOf(searchTerm) >= 0 ||
                  coords.indexOf(searchTerm) >= 0;
         },
         formatter: function(cell) {
           var point = cell.getRow().getData();
           var coords = Number(point.lat).toFixed(4) + ', ' + Number(point.lng).toFixed(4);
           var userBadge = point.username ? ' <span class="role-badge">' + point.username + '</span>' : '';
-          return '<strong>' + (point.title || '(no title)') + '</strong> - ' + coords + userBadge;
+          var statusBadge = point.status ? ' <span class="role-badge">' + point.status + '</span>' : '';
+          
+          // Show code only if current user is the point owner
+          var isOwner = State.currentUser && point.username === State.currentUser;
+          var codeBadge = isOwner && point.code ? ' <span class="role-badge">Code: ' + point.code + '</span>' : '';
+          
+          return '<strong>' + (point.title || '(no title)') + '</strong> - ' + coords + userBadge + statusBadge + codeBadge;
         }
       },
       { title: "Actions", field: "actions", headerSort: false, width: 150, formatter: function(cell) {
@@ -1849,6 +1868,12 @@ export function openMapPointDetailsForAdd() {
   }
   
   setVal("mpd-desc", "");
+  setVal("mpd-status", "pending");
+  setVal("mpd-code", "");
+  
+  // Show code field (user is creating their own point)
+  var codeLabel = $("mpd-code-label");
+  if (codeLabel) codeLabel.style.display = "block";
   
   // Remove the temp placemark (coords are already stored)
   if (State.tempPlacemark && State.leafletMap) {
@@ -1874,6 +1899,16 @@ export function openMapPointDetailsForEdit(id) {
   setVal("mpd-lat", "" + p.lat);
   setVal("mpd-lng", "" + p.lng);
   setVal("mpd-desc", p.desc || "");
+  setVal("mpd-status", p.status || "pending");
+  setVal("mpd-code", p.code || "");
+  
+  // Show/hide code field based on whether current user is the point owner
+  var codeLabel = $("mpd-code-label");
+  if (codeLabel) {
+    var isOwner = State.currentUser && p.username === State.currentUser;
+    codeLabel.style.display = isOwner ? "block" : "none";
+  }
+  
   showContent("mapPointDetails");
 }
 
@@ -1884,6 +1919,8 @@ export async function saveMapPointFromDetails() {
   var lat = Number(getVal("mpd-lat"));
   var lng = Number(getVal("mpd-lng"));
   var desc = getVal("mpd-desc");
+  var status = getVal("mpd-status") || "pending";
+  var code = getVal("mpd-code") || "";
   
   // Validate title is non-empty
   if (!title) {
@@ -1924,7 +1961,9 @@ export async function saveMapPointFromDetails() {
       title: title,
       lat: lat,
       lng: lng,
-      desc: desc
+      desc: desc,
+      status: status,
+      code: code
     };
     
     var result = await DB.addPoint(newPointData);
@@ -1943,7 +1982,9 @@ export async function saveMapPointFromDetails() {
       title: title,
       lat: lat,
       lng: lng,
-      desc: desc
+      desc: desc,
+      status: status,
+      code: code
     };
     
     var result = await DB.updatePoint(id, pointData);
