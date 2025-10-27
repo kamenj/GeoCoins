@@ -43,8 +43,10 @@
         </div>
       </div>
       <div class="section-content">
-        <label>Username <input id="login-username" /></label>
-        <label>Password <input id="login-password" type="password" /></label>
+        <form id="login-form" onsubmit="return false;">
+          <label>Username <input id="login-username" autocomplete="username" /></label>
+          <label>Password <input id="login-password" type="password" autocomplete="current-password" /></label>
+        </form>
       </div>
     </div>
 
@@ -71,22 +73,24 @@
         </div>
       </div>
       <div class="section-content">
-        <input type="hidden" id="ud-username-old" />
-        <label>Username <input id="ud-username" /></label>
-        <label>Name <input id="ud-name" /></label>
-        <!-- <label>Surname <input id="ud-surname" /></label> -->
-        <label>Password <input id="ud-password" /></label>
-        <!-- §kamen_20251010_175213-->
+        <form id="userDetails-form" onsubmit="return false;">
+          <input type="hidden" id="ud-username-old" />
+          <label>Username <input id="ud-username" autocomplete="username" /></label>
+          <label>Name <input id="ud-name" autocomplete="name" /></label>
+          <!-- <label>Surname <input id="ud-surname" /></label> -->
+          <label>Password <input id="ud-password" type="password" autocomplete="new-password" /></label>
+          <!-- §kamen_20251010_175213-->
 
-        <!-- §kamen_20251010_180320  -->
-        <fieldset>
-          <legend>Roles</legend>
-          <label><input type="checkbox" id="ud-role-admin" value="admin" />Admin</label>
-          <label><input type="checkbox" id="ud-role-seeker" value="seeker" />Seeker</label>
-          <label><input type="checkbox" id="ud-role-hider" value="hider" />Hider</label>
-          <label><input type="checkbox" id="ud-role-tester" value="tester" />Tester</label>
-          <label><input type="checkbox" id="ud-role-developer" value="developer" />Developer</label>
-        </fieldset>
+          <!-- §kamen_20251010_180320  -->
+          <fieldset>
+            <legend>Roles</legend>
+            <label><input type="checkbox" id="ud-role-admin" value="admin" />Admin</label>
+            <label><input type="checkbox" id="ud-role-seeker" value="seeker" />Seeker</label>
+            <label><input type="checkbox" id="ud-role-hider" value="hider" />Hider</label>
+            <label><input type="checkbox" id="ud-role-tester" value="tester" />Tester</label>
+            <label><input type="checkbox" id="ud-role-developer" value="developer" />Developer</label>
+          </fieldset>
+        </form>
       </div>
     </div>
 

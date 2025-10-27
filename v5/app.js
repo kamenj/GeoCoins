@@ -1183,7 +1183,7 @@ export function fitContentToViewport(contentId) {
   // Set the container height
   container.style.height = finalHeight + 'px';
   
-  console.log("fitContentToViewport(" + contentId + "): set height to " + finalHeight + "px (viewport=" + viewportHeight + ", top=" + Math.round(containerTop) + ", menuBottom=" + Math.round(menuBottomHeight) + ", bodyPadding=" + bodyPaddingBottom + ", extraPadding=" + paddingBottom + ")");
+  //console.log("fitContentToViewport(" + contentId + "): set height to " + finalHeight + "px (viewport=" + viewportHeight + ", top=" + Math.round(containerTop) + ", menuBottom=" + Math.round(menuBottomHeight) + ", bodyPadding=" + bodyPaddingBottom + ", extraPadding=" + paddingBottom + ")");
 }
 
 /* ===== Show one content at a time ===== */
