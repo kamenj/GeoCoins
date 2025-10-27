@@ -104,6 +104,114 @@ button.primary {
 button:hover { background: var(--rowEven); }
 button.primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
 
+/* Login button - subtly distinct styling */
+button.login-btn {
+  background: linear-gradient(135deg, var(--bg) 0%, var(--rowEven) 100%);
+  border: 1.5px solid var(--accent);
+  font-weight: 500;
+  position: relative;
+  overflow: hidden;
+}
+
+button.login-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+  z-index: 1;
+  pointer-events: none;
+}
+
+button.login-btn:hover {
+  background: linear-gradient(135deg, var(--rowEven) 0%, var(--accent) 15%, var(--rowEven) 100%);
+  border-color: var(--accent-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+button.login-btn:hover::before {
+  animation: shineSwipe 0.5s ease-out forwards;
+}
+
+/* Login button entrance animation - shine sweep with subtle lift */
+@keyframes loginButtonEntrance {
+  0% {
+    transform: translateY(0);
+    box-shadow: none;
+  }
+  10% {
+    background: linear-gradient(135deg, var(--rowEven) 0%, var(--accent) 15%, var(--rowEven) 100%);
+    border-color: var(--accent-hover);
+  }
+  20% {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  }
+  40% {
+    transform: translateY(-1px);
+  }
+  100% {
+    transform: translateY(0);
+    box-shadow: none;
+    background: linear-gradient(135deg, var(--bg) 0%, var(--rowEven) 100%);
+    border-color: var(--accent);
+  }
+}
+
+/* Shine sweep animation - matches hover effect */
+@keyframes shineSwipe {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+button.login-btn.animate-entrance {
+  animation: loginButtonEntrance 1.2s ease-out forwards;
+}
+
+button.login-btn.animate-entrance::before {
+  /* Trigger shine sweep during entrance */
+  animation: shineSwipe 0.8s ease-out 0.3s forwards;
+}
+
+/* Login button attention pulse - triggered after entrance */
+@keyframes loginButtonPulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 var(--accent);
+  }
+  50% {
+    transform: scale(1.02);
+    box-shadow: 0 0 0 4px rgba(25, 118, 210, 0.15);
+  }
+}
+
+/* Dark theme pulse shadow */
+body[data-theme="dark"] button.login-btn.animate-pulse {
+  animation: loginButtonPulseDark 1.2s ease-in-out 2;
+}
+
+@keyframes loginButtonPulseDark {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 var(--accent);
+  }
+  50% {
+    transform: scale(1.02);
+    box-shadow: 0 0 0 4px rgba(100, 181, 246, 0.15);
+  }
+}
+
+button.login-btn.animate-pulse {
+  animation: loginButtonPulse 1.2s ease-in-out 2;
+}
+
 input, select, textarea {
   padding: 6px;
   border: 1px solid var(--border);

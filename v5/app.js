@@ -51,6 +51,7 @@ const Constants = {
     PointsDeleteRow: "points.deleteRow",
     PointsEditRow: "points.editRow",
     PointsCancel: "points.cancel",
+    PointsLogin: "points.login",
     PointsShowList: "points.showList",
     PointsShowMap: "points.showMap",
     PointsShowBoth: "points.showBoth",
@@ -86,6 +87,7 @@ const Constants = {
     BottomTitle: "menu.bottom.title",
     BottomTop: "menu.bottom.top",
     BottomBottom: "menu.bottom.bottom",
+    MapPointsTitle: "menu.mapPoints.title",
     ListRow: "list.row",
   },
   ElementId: {
@@ -95,6 +97,7 @@ const Constants = {
     MenuBottomTitleCommands: "menuBottom-title-commands",
     MenuBottomTopCommands: "menuBottom-top-commands",
     MenuBottomBottomCommands: "menuBottom-bottom-commands",
+    MapPointsTitleCommands: "mapPoints-title-commands",
     MenuTop: "menuTop",
     MenuBottom: "menuBottom",
     MenuTopHeader: "menuTop-header",
@@ -476,6 +479,19 @@ const Config = {
       },
     ],
     [Constants.ContentSection.MapPoints]: [
+      {
+        name: "points.login",
+        caption: "Login",
+        menu: { location: "menu.mapPoints.title" },
+        action: function () {
+          showContent("login");
+        },
+        visible: function() {
+          // Only show when not logged in
+          return !State.currentUser;
+        },
+        enabled: true,
+      },
       {
         name: "points.add",
         caption: "Add map point",
@@ -1147,6 +1163,16 @@ export function showContent(id) {
       State.mapPointsView.showList = Config.MapPointsList.InitialView.showList;
       State.mapPointsView.showMap = Config.MapPointsList.InitialView.showMap;
       
+      // Control visibility of the form based on user login status
+      var mapPointsForm = $("mapPointsForm");
+      if (mapPointsForm) {
+        if (State.currentUser) {
+          mapPointsForm.style.display = "block";
+        } else {
+          mapPointsForm.style.display = "none";
+        }
+      }
+      
       // Set initial visibility
       var listDiv = $("mapPointsList");
       var mapDiv = $("mapPointsGeoView");
@@ -1534,97 +1560,81 @@ function getTableColumns(viewMode) {
 function getPointsTableColumns(viewMode) {
   // Returns column definitions for Tabulator for the points table based on view mode
   
-  var columns = {
-    details: [
-      { title: "#", field: "index", width: 60, headerSort: false, formatter: function(cell) { 
-        return cell.getRow().getPosition(); 
-      }},
-      { title: "Title", field: "title", headerFilter: "input", sorter: "string", formatter: function(cell) {
-        var point = cell.getRow().getData();
-        return '<button class="' + Config.Constants.ClassName.LinkBtn + '" ' + 
-               Config.Constants.Attribute.DataOpenPoint + '="' + point.id + '">' +
-               (point.title || "(no title)") + '</button>';
-      }},
-      { title: "User", field: "username", headerFilter: "input", sorter: "string" },
-      { title: "Status", field: "status", headerFilter: "input", sorter: "string", formatter: function(cell) {
-        var status = cell.getValue() || "pending";
-        var badge = '<span class="role-badge">' + status + '</span>';
-        return badge;
-      }},
-      // Code column hidden - users can enter code via "Enter Code" button
-      // { title: "Code", field: "code", headerFilter: "input", sorter: "string", formatter: function(cell) {
-      //   var point = cell.getRow().getData();
-      //   // Only show code if current user is the point owner
-      //   var isOwner = State.currentUser && point.username === State.currentUser;
-      //   return isOwner ? (point.code || "") : "•••••";
-      // }},
-      { title: "Found By", field: "foundBy", headerFilter: "input", sorter: "string", formatter: function(cell) {
-        return cell.getValue() || "";
-      }},
-      { title: "Latitude", field: "lat", headerFilter: "input", sorter: "number", formatter: function(cell) {
-        return Number(cell.getValue()).toFixed(6);
-      }},
-      { title: "Longitude", field: "lng", headerFilter: "input", sorter: "number", formatter: function(cell) {
-        return Number(cell.getValue()).toFixed(6);
-      }},
-      { title: "Actions", field: "actions", headerSort: false, width: 200, formatter: function(cell) {
-        var point = cell.getRow().getData();
-        var isOwner = State.currentUser && point.username === State.currentUser;
-        var canEnterCode = canCurrentUserSeekPoints() && !isOwner && point.status !== 'found' && point.status !== 'pending';
-        var canEdit = canCurrentUserEditPoint(point);
+  var baseDetailsColumns = [
+    { title: "#", field: "index", width: 60, headerSort: false, formatter: function(cell) { 
+      return cell.getRow().getPosition(); 
+    }},
+    { title: "Title", field: "title", headerFilter: "input", sorter: "string", formatter: function(cell) {
+      var point = cell.getRow().getData();
+      return '<button class="' + Config.Constants.ClassName.LinkBtn + '" ' + 
+             Config.Constants.Attribute.DataOpenPoint + '="' + point.id + '">' +
+             (point.title || "(no title)") + '</button>';
+    }},
+    { title: "User", field: "username", headerFilter: "input", sorter: "string" },
+    { title: "Status", field: "status", headerFilter: "input", sorter: "string", formatter: function(cell) {
+      var status = cell.getValue() || "pending";
+      var badge = '<span class="role-badge">' + status + '</span>';
+      return badge;
+    }},
+    // Code column hidden - users can enter code via "Enter Code" button
+    // { title: "Code", field: "code", headerFilter: "input", sorter: "string", formatter: function(cell) {
+    //   var point = cell.getRow().getData();
+    //   // Only show code if current user is the point owner
+    //   var isOwner = State.currentUser && point.username === State.currentUser;
+    //   return isOwner ? (point.code || "") : "•••••";
+    // }},
+    { title: "Found By", field: "foundBy", headerFilter: "input", sorter: "string", formatter: function(cell) {
+      return cell.getValue() || "";
+    }},
+    { title: "Latitude", field: "lat", headerFilter: "input", sorter: "number", formatter: function(cell) {
+      return Number(cell.getValue()).toFixed(6);
+    }},
+    { title: "Longitude", field: "lng", headerFilter: "input", sorter: "number", formatter: function(cell) {
+      return Number(cell.getValue()).toFixed(6);
+    }}
+  ];
+  
+  var baseCompactColumns = [
+    { 
+      title: "Point", 
+      field: "title", 
+      headerFilter: "input", 
+      sorter: "string",
+      headerFilterFunc: function(headerValue, rowValue, rowData, filterParams) {
+        // Custom filter that searches in title, username, status, and coordinates
+        var searchTerm = headerValue.toLowerCase();
+        var title = (rowData.title || '').toLowerCase();
+        var username = (rowData.username || '').toLowerCase();
+        var status = (rowData.status || '').toLowerCase();
+        var coords = (rowData.lat + ', ' + rowData.lng).toLowerCase();
         
-        var buttons = '';
-        
-        // Add Enter Code button for seekers/admins on unfound, non-pending points they don't own
-        if (canEnterCode) {
-          buttons += '<button class="' + Config.Constants.ClassName.CmdBtn + '" onclick="window.appEnterPointCode(' + point.id + ')">Enter Code</button> ';
-        }
-        
-        // Only show Edit/Delete buttons if user has permission
-        if (canEdit) {
-          buttons += renderCommandHTML({ payload: point.id }, Config.Constants.CommandName.PointsDeleteRow) + " " +
-                     renderCommandHTML({ payload: point.id }, Config.Constants.CommandName.PointsEditRow);
-        }
-        
-        return buttons;
-      }}
-    ],
-    compact: [
-      { 
-        title: "Point", 
-        field: "title", 
-        headerFilter: "input", 
-        sorter: "string",
-        headerFilterFunc: function(headerValue, rowValue, rowData, filterParams) {
-          // Custom filter that searches in title, username, status, and coordinates
-          var searchTerm = headerValue.toLowerCase();
-          var title = (rowData.title || '').toLowerCase();
-          var username = (rowData.username || '').toLowerCase();
-          var status = (rowData.status || '').toLowerCase();
-          var coords = (rowData.lat + ', ' + rowData.lng).toLowerCase();
-          
-          return title.indexOf(searchTerm) >= 0 || 
-                 username.indexOf(searchTerm) >= 0 || 
-                 status.indexOf(searchTerm) >= 0 ||
-                 coords.indexOf(searchTerm) >= 0;
-        },
-        formatter: function(cell) {
-          var point = cell.getRow().getData();
-          var coords = Number(point.lat).toFixed(4) + ', ' + Number(point.lng).toFixed(4);
-          var userBadge = point.username ? ' <span class="role-badge">' + point.username + '</span>' : '';
-          var statusBadge = point.status ? ' <span class="role-badge">' + point.status + '</span>' : '';
-          
-          // Show code only if current user is the point owner
-          var isOwner = State.currentUser && point.username === State.currentUser;
-          var codeBadge = isOwner && point.code ? ' <span class="role-badge">Code: ' + point.code + '</span>' : '';
-          
-          // Show foundBy if available
-          var foundByBadge = point.foundBy ? ' <span class="role-badge">Found by: ' + point.foundBy + '</span>' : '';
-          
-          return '<strong>' + (point.title || '(no title)') + '</strong> - ' + coords + userBadge + statusBadge + codeBadge + foundByBadge;
-        }
+        return title.indexOf(searchTerm) >= 0 || 
+               username.indexOf(searchTerm) >= 0 || 
+               status.indexOf(searchTerm) >= 0 ||
+               coords.indexOf(searchTerm) >= 0;
       },
-      { title: "Actions", field: "actions", headerSort: false, width: 200, formatter: function(cell) {
+      formatter: function(cell) {
+        var point = cell.getRow().getData();
+        var coords = Number(point.lat).toFixed(4) + ', ' + Number(point.lng).toFixed(4);
+        var userBadge = point.username ? ' <span class="role-badge">' + point.username + '</span>' : '';
+        var statusBadge = point.status ? ' <span class="role-badge">' + point.status + '</span>' : '';
+        
+        // Show code only if current user is the point owner
+        var isOwner = State.currentUser && point.username === State.currentUser;
+        var codeBadge = isOwner && point.code ? ' <span class="role-badge">Code: ' + point.code + '</span>' : '';
+        
+        // Show foundBy if available
+        var foundByBadge = point.foundBy ? ' <span class="role-badge">Found by: ' + point.foundBy + '</span>' : '';
+        
+        return '<strong>' + (point.title || '(no title)') + '</strong> - ' + coords + userBadge + statusBadge + codeBadge + foundByBadge;
+      }
+    }
+  ];
+  
+  // Add Actions column only if user is logged in
+  if (State.currentUser) {
+    baseDetailsColumns.push({
+      title: "Actions", field: "actions", headerSort: false, width: 200, formatter: function(cell) {
         var point = cell.getRow().getData();
         var isOwner = State.currentUser && point.username === State.currentUser;
         var canEnterCode = canCurrentUserSeekPoints() && !isOwner && point.status !== 'found' && point.status !== 'pending';
@@ -1644,8 +1654,37 @@ function getPointsTableColumns(viewMode) {
         }
         
         return buttons;
-      }}
-    ]
+      }
+    });
+
+    baseCompactColumns.push({
+      title: "Actions", field: "actions", headerSort: false, width: 200, formatter: function(cell) {
+        var point = cell.getRow().getData();
+        var isOwner = State.currentUser && point.username === State.currentUser;
+        var canEnterCode = canCurrentUserSeekPoints() && !isOwner && point.status !== 'found' && point.status !== 'pending';
+        var canEdit = canCurrentUserEditPoint(point);
+        
+        var buttons = '';
+        
+        // Add Enter Code button for seekers/admins on unfound, non-pending points they don't own
+        if (canEnterCode) {
+          buttons += '<button class="' + Config.Constants.ClassName.CmdBtn + '" onclick="window.appEnterPointCode(' + point.id + ')">Enter Code</button> ';
+        }
+        
+        // Only show Edit/Delete buttons if user has permission
+        if (canEdit) {
+          buttons += renderCommandHTML({ payload: point.id }, Config.Constants.CommandName.PointsDeleteRow) + " " +
+                     renderCommandHTML({ payload: point.id }, Config.Constants.CommandName.PointsEditRow);
+        }
+        
+        return buttons;
+      }
+    });
+  }
+  
+  var columns = {
+    details: baseDetailsColumns,
+    compact: baseCompactColumns
   };
   
   return columns[viewMode] || columns.details;
@@ -1965,7 +2004,8 @@ export async function logout() {
   await DB.clearCurrentUser();
   updateStatusBar();
   await customAlert("Logout", "You have been logged out.");
-  showContent("login");
+  // Show map points in view-only mode after logout
+  showContent("mapPoints");
 }
 
 /* ===== Map Points ===== */
@@ -2002,6 +2042,16 @@ function renderPointsRow(p, i) {
   return html;
 }
 export function refreshMapPointsTable() {
+  // Control visibility of the form based on user login status
+  var mapPointsForm = $("mapPointsForm");
+  if (mapPointsForm) {
+    if (State.currentUser) {
+      mapPointsForm.style.display = "block";
+    } else {
+      mapPointsForm.style.display = "none";
+    }
+  }
+  
   var tableDiv = $(Config.Constants.ElementId.MpsTable);
   var empty = $(Config.Constants.ElementId.MpsEmpty);
   
@@ -2977,17 +3027,27 @@ function on_before_command_added(target_menu, cmd) {
   
   // If no user is logged in, only show specific commands
   if (!State.currentUser) {
-    // Allow: Show Login, Show Register, Show About, and all login/userDetails (register mode) page commands, plus message OK
+    // Allow: Show Login, Show Register, Show About, Show Points (view-only), and all login/userDetails (register mode) page commands, plus message OK
     var allowedCommands = [
       Config.Constants.CommandName.ShowLogin,
       Config.Constants.CommandName.ShowRegister,
       Config.Constants.CommandName.ShowAbout,
+      Config.Constants.CommandName.ShowPoints,
       Config.Constants.CommandName.LoginOk,
       Config.Constants.CommandName.LoginCancel,
       Config.Constants.CommandName.LoginRegister,
       Config.Constants.CommandName.UserSave,
       Config.Constants.CommandName.UserCancel,
-      Config.Constants.CommandName.MessageOk
+      Config.Constants.CommandName.MessageOk,
+      // Allow map points view-only commands when not logged in
+      Config.Constants.CommandName.PointsRefresh,
+      Config.Constants.CommandName.PointsViewDetails,
+      Config.Constants.CommandName.PointsViewCompact,
+      Config.Constants.CommandName.PointsShowList,
+      Config.Constants.CommandName.PointsShowMap,
+      Config.Constants.CommandName.PointsShowBoth,
+      Config.Constants.CommandName.PointsCancel,
+      Config.Constants.CommandName.PointsLogin
     ];
     
     if (allowedCommands.indexOf(cmd.name) === -1) {
@@ -3016,6 +3076,13 @@ function on_before_command_added(target_menu, cmd) {
       if (!currentUser || !hasRole(currentUser, "admin")) {
         return null; // Skip Developer Tools button if not admin
       }
+    }
+  } else {
+    // When not logged in, show Login button in map points view for easy access
+    // Hide Register button from top menu when viewing map points (can still access via login page)
+    if (State.currentContentId === Constants.ContentSection.MapPoints && 
+        cmd.name === Config.Constants.CommandName.ShowRegister) {
+      return null; // Hide Register button in map points view-only mode
     }
   }
   
@@ -3074,6 +3141,7 @@ function clearMenuBars() {
     Config.Constants.ElementId.MenuBottomTitleCommands,
     Config.Constants.ElementId.MenuBottomTopCommands,
     Config.Constants.ElementId.MenuBottomBottomCommands,
+    Config.Constants.ElementId.MapPointsTitleCommands,
   ];
   for (var i = 0; i < ids.length; i++) {
     var el = $(ids[i]);
@@ -3156,6 +3224,8 @@ function renderMenusFor(contentId) {
           ? Config.Constants.ElementId.MenuBottomTopCommands
           : loc === Config.Constants.MenuLocation.BottomBottom
           ? Config.Constants.ElementId.MenuBottomBottomCommands
+          : loc === Config.Constants.MenuLocation.MapPointsTitle
+          ? Config.Constants.ElementId.MapPointsTitleCommands
           : null;
       if (hostId) {
         var host = $(hostId);
@@ -3165,19 +3235,65 @@ function renderMenusFor(contentId) {
           // Call on_before_command_added to get the HTML element
           var btnElement = on_before_command_added(hostId, c);
           if (btnElement) {
+            // Add special styling to Login button
+            if (c.name === "points.login") {
+              btnElement.classList.add("login-btn");
+              
+              // Check if this is the first time we're seeing this button (animation not yet triggered)
+              var isFirstLoad = !btnElement.hasAttribute('data-animation-triggered');
+              
+              if (isFirstLoad) {
+                btnElement.setAttribute('data-animation-triggered', 'pending');
+                
+                // Trigger entrance animation with delay
+                setTimeout(function() {
+                  // Find the login button (it might have been re-rendered)
+                  var loginBtn = document.querySelector('button.login-btn[data-animation-triggered="pending"]');
+                  if (loginBtn && !State.currentUser) {
+                    loginBtn.setAttribute('data-animation-triggered', 'done');
+                    loginBtn.classList.add("animate-entrance");
+                    
+                    // Remove entrance class after animation completes
+                    setTimeout(function() {
+                      if (loginBtn) {
+                        loginBtn.classList.remove("animate-entrance");
+                      }
+                    }, 1200);
+                    
+                    // Follow up with pulse animation
+                    setTimeout(function() {
+                      if (loginBtn && !State.currentUser) {
+                        loginBtn.classList.add("animate-pulse");
+                        setTimeout(function() {
+                          if (loginBtn) {
+                            loginBtn.classList.remove("animate-pulse");
+                          }
+                        }, 2400);
+                      }
+                    }, 1400);
+                  }
+                }, 1500);
+              }
+            }
+            
             var needsSeparator = false;
+            
+            // Add separator after Login button (when not logged in)
+            if (c.name === "points.login" && !State.currentUser && hostId === Config.Constants.ElementId.MenuBottomTitleCommands) {
+              needsSeparator = "after";
+            }
             
             // Add separator before first view toggle button (after non-view-toggle buttons)
             if (isViewToggle && lastWasNonViewToggle && hostId === Config.Constants.ElementId.MenuBottomTitleCommands) {
-              needsSeparator = true;
+              needsSeparator = "before";
             }
             
             // Add separator after last view toggle button (before non-view-toggle buttons)
             if (!isViewToggle && lastWasViewToggle && hostId === Config.Constants.ElementId.MenuBottomTitleCommands) {
-              needsSeparator = true;
+              needsSeparator = "before";
             }
             
-            if (needsSeparator) {
+            if (needsSeparator === "before") {
               var separator = document.createElement("span");
               separator.className = "cmd-separator";
               separator.textContent = "|";
@@ -3185,6 +3301,13 @@ function renderMenusFor(contentId) {
             }
             
             host.appendChild(btnElement);
+            
+            if (needsSeparator === "after") {
+              var separator = document.createElement("span");
+              separator.className = "cmd-separator";
+              separator.textContent = "|";
+              host.appendChild(separator);
+            }
             lastWasViewToggle = isViewToggle;
             lastWasNonViewToggle = !isViewToggle;
           }
@@ -3462,6 +3585,11 @@ async function loadAll() {
   for (var i = 0; i < Config.CONTENT_SECTIONS.length; i++)
     setSectionVisible(Config.CONTENT_SECTIONS[i], false);
   renderMenusFor(null);
+
+  // If no user is logged in, automatically show map points in view-only mode
+  if (!State.currentUser) {
+    showContent("mapPoints");
+  }
 
   // Update view toggle button locations after Config is initialized
   const configLocation = Config.MapPointsList.ViewToggleButtonsLocation;

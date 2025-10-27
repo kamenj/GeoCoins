@@ -108,17 +108,20 @@
           <span class="chev" id="chev-mapPoints">▼</span>
           <span class="title-text">Map Points</span>
         </div>
+        <div id="mapPoints-title-commands" class="cmd-bar title-cmds"></div>
       </div>
       <div class="section-content">
         <div id="mapPoints-container" class="mappoints-container">
           <!-- Left/Top: Map Points List -->
           <div id="mapPointsList" class="mappoints-list">
-            <input type="hidden" id="mp-id" />
-            <label>Owner Username <input id="mp-username" /></label>
-            <label>Title <input id="mp-title" /></label>
-            <label>Latitude <input id="mp-lat" /></label>
-            <label>Longitude <input id="mp-lng" /></label>
-            <label>Description <textarea id="mp-desc"></textarea></label>
+            <div id="mapPointsForm" class="mappoints-form">
+              <input type="hidden" id="mp-id" />
+              <label>Owner Username <input id="mp-username" /></label>
+              <label>Title <input id="mp-title" /></label>
+              <label>Latitude <input id="mp-lat" /></label>
+              <label>Longitude <input id="mp-lng" /></label>
+              <label>Description <textarea id="mp-desc"></textarea></label>
+            </div>
 
             <div id="mps-empty" style="display: none">No map points.</div>
             <div id="mps-table"></div>
