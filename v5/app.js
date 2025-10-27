@@ -1810,6 +1810,8 @@ function fillUserDetails(u, mode) {
   $("ud-role-admin").checked = roles.indexOf("admin") !== -1;
   $("ud-role-seeker").checked = roles.indexOf("seeker") !== -1;
   $("ud-role-hider").checked = roles.indexOf("hider") !== -1;
+  $("ud-role-tester").checked = roles.indexOf("tester") !== -1;
+  $("ud-role-developer").checked = roles.indexOf("developer") !== -1;
   
   // Hide admin checkbox in register mode
   var adminLabel = $("ud-role-admin").closest("label");
@@ -1889,6 +1891,8 @@ export async function saveUserDetails() {
   }
   if ($("ud-role-seeker").checked) newRoles.push("seeker");
   if ($("ud-role-hider").checked) newRoles.push("hider");
+  if ($("ud-role-tester").checked) newRoles.push("tester");
+  if ($("ud-role-developer").checked) newRoles.push("developer");
   
   // Validate at least one role is selected
   if (newRoles.length === 0) {

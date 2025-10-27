@@ -35,7 +35,7 @@ export var SAMPLE_USERS = [
     password: "1234",
     name: "Diana",
     gender: "female",
-    roles: ["seeker"]
+    roles: ["seeker","developer","tester"]
   },
   {
     id: 5,
@@ -44,6 +44,22 @@ export var SAMPLE_USERS = [
     name: "Evan",
     gender: "male",
     roles: ["seeker", "hider"]
+  },
+  {
+    id: 6,
+    username: "frank",
+    password: "1234",
+    name: "Frank",
+    gender: "male",
+    roles: ["tester"]
+  },
+  {
+    id: 7,
+    username: "grace",
+    password: "1234",
+    name: "Grace",
+    gender: "female",
+    roles: ["developer"]
   },
 ];
 
