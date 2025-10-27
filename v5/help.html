@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dani-Geo-Coins User Guide</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            color: #333;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 30px;
+            border-bottom: 2px solid #95a5a6;
+            padding-bottom: 5px;
+        }
+        h3 {
+            color: #555;
+            margin-top: 20px;
+        }
+        .feature-box {
+            background-color: #f8f9fa;
+            border-left: 4px solid #3498db;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        .tip {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .role-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            margin: 2px;
+            border-radius: 3px;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+        .role-admin { background: #dc3545; color: white; }
+        .role-seeker { background: #28a745; color: white; }
+        .role-hider { background: #007bff; color: white; }
+        .role-tester { background: #ffc107; color: black; }
+        .role-developer { background: #6c757d; color: white; }
+        .status-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            margin: 2px;
+            border-radius: 3px;
+            font-size: 0.85em;
+            font-weight: bold;
+        }
+        .status-pending { background: #ffc107; color: black; }
+        .status-hidden { background: #007bff; color: white; }
+        .status-found { background: #28a745; color: white; }
+        ul {
+            line-height: 1.8;
+        }
+        code {
+            background: #e9ecef;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+        .section-divider {
+            margin: 40px 0;
+            border-top: 1px solid #dee2e6;
+        }
+        /* Highlight animation for synced sections */
+        .help-highlight {
+            animation: highlight-pulse 2s ease-in-out;
+            scroll-margin-top: 20px;
+        }
+        @keyframes highlight-pulse {
+            0%, 100% { background-color: transparent; }
+            50% { background-color: #fff3cd; border-radius: 8px; padding: 10px; margin: -10px; }
+        }
+    </style>
+</head>
+<body>
+    <h1>📍 Dani-Geo-Coins User Guide</h1>
+    
+    <p><strong>Dani-Geo-Coins</strong> is a geocaching-style game where users hide and find virtual coins at real-world locations. This guide will help you understand how to use all features of the application.</p>
+
+    <h2 id="help-getting-started">🎮 Getting Started</h2>
+    
+    <div class="feature-box">
+        <h3>First Time Setup</h3>
+        <ol>
+            <li><strong>Register:</strong> Click "Register" in the top menu or on the Login screen</li>
+            <li>Choose a unique username (max 20 characters) and password</li>
+            <li>Enter your full name</li>
+            <li>Select at least one role (default is <span class="role-badge role-seeker">Seeker</span>)</li>
+            <li>Click "Save" to create your account (you'll be automatically logged in)</li>
+        </ol>
+    </div>
+
+    <div class="feature-box">
+        <h3>Login</h3>
+        <ul>
+            <li>Enter your username and password</li>
+            <li>Click "OK" to access the app</li>
+            <li>View coins without logging in (limited functionality)</li>
+        </ul>
+    </div>
+
+    <h2 id="help-user-roles">👥 User Roles</h2>
+    
+    <p>Each user can have multiple roles that determine what they can do:</p>
+    
+    <ul>
+        <li><span class="role-badge role-admin">Admin</span> - Full access to manage users and all coins</li>
+        <li><span class="role-badge role-seeker">Seeker</span> - Can find coins hidden by others by entering codes</li>
+        <li><span class="role-badge role-hider">Hider</span> - Can hide coins for others to find</li>
+        <li><span class="role-badge role-tester">Tester</span> - Access to GitHub issue reporting</li>
+        <li><span class="role-badge role-developer">Developer</span> - Access to Developer Tools and JSON database editor</li>
+    </ul>
+
+    <div class="tip">
+        <strong>💡 Tip:</strong> Users with only the Seeker role cannot hide coins - they can only find them!
+    </div>
+
+    <h2 id="help-map-points">🗺️ Map Points (Coins)</h2>
+
+    <h3>Understanding Coin Status</h3>
+    
+    <ul>
+        <li><span class="status-badge status-pending">PENDING</span> - Coin is being prepared (not yet hidden or found)</li>
+        <li><span class="status-badge status-hidden">HIDDEN</span> - Coin is hidden and waiting to be found</li>
+        <li><span class="status-badge status-found">FOUND</span> - Coin has been successfully found by a seeker</li>
+    </ul>
+
+    <div class="feature-box">
+        <h3>Viewing Map Points</h3>
+        <ul>
+            <li><strong>Three View Modes:</strong>
+                <ul>
+                    <li><strong>List</strong> - Shows coins in table format with filters</li>
+                    <li><strong>Map</strong> - Shows coins on an interactive map</li>
+                    <li><strong>L+M</strong> - Shows both list and map side-by-side or stacked</li>
+                </ul>
+            </li>
+            <li>Toggle between views using buttons in the bottom menu</li>
+            <li>Layout adapts automatically: horizontal split on wide screens, vertical on tall screens</li>
+            <li>Click a coin title in the list to navigate to it on the map</li>
+        </ul>
+    </div>
+
+    <div class="feature-box">
+        <h3>Adding a New Coin (Hiders/Admins Only)</h3>
+        <ol>
+            <li>Click <strong>"Add map point"</strong> in the bottom menu</li>
+            <li><strong>Set coordinates:</strong>
+                <ul>
+                    <li>Click <strong>"My Loc"</strong> to use your current GPS location</li>
+                    <li>Long-press (hold) anywhere on the map for 1 second</li>
+                    <li>Drag the temporary marker to adjust position</li>
+                    <li>Click <strong>"Add"</strong> on the marker popup</li>
+                </ul>
+            </li>
+            <li>Enter coin details:
+                <ul>
+                    <li><strong>Title:</strong> Unique name for the coin</li>
+                    <li><strong>Description:</strong> Hints or information about the location</li>
+                    <li><strong>Code:</strong> Secret code seekers must enter (keep this private!)</li>
+                    <li><strong>Status:</strong> Set to "Hidden" when ready for seekers</li>
+                </ul>
+            </li>
+            <li>Click <strong>"Save"</strong></li>
+        </ol>
+    </div>
+
+    <div class="feature-box">
+        <h3>Finding a Coin (Seekers/Admins Only)</h3>
+        <ol>
+            <li>Navigate to the coin location on the map</li>
+            <li>Find the physical location and discover the hidden code</li>
+            <li>Click <strong>"Enter Code"</strong> button (in list or on map marker)</li>
+            <li>Type the code and click "OK"</li>
+            <li>If correct, the coin status changes to <span class="status-badge status-found">FOUND</span> and you're recorded as the finder!</li>
+        </ol>
+    </div>
+
+    <div class="tip">
+        <strong>🔒 Permission Rules:</strong>
+        <ul style="margin: 5px 0;">
+            <li>You can only edit or delete coins you created (or if you're an admin)</li>
+            <li>You cannot enter codes for your own coins</li>
+            <li>Codes are only visible to the coin owner</li>
+        </ul>
+    </div>
+
+    <h2 id="help-table-views">📊 Table Views</h2>
+
+    <div class="feature-box">
+        <h3>Details vs Compact View</h3>
+        <ul>
+            <li><strong>Details View:</strong> Shows all information in separate columns - best for desktop</li>
+            <li><strong>Compact View:</strong> Combines info into single formatted rows - best for mobile</li>
+            <li>Toggle between views using <strong>"Details"</strong> or <strong>"Compact"</strong> buttons</li>
+            <li>Use column header filters to search/filter data</li>
+            <li>Click column headers to sort</li>
+            <li>Filter state is preserved when switching views</li>
+        </ul>
+    </div>
+
+    <h2 id="help-managing-users">👤 Managing Users</h2>
+
+    <div class="feature-box">
+        <h3>Users List (Admin Access Recommended)</h3>
+        <ul>
+            <li>View all registered users with their roles</li>
+            <li>Click username to view/edit user details</li>
+            <li><strong>"Add user"</strong> - Create new user accounts</li>
+            <li><strong>"Refresh"</strong> - Reload user data</li>
+            <li><strong>"Delete"</strong> - Remove users (inline action)</li>
+            <li>Filter users by name, username, or role</li>
+        </ul>
+    </div>
+
+    <h2 id="help-status-bar">📈 Status Bar</h2>
+
+    <p>The status bar at the top shows important game statistics:</p>
+    <ul>
+        <li><strong>Found:</strong> Number of coins you've found</li>
+        <li><strong>Hidden:</strong> Number of coins you've hidden (with status = hidden)</li>
+        <li><strong>Total:</strong> Global stats (found/total coins in game)</li>
+        <li><strong>User:</strong> Current logged-in user and their roles</li>
+    </ul>
+
+    <div class="tip">
+        <strong>💡 Note:</strong> Pending coins are excluded from the total count - only hidden and found coins are counted.
+    </div>
+
+    <h2 id="help-settings">⚙️ Settings</h2>
+
+    <div class="feature-box">
+        <h3>Customize Your Experience</h3>
+        <ul>
+            <li><strong>Theme:</strong> Choose between Light and Dark modes</li>
+            <li><strong>Font Size:</strong> Small, Medium, or Large text</li>
+            <li><strong>Auto-hide Top Menu:</strong> Automatically collapse the top menu when viewing content</li>
+        </ul>
+        <p>Click <strong>"Apply"</strong> to save changes or <strong>"Reset"</strong> to clear all app data.</p>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <h2 id="help-advanced-features">🔧 Advanced Features</h2>
+
+    <div class="feature-box">
+        <h3>Developer Tools (Developer Role Required)</h3>
+        <ul>
+            <li><strong>Show DB:</strong> View the entire database in JSON format</li>
+            <li><strong>Save DB:</strong> Apply manual changes to the database</li>
+            <li><strong>A+ / A-:</strong> Adjust editor font size</li>
+            <li>Edit users and coins directly in JSON (advanced users only)</li>
+        </ul>
+    </div>
+
+    <div class="feature-box">
+        <h3>Collapsible Sections</h3>
+        <ul>
+            <li>Click the <strong>▼</strong> chevron next to any section header to collapse/expand it</li>
+            <li>Helps manage screen space when viewing multiple sections</li>
+        </ul>
+    </div>
+
+    <div class="feature-box">
+        <h3>Issue Reporting (Tester/Developer Roles)</h3>
+        <ul>
+            <li><strong>"View Issues":</strong> See all reported bugs and feature requests on GitHub</li>
+            <li><strong>"New Issue":</strong> Report a bug or suggest an enhancement</li>
+        </ul>
+    </div>
+
+    <h2 id="help-tips-tricks">📱 Tips & Tricks</h2>
+
+    <div class="tip">
+        <strong>Location Services:</strong> Allow location access in your browser for the "My Loc" feature to work.
+    </div>
+
+    <div class="tip">
+        <strong>Map Navigation:</strong>
+        <ul style="margin: 5px 0;">
+            <li>Zoom: Mouse wheel or +/- buttons</li>
+            <li>Pan: Click and drag</li>
+            <li>Long-press (1 second) to set default coordinates for new coins</li>
+        </ul>
+    </div>
+
+    <div class="tip">
+        <strong>Table Filtering:</strong> Type in column headers to filter instantly. Combine multiple filters for precise results.
+    </div>
+
+    <div class="tip">
+        <strong>Quick Actions:</strong> Most buttons have tooltips. Hover over buttons to see what they do.
+    </div>
+
+    <div class="section-divider"></div>
+
+    <h2 id="help-common-questions">❓ Common Questions</h2>
+
+    <div class="feature-box">
+        <h3>Can I play without logging in?</h3>
+        <p>Yes! You can view the map and see all coins, but you cannot add coins or enter codes to find them.</p>
+    </div>
+
+    <div class="feature-box">
+        <h3>What happens if I enter the wrong code?</h3>
+        <p>You'll see an error message. You can try again - there's no penalty for incorrect attempts.</p>
+    </div>
+
+    <div class="feature-box">
+        <h3>Can I change a coin after hiding it?</h3>
+        <p>Yes! Click "Edit" on your own coins to update title, description, location, code, or status. Only you (or admins) can edit your coins.</p>
+    </div>
+
+    <div class="feature-box">
+        <h3>How do I logout?</h3>
+        <p>Click "Logout" in the top menu. You'll be shown the Map Points view in read-only mode.</p>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <p style="text-align: center; color: #6c757d; margin-top: 40px;">
+        <strong>Happy Geocaching! 🎯</strong><br>
+        <small>Dani-Geo-Coins v5 - Have fun hiding and finding coins!</small>
+    </p>
+
+    <script>
+        // Listen for messages from parent window to sync help sections
+        window.addEventListener('message', function(event) {
+            // Security: In production, check event.origin
+            if (event.data && event.data.type === 'scrollToHelpSection') {
+                var sectionId = event.data.sectionId;
+                var element = document.getElementById(sectionId);
+                
+                if (element) {
+                    // Remove previous highlights
+                    var highlighted = document.querySelectorAll('.help-highlight');
+                    for (var i = 0; i < highlighted.length; i++) {
+                        highlighted[i].classList.remove('help-highlight');
+                    }
+                    
+                    // Add highlight
+                    element.classList.add('help-highlight');
+                    
+                    // Scroll using scrollTop instead of scrollIntoView to prevent parent page scrolling
+                    var elementTop = element.offsetTop;
+                    window.scrollTo({ top: elementTop - 20, behavior: 'smooth' });
+                    
+                    // Remove highlight after animation completes
+                    setTimeout(function() {
+                        element.classList.remove('help-highlight');
+                    }, 2000);
+                }
+            }
+        });
+    </script>
+</body>
+</html>

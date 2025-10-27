@@ -22,6 +22,7 @@ const Constants = {
     Settings: "settings",
     About: "about",
     DeveloperTools: "developerTools",
+    Help: "help",
   },
   CommandName: {
     // Login commands
@@ -79,6 +80,7 @@ const Constants = {
     ShowSettings: "show.settings",
     ShowAbout: "show.about",
     ShowDeveloperTools: "show.developerTools",
+    ShowHelp: "show.help",
     ViewIssues: "view.issues",
     NewIssue: "new.issue",
   },
@@ -113,6 +115,7 @@ const Constants = {
     SettingsHeader: "settings-header",
     AboutHeader: "about-header",
     DeveloperToolsHeader: "developerTools-header",
+    HelpHeader: "help-header",
     UsersTbody: "users-tbody",
     UsersTable: "users-table",
     UsersEmpty: "users-empty",
@@ -285,6 +288,7 @@ const Config = {
     Constants.ContentSection.Settings,
     Constants.ContentSection.About,
     Constants.ContentSection.DeveloperTools,
+    Constants.ContentSection.Help,
   ],
   
   // Generic viewport fitting configuration per content section
@@ -297,12 +301,13 @@ const Config = {
       enabled: true,
       containerSelector: "#mapPoints-container", // The element to resize
       minHeight: 400,                            // Minimum height in pixels
-      paddingBottom: 20                          // Extra padding at bottom (increased from 16)
+      paddingBottom: 40                          // Extra padding at bottom to ensure bottom menu is visible
     },
     [Constants.ContentSection.MapPointDetails]: { enabled: false },
     [Constants.ContentSection.Settings]: { enabled: false },
     [Constants.ContentSection.About]: { enabled: false },
     [Constants.ContentSection.DeveloperTools]: { enabled: false },
+    [Constants.ContentSection.Help]: { enabled: false },
   },
 
   Commands: {
@@ -861,6 +866,22 @@ const Config = {
       enabled: true,
     },
     {
+      name: "show.help",
+      caption: "Help",
+      menu: { location: "menu.top.top" },
+      action: function () {
+        // Scroll to help section
+        var helpSection = $("help");
+        if (helpSection) {
+          helpSection.scrollIntoView({ behavior: "smooth", block: "start" });
+          // Ensure it's expanded
+          setCollapsed("help", false);
+        }
+      },
+      visible: true,
+      enabled: true,
+    },
+    {
       name: "show.developerTools",
       caption: "Developer Tools",
       menu: { location: "menu.top.top" },
@@ -1153,6 +1174,7 @@ export function fitContentToViewport(contentId) {
   var bodyPaddingBottom = 8;
   
   // Calculate available height: viewport - container top position - bottom menu height (with margins) - body padding - extra padding
+  // Note: Help section is NOT included - it will be scrollable below the viewport
   var availableHeight = viewportHeight - containerTop - menuBottomHeight - bodyPaddingBottom - paddingBottom;
   
   // Apply minimum height constraint
@@ -1161,13 +1183,17 @@ export function fitContentToViewport(contentId) {
   // Set the container height
   container.style.height = finalHeight + 'px';
   
- // console.log("fitContentToViewport(" + contentId + "): set height to " + finalHeight + "px (viewport=" + viewportHeight + ", top=" + Math.round(containerTop) + ", menuBottom=" + Math.round(menuBottomHeight) + ", bodyPadding=" + bodyPaddingBottom + ", extraPadding=" + paddingBottom + ")");
+  console.log("fitContentToViewport(" + contentId + "): set height to " + finalHeight + "px (viewport=" + viewportHeight + ", top=" + Math.round(containerTop) + ", menuBottom=" + Math.round(menuBottomHeight) + ", bodyPadding=" + bodyPaddingBottom + ", extraPadding=" + paddingBottom + ")");
 }
 
 /* ===== Show one content at a time ===== */
 function hideAllContent() {
-  for (var i = 0; i < Config.CONTENT_SECTIONS.length; i++)
-    setSectionVisible(Config.CONTENT_SECTIONS[i], false);
+  for (var i = 0; i < Config.CONTENT_SECTIONS.length; i++) {
+    // Keep Help section always visible
+    if (Config.CONTENT_SECTIONS[i] !== Config.Constants.ContentSection.Help) {
+      setSectionVisible(Config.CONTENT_SECTIONS[i], false);
+    }
+  }
 }
 export function showContent(id) {
   // Save filter state when leaving Users List
@@ -1261,11 +1287,53 @@ export function showContent(id) {
   }
   renderMenusFor(State.currentContentId);
   
+  // Ensure Help section always remains visible
+  setSectionVisible(Config.Constants.ContentSection.Help, true);
+  
+  // Sync help section with current content (iframe scrolls internally, won't affect main page)
+  syncHelpSection(State.currentContentId);
+  
   // Apply generic viewport fitting after menus are rendered and a short delay to ensure rendering is complete
-  if (State.currentContentId) {
+  // Skip for MapPoints since updateMapPointsLayout() already handles it
+  if (State.currentContentId && State.currentContentId !== Constants.ContentSection.MapPoints) {
     setTimeout(function() {
       fitContentToViewport(State.currentContentId);
     }, 200);
+  }
+}
+
+/* ===== Help Section Synchronization ===== */
+function syncHelpSection(contentId) {
+  // Don't sync if no content is being shown
+  if (!contentId) return;
+  
+  // Map content sections to help section IDs
+  var helpSectionMap = {
+    'login': 'help-getting-started',
+    'usersList': 'help-managing-users',
+    'userDetails': 'help-managing-users',
+    'mapPoints': 'help-map-points',
+    'mapPointDetails': 'help-map-points',
+    'settings': 'help-settings',
+    'about': 'help-getting-started',
+    'developerTools': 'help-advanced-features'
+  };
+  
+  var helpSectionId = helpSectionMap[contentId];
+  
+  if (helpSectionId) {
+    // Get the help iframe
+    var helpIframe = $('help-iframe');
+    if (helpIframe && helpIframe.contentWindow) {
+      // Wait a bit to ensure iframe is loaded, then send message
+      setTimeout(function() {
+        // Send message to iframe to scroll to the relevant section
+        helpIframe.contentWindow.postMessage({
+          type: 'scrollToHelpSection',
+          sectionId: helpSectionId
+        }, '*');
+      }, 100);
+    }
   }
 }
 
@@ -3621,15 +3689,25 @@ async function loadAll() {
   // Initialize status bar
   updateStatusBar();
 
-  // Initially, no content -> default menu commands
-  for (var i = 0; i < Config.CONTENT_SECTIONS.length; i++)
-    setSectionVisible(Config.CONTENT_SECTIONS[i], false);
+  // Initially, no content -> default menu commands (but keep Help visible)
+  for (var i = 0; i < Config.CONTENT_SECTIONS.length; i++) {
+    if (Config.CONTENT_SECTIONS[i] !== Config.Constants.ContentSection.Help) {
+      setSectionVisible(Config.CONTENT_SECTIONS[i], false);
+    }
+  }
+  // Ensure Help section is visible but collapsed initially
+  setSectionVisible(Config.Constants.ContentSection.Help, true);
+  setCollapsed(Config.Constants.ContentSection.Help, true);
+  
   renderMenusFor(null);
 
   // If no user is logged in, automatically show map points in view-only mode
   if (!State.currentUser) {
     showContent("mapPoints");
   }
+  
+  // Scroll to top to ensure we start at the top of the page
+  window.scrollTo(0, 0);
 
   // Update view toggle button locations after Config is initialized
   const configLocation = Config.MapPointsList.ViewToggleButtonsLocation;
@@ -3675,6 +3753,9 @@ async function loadAll() {
   });
   $(Config.Constants.ElementId.DeveloperToolsHeader).addEventListener("click", function () {
     toggleCollapse(Config.Constants.ContentSection.DeveloperTools);
+  });
+  $(Config.Constants.ElementId.HelpHeader).addEventListener("click", function () {
+    toggleCollapse(Config.Constants.ContentSection.Help);
   });
 
   // Delegates for list row actions
