@@ -79,6 +79,8 @@ const Constants = {
     ShowSettings: "show.settings",
     ShowAbout: "show.about",
     ShowDeveloperTools: "show.developerTools",
+    ViewIssues: "view.issues",
+    NewIssue: "new.issue",
   },
   MenuLocation: {
     TopTitle: "menu.top.title",
@@ -152,6 +154,8 @@ const Config = {
   },
   Constants: Constants,
   AppTitle: "Dani-Geo-Coins v5",
+  ISSUES_VIEW_LINK: "https://github.com/kamenj/SimpleLoginSite/issues",
+  ISSUES_NEW_LINK: "https://github.com/kamenj/SimpleLoginSite/issues/new",
   Debug: {
     UseDefaultCredentials: true,
     //  DefaultUser: "bob", //hider
@@ -864,6 +868,38 @@ const Config = {
         showContent("developerTools");
       },
       visible: true,
+      enabled: true,
+    },
+    {
+      name: "view.issues",
+      caption: "View Issues",
+      menu: { location: "menu.top.top" },
+      action: function () {
+        window.open(Config.ISSUES_VIEW_LINK, '_blank');
+      },
+      visible: function() {
+        // Only show for users with tester or developer role
+        if (!State.currentUser) return false;
+        var user = findUser(State.currentUser);
+        if (!user) return false;
+        return hasRole(user, 'tester') || hasRole(user, 'developer');
+      },
+      enabled: true,
+    },
+    {
+      name: "new.issue",
+      caption: "New Issue",
+      menu: { location: "menu.top.top" },
+      action: function () {
+        window.open(Config.ISSUES_NEW_LINK, '_blank');
+      },
+      visible: function() {
+        // Only show for users with tester or developer role
+        if (!State.currentUser) return false;
+        var user = findUser(State.currentUser);
+        if (!user) return false;
+        return hasRole(user, 'tester') || hasRole(user, 'developer');
+      },
       enabled: true,
     },
     {
