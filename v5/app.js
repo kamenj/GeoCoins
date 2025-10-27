@@ -601,13 +601,13 @@ const Config = {
           }
           
           if (!point) {
-            showMessage('Point not found', 'mapPoints');
+            await customAlert('Error', 'Point not found');
             return;
           }
           
           // Check permission
           if (!canCurrentUserEditPoint(point)) {
-            showMessage('You do not have permission to delete this point', 'mapPoints');
+            await customAlert('Permission Denied', 'You do not have permission to delete this point');
             return;
           }
           
@@ -617,6 +617,8 @@ const Config = {
               return Number(p.id) !== Number(id);
             });
             refreshMapPointsTable();
+            // Update status bar to reflect changes
+            updateStatusBar();
           }
         },
         visible: true,
@@ -916,9 +918,84 @@ export function load(k, def) {
   }
 }
 
+/* ===== Coin Counting Functions ===== */
+export function getCoinsFoundByUser(username) {
+  if (!username) return 0;
+  var count = 0;
+  for (var i = 0; i < State.mapPoints.length; i++) {
+    var point = State.mapPoints[i];
+    if (point.foundBy === username) {
+      count++;
+    }
+  }
+  return count;
+}
+
+export function getCoinsHiddenByUser(username) {
+  if (!username) return 0;
+  var count = 0;
+  for (var i = 0; i < State.mapPoints.length; i++) {
+    var point = State.mapPoints[i];
+    if (point.username === username && point.status === 'hidden') {
+      count++;
+    }
+  }
+  return count;
+}
+
+export function getTotalCoinsInGame() {
+  return State.mapPoints.length;
+}
+
+export function getCoinsFoundInGame() {
+  var count = 0;
+  for (var i = 0; i < State.mapPoints.length; i++) {
+    var point = State.mapPoints[i];
+    if (point.status === 'found') {
+      count++;
+    }
+  }
+  return count;
+}
+
+export function getCoinsHiddenInGame() {
+  var count = 0;
+  for (var i = 0; i < State.mapPoints.length; i++) {
+    var point = State.mapPoints[i];
+    if (point.status === 'hidden') {
+      count++;
+    }
+  }
+  return count;
+}
+
+export function getCoinsPendingInGame() {
+  var count = 0;
+  for (var i = 0; i < State.mapPoints.length; i++) {
+    var point = State.mapPoints[i];
+    if (point.status === 'pending') {
+      count++;
+    }
+  }
+  return count;
+}
+
 /* ===== Status Bar ===== */
 export function setStatusBarTitle(title) {
-  setText(Config.Constants.ElementId.StatusBarTitle, title);
+  // Add coin counts to title if user is logged in
+  if (State.currentUser) {
+    var foundByUser = getCoinsFoundByUser(State.currentUser);
+    var hiddenByUser = getCoinsHiddenByUser(State.currentUser);
+    var totalFound = getCoinsFoundInGame();
+    var totalHidden = getCoinsHiddenInGame();
+    // Exclude pending coins from total count (only count found + hidden)
+    var totalCoins = totalFound + totalHidden;
+    
+    var coinInfo = " | Found: " + foundByUser + " | Hidden: " + hiddenByUser + " | Total: " + totalFound + "/" + totalCoins;
+    setText(Config.Constants.ElementId.StatusBarTitle, title + coinInfo);
+  } else {
+    setText(Config.Constants.ElementId.StatusBarTitle, title);
+  }
 }
 export function setStatusBarUser(username) {
   var userText = username ? "User: " + username : "Not logged in";
@@ -1239,6 +1316,54 @@ function customPrompt(title, message, defaultValue = '') {
     okBtn.addEventListener('click', handleOk);
     cancelBtn.addEventListener('click', handleCancel);
     inputEl.addEventListener('keydown', handleKeyDown);
+  });
+}
+
+/**
+ * Custom alert dialog that returns a promise
+ * @param {string} title - The title of the modal
+ * @param {string} message - The message to display
+ * @returns {Promise<void>} - Returns when user clicks OK
+ */
+function customAlert(title, message) {
+  return new Promise((resolve) => {
+    const modal = document.getElementById('customAlertModal');
+    const titleEl = document.getElementById('customAlertTitle');
+    const messageEl = document.getElementById('customAlertMessage');
+    const okBtn = document.getElementById('customAlertOk');
+    
+    // Set content
+    titleEl.textContent = title;
+    messageEl.textContent = message;
+    
+    // Show modal
+    modal.classList.remove('hidden');
+    okBtn.focus();
+    
+    // Handle OK
+    const handleOk = () => {
+      cleanup();
+      resolve();
+    };
+    
+    // Handle Enter/Escape key
+    const handleKeyDown = (e) => {
+      if (e.key === 'Enter' || e.key === 'Escape') {
+        e.preventDefault();
+        handleOk();
+      }
+    };
+    
+    // Cleanup function
+    const cleanup = () => {
+      modal.classList.add('hidden');
+      okBtn.removeEventListener('click', handleOk);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+    
+    // Attach event listeners
+    okBtn.addEventListener('click', handleOk);
+    document.addEventListener('keydown', handleKeyDown);
   });
 }
 
@@ -1692,28 +1817,28 @@ export async function saveUserDetails() {
   var newPassword = getVal("ud-password");
   
   // Validate username is not empty
-  if (!newU) return showMessage("Username cannot be empty.", "userDetails");
+  if (!newU) return await customAlert("Validation Error", "Username cannot be empty.");
 
   // Validate username length
   if (newU.length > 20) {
-    showMessage("Username must be maximum 20 characters.", "userDetails");
+    await customAlert("Validation Error", "Username must be maximum 20 characters.");
     return;
   }
   
   // Validate name is not empty (for register and add modes)
   if ((mode === "register" || mode === "add") && !newName) {
-    return showMessage("Name cannot be empty.", "userDetails");
+    return await customAlert("Validation Error", "Name cannot be empty.");
   }
   
   // Validate password is not empty (for register and add modes)
   if ((mode === "register" || mode === "add") && !newPassword) {
-    return showMessage("Password cannot be empty.", "userDetails");
+    return await customAlert("Validation Error", "Password cannot be empty.");
   }
   
   // Check if username already exists (skip check if editing the same user)
   if (mode !== "edit" || oldU !== newU) {
     if (findUser(newU)) {
-      return showMessage("Username already exists. Please choose a different username.", "userDetails");
+      return await customAlert("Validation Error", "Username already exists. Please choose a different username.");
     }
   }
   
@@ -1728,7 +1853,7 @@ export async function saveUserDetails() {
   
   // Validate at least one role is selected
   if (newRoles.length === 0) {
-    return showMessage("Please select at least one role.", "userDetails");
+    return await customAlert("Validation Error", "Please select at least one role.");
   }
   
   // Update user via DB
@@ -1754,12 +1879,13 @@ export async function saveUserDetails() {
       if (State.currentUser === oldU) {
         State.currentUser = newU;
         await DB.setCurrentUser(newU);
+        updateStatusBar(); // Update status bar if current user changed
       }
       
       refreshUsersTable();
       showContent("usersList");
     } else {
-      showMessage("Failed to save user: " + result.error, "userDetails");
+      await customAlert("Error", "Failed to save user: " + result.error);
     }
   } else if (mode === "add" || mode === "register") {
     // Add new user
@@ -1779,13 +1905,14 @@ export async function saveUserDetails() {
         State.currentUser = newU;
         await DB.setCurrentUser(State.currentUser);
         updateStatusBar();
-        showMessage("Registration successful. Welcome, " + State.currentUser + "!", "login");
+        showContent(null); // Just show main content, no success message
       } else {
         // mode === "add" - admin adding a user
-        showMessage("User added successfully.", "usersList");
+        await customAlert("Success", "User added successfully.");
+        showContent("usersList");
       }
     } else {
-      showMessage("Failed to add user: " + result.error, "userDetails");
+      await customAlert("Error", "Failed to add user: " + result.error);
     }
   }
 }
@@ -1802,7 +1929,7 @@ export async function deleteUser() {
     refreshUsersTable();
     showContent("usersList");
   } else {
-    showMessage("Failed to delete user: " + result.error, "userDetails");
+    await customAlert("Error", "Failed to delete user: " + result.error);
   }
 }
 export function cancelUserDetails() {
@@ -1827,16 +1954,18 @@ export async function handleLogin() {
     State.currentUser = result.data.username;
     await DB.setCurrentUser(State.currentUser);
     updateStatusBar();
-    showMessage("Login successful. Welcome, " + State.currentUser + "!", null);
+    // No message on successful login - just proceed
+    showContent(null);
   } else {
-    showMessage("Login failed. Wrong username or password.", "login");
+    await customAlert("Login Failed", "Wrong username or password.");
   }
 }
 export async function logout() {
   State.currentUser = null;
   await DB.clearCurrentUser();
   updateStatusBar();
-  showMessage("You have been logged out.", null);
+  await customAlert("Logout", "You have been logged out.");
+  showContent("login");
 }
 
 /* ===== Map Points ===== */
@@ -1888,6 +2017,9 @@ export function refreshMapPointsTable() {
     if (State.leafletMap) {
       refreshMapMarkers();
     }
+    
+    // Update status bar to reflect changes
+    updateStatusBar();
     return;
   }
   
@@ -1957,6 +2089,9 @@ export function refreshMapPointsTable() {
   if (State.leafletMap) {
     refreshMapMarkers();
   }
+  
+  // Update status bar to reflect changes
+  updateStatusBar();
 }
 
 export function clearMapPointForm() {
@@ -1975,7 +2110,7 @@ export async function saveMapPoint() {
     lng = Number(getVal("mp-lng")),
     desc = getVal("mp-desc");
   if (!isFinite(lat) || !isFinite(lng))
-    return showMessage("Latitude and Longitude must be numbers.", "mapPoints");
+    return await customAlert("Validation Error", "Latitude and Longitude must be numbers.");
   
   if (idStr) {
     // Update existing point
@@ -2000,7 +2135,7 @@ export async function saveMapPoint() {
       refreshMapPointsTable();
       showContent("mapPoints");
     } else {
-      showMessage("Failed to update point: " + result.error, "mapPoints");
+      await customAlert("Error", "Failed to update point: " + result.error);
     }
   } else {
     // Add new point
@@ -2017,9 +2152,10 @@ export async function saveMapPoint() {
       State.mapPoints.push(result.data);
       refreshMapPointsTable();
       clearMapPointForm();
-      showMessage("Map point added.", "mapPoints");
+      await customAlert("Success", "Map point added.");
+      showContent("mapPoints");
     } else {
-      showMessage("Failed to add point: " + result.error, "mapPoints");
+      await customAlert("Error", "Failed to add point: " + result.error);
     }
   }
 }
@@ -2187,6 +2323,8 @@ export async function saveMapPointFromDetails() {
         State.mapPoints = pointsResult.data || [];
       }
       refreshMapPointsTable();
+      // Update status bar to reflect changes
+      updateStatusBar();
       showContent("mapPoints");
     } else {
       showMessage("Failed to add point: " + result.error, "mapPointDetails");
@@ -2213,6 +2351,8 @@ export async function saveMapPointFromDetails() {
         }
       }
       refreshMapPointsTable();
+      // Update status bar to reflect changes
+      updateStatusBar();
       showContent("mapPoints");
     } else {
       showMessage("Failed to update point: " + result.error, "mapPointDetails");
@@ -2244,6 +2384,8 @@ export async function deleteMapPointFromDetails() {
       return Number(x.id) !== id;
     });
     refreshMapPointsTable();
+    // Update status bar to reflect changes
+    updateStatusBar();
     showContent("mapPoints");
   } else {
     showMessage("Failed to delete point: " + result.error, "mapPointDetails");
@@ -3441,13 +3583,13 @@ window.appDeleteMapPoint = async function(pointId) {
   }
   
   if (!point) {
-    alert('Point not found');
+    await customAlert('Error', 'Point not found');
     return;
   }
   
   // Check if user has permission to delete
   if (!canCurrentUserEditPoint(point)) {
-    alert('You do not have permission to delete this point');
+    await customAlert('Permission Denied', 'You do not have permission to delete this point');
     return;
   }
   
@@ -3462,8 +3604,10 @@ window.appDeleteMapPoint = async function(pointId) {
     });
     refreshMapPointsTable();
     refreshMapMarkers();
+    // Update status bar to reflect changes
+    updateStatusBar();
   } else {
-    alert('Failed to delete point: ' + result.error);
+    await customAlert('Error', 'Failed to delete point: ' + result.error);
   }
 };
 
@@ -3479,13 +3623,13 @@ window.appEnterPointCode = async function(pointId) {
   }
   
   if (!point) {
-    alert('Point not found');
+    await customAlert('Error', 'Point not found');
     return;
   }
   
   // Check if point is already found
   if (point.status === 'found') {
-    alert('This point has already been found by ' + (point.foundBy || 'someone'));
+    await customAlert('Already Found', 'This point has already been found by ' + (point.foundBy || 'someone'));
     return;
   }
   
@@ -3523,12 +3667,14 @@ window.appEnterPointCode = async function(pointId) {
       // Refresh UI
       refreshMapPointsTable();
       refreshMapMarkers();
-      alert('Congratulations! You found the point!');
+      // Update status bar to reflect the new found coin
+      updateStatusBar();
+      await customAlert('Congratulations!', 'You found the point!');
     } else {
-      alert('Failed to update point: ' + result.error);
+      await customAlert('Error', 'Failed to update point: ' + result.error);
     }
   } else {
-    alert('Incorrect code. Try again!');
+    await customAlert('Incorrect Code', 'Incorrect code. Try again!');
   }
 };
 
