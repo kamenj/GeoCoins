@@ -21,9 +21,27 @@ function formatErrorDetails(errorInfo) {
 }
 
 /**
+ * Check if error should be ignored (benign browser warnings)
+ */
+function shouldIgnoreError(message) {
+  const ignoredPatterns = [
+    /ResizeObserver loop completed with undelivered notifications/i,
+    /ResizeObserver loop limit exceeded/i
+  ];
+  
+  return ignoredPatterns.some(pattern => pattern.test(message));
+}
+
+/**
  * Add error to State.Errors array
  */
 function logError(errorDetails) {
+  // Ignore benign errors
+  if (shouldIgnoreError(errorDetails.message)) {
+    console.log('Ignored benign error:', errorDetails.message);
+    return;
+  }
+  
   // Initialize State.Errors if not exists
   if (!window.State) {
     window.State = {};
