@@ -61,6 +61,21 @@ body {
 .status-bar-user {
   font-size: 0.9em;
 }
+.error-indicator-btn {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  padding: 5px 12px;
+  margin-left: 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 0.85em;
+  transition: background-color 0.2s;
+}
+.error-indicator-btn:hover {
+  background-color: #c82333;
+}
 
 /* ===== Sections ===== */
 .section {

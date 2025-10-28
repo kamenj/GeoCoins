@@ -23,6 +23,7 @@ const Constants = {
     About: "about",
     DeveloperTools: "developerTools",
     Help: "help",
+    Errors: "errors",
   },
   CommandName: {
     // Login commands
@@ -116,6 +117,7 @@ const Constants = {
     AboutHeader: "about-header",
     DeveloperToolsHeader: "developerTools-header",
     HelpHeader: "help-header",
+    ErrorsHeader: "errors-header",
     UsersTbody: "users-tbody",
     UsersTable: "users-table",
     UsersEmpty: "users-empty",
@@ -159,10 +161,12 @@ const Config = {
   AppTitle: "Dani-Geo-Coins v5",
   ISSUES_VIEW_LINK: "https://github.com/kamenj/SimpleLoginSite/issues",
   ISSUES_NEW_LINK: "https://github.com/kamenj/SimpleLoginSite/issues/new",
+  Errors_GlobalHandlerEnabled: true, // Global error handler (admin setting)
   Debug: {
     UseDefaultCredentials: true,
     //  DefaultUser: "bob", //hider
-    DefaultUser: "diana", //seeker
+    //  DefaultUser: "diana", //seeker
+    DefaultUser: "alice", //admin
     
     DefaultPassword: "1234"
   },
@@ -289,6 +293,7 @@ const Config = {
     Constants.ContentSection.About,
     Constants.ContentSection.DeveloperTools,
     Constants.ContentSection.Help,
+    Constants.ContentSection.Errors,
   ],
   
   // Generic viewport fitting configuration per content section
@@ -773,6 +778,18 @@ const Config = {
         enabled: true,
       },
       {
+        name: "devtools.testError",
+        caption: "Test Error",
+        menu: { location: "menu.bottom.title" },
+        action: function () {
+          // Simulate a realistic error - accessing property of undefined
+          var obj = null;
+          var result = obj.someProperty.nestedProperty;
+        },
+        visible: true,
+        enabled: true,
+      },
+      {
         name: "devtools.fontIncrease",
         caption: "A+",
         menu: { location: "menu.bottom.title" },
@@ -794,6 +811,48 @@ const Config = {
       },
       {
         name: "devtools.close",
+        caption: "Close",
+        menu: { location: "menu.bottom.title" },
+        action: function () {
+          showContent(null);
+        },
+        visible: true,
+        enabled: true,
+      },
+    ],
+    [Constants.ContentSection.Errors]: [
+      {
+        name: "errors.copy",
+        caption: "Copy to Clipboard",
+        menu: { location: "menu.bottom.title" },
+        action: function () {
+          copyErrorsToClipboard();
+        },
+        visible: true,
+        enabled: true,
+      },
+      {
+        name: "errors.clear",
+        caption: "Clear All",
+        menu: { location: "menu.bottom.title" },
+        action: function () {
+          clearAllErrors();
+        },
+        visible: true,
+        enabled: true,
+      },
+      {
+        name: "errors.refresh",
+        caption: "Refresh",
+        menu: { location: "menu.bottom.title" },
+        action: function () {
+          showErrorsInEditor();
+        },
+        visible: true,
+        enabled: true,
+      },
+      {
+        name: "errors.close",
         caption: "Close",
         menu: { location: "menu.bottom.title" },
         action: function () {
@@ -892,6 +951,20 @@ const Config = {
       enabled: true,
     },
     {
+      name: "show.errors",
+      caption: "Errors",
+      menu: { location: "menu.top.top" },
+      action: function () {
+        showErrorsInEditor();
+        showContent(Config.Constants.ContentSection.Errors);
+      },
+      visible: function() {
+        var hasErrors = State.Errors && State.Errors.length > 0;
+        return hasErrors && Config.Errors_GlobalHandlerEnabled;
+      },
+      enabled: true,
+    },
+    {
       name: "view.issues",
       caption: "View Issues",
       menu: { location: "menu.top.top" },
@@ -961,7 +1034,13 @@ const State = {
   usersTableFilters: null, // Store table filter state
   pointsTable: null, // Tabulator instance for Points table
   pointsTableFilters: null, // Store table filter state
+  Errors: [], // Global error log
+  errorsJsonEditor: null, // JSONEditor instance for Errors view
 };
+
+// Expose Config and State to window for errorHandler.js
+window.Config = Config;
+window.State = State;
 
 
 export function $(id) {
@@ -1089,7 +1168,27 @@ export function setStatusBarUser(username) {
 export function updateStatusBar() {
   setStatusBarTitle(Config.AppTitle);
   setStatusBarUser(State.currentUser);
+  updateErrorIndicator();
 }
+
+/* ===== Error Indicator ===== */
+export function updateErrorIndicator() {
+  var errorBtn = $('statusBar-errors');
+  if (!errorBtn) return;
+  
+  var hasErrors = State.Errors && State.Errors.length > 0;
+  
+  // Show button to all users if there are errors and handler is enabled
+  if (hasErrors && Config.Errors_GlobalHandlerEnabled) {
+    errorBtn.style.display = 'inline-block';
+    errorBtn.textContent = 'Errors (' + State.Errors.length + ')';
+  } else {
+    errorBtn.style.display = 'none';
+  }
+}
+
+// Make updateErrorIndicator available globally for errorHandler.js
+window.updateErrorIndicator = updateErrorIndicator;
 
 /* ===== Visibility / Collapse ===== */
 export function setSectionVisible(id, visible) {
@@ -1300,6 +1399,74 @@ export function showContent(id) {
       fitContentToViewport(State.currentContentId);
     }, 200);
   }
+}
+
+/* ===== Errors Content View ===== */
+function initializeErrorsJsonEditor() {
+  if (State.errorsJsonEditor) {
+    State.errorsJsonEditor.destroy();
+  }
+
+  var container = $('errors-json-editor');
+  if (!container) return;
+
+  var options = {
+    mode: 'code', // Code mode (read-only will be enforced)
+    modes: ['code', 'tree', 'view'],
+    onError: function (err) {
+      customAlert('JSON Editor Error', err.toString());
+    },
+    onModeChange: function(newMode, oldMode) {
+      // Keep it read-only in all modes
+      if (State.errorsJsonEditor) {
+        State.errorsJsonEditor.setMode(newMode);
+      }
+    }
+  };
+
+  State.errorsJsonEditor = new JSONEditor(container, options);
+  
+  // Make the editor read-only by disabling the textarea/ace editor
+  setTimeout(function() {
+    var aceEditor = container.querySelector('.ace_editor');
+    if (aceEditor && aceEditor.env && aceEditor.env.editor) {
+      aceEditor.env.editor.setReadOnly(true);
+    }
+    var textarea = container.querySelector('.jsoneditor-text');
+    if (textarea) {
+      textarea.setAttribute('readonly', 'readonly');
+    }
+  }, 100);
+}
+
+export function showErrorsInEditor() {
+  var errors = State.Errors || [];
+  
+  if (!State.errorsJsonEditor) {
+    initializeErrorsJsonEditor();
+  }
+  
+  if (State.errorsJsonEditor) {
+    State.errorsJsonEditor.set(errors);
+  }
+}
+
+export function copyErrorsToClipboard() {
+  var errors = State.Errors || [];
+  var errorsJson = JSON.stringify(errors, null, 2);
+  
+  navigator.clipboard.writeText(errorsJson).then(function() {
+    showMessage('Errors copied to clipboard!', 'errors');
+  }).catch(function(err) {
+    showMessage('Failed to copy errors: ' + err, 'errors');
+  });
+}
+
+export function clearAllErrors() {
+  State.Errors = [];
+  updateErrorIndicator();
+  showErrorsInEditor();
+  showMessage('All errors cleared', 'errors');
 }
 
 /* ===== Help Section Synchronization ===== */
@@ -2961,6 +3128,17 @@ export function openSettings() {
   setVal("set-theme", State.settings.theme || Config.Constants.Theme.Light);
   setVal("set-font", State.settings.font || Config.Constants.FontSize.Medium);
   $("set-autoHideTopMenu").checked = State.settings.autoHideTopMenu || false;
+  
+  // Error handler checkbox (admin only)
+  var errorHandlerCheckbox = $('set-errorHandler');
+  if (errorHandlerCheckbox) {
+    var isAdmin = State.currentUser && hasRole(State.currentUser, 'admin');
+    var errorHandlerRow = errorHandlerCheckbox.closest('tr');
+    if (errorHandlerRow) {
+      errorHandlerRow.style.display = isAdmin ? '' : 'none';
+    }
+    errorHandlerCheckbox.checked = Config.Errors_GlobalHandlerEnabled;
+  }
 }
 export async function applySettings() {
   State.settings = {
@@ -2968,6 +3146,18 @@ export async function applySettings() {
     font: getVal("set-font") || Config.Constants.FontSize.Medium,
     autoHideTopMenu: $("set-autoHideTopMenu").checked || false,
   };
+  
+  // Save error handler setting (admin only)
+  var errorHandlerCheckbox = $('set-errorHandler');
+  if (errorHandlerCheckbox) {
+    var isAdmin = State.currentUser && hasRole(State.currentUser, 'admin');
+    if (isAdmin) {
+      Config.Errors_GlobalHandlerEnabled = errorHandlerCheckbox.checked;
+      // Reinitialize error handlers
+      var errorHandlerModule = await import('./errorHandler.js');
+      errorHandlerModule.initializeErrorHandlers();
+    }
+  }
   
   var result = await DB.saveSettings(State.settings);
   if (result.success) {
@@ -3757,6 +3947,18 @@ async function loadAll() {
   $(Config.Constants.ElementId.HelpHeader).addEventListener("click", function () {
     toggleCollapse(Config.Constants.ContentSection.Help);
   });
+  $(Config.Constants.ElementId.ErrorsHeader).addEventListener("click", function () {
+    toggleCollapse(Config.Constants.ContentSection.Errors);
+  });
+
+  // Status bar errors button click handler
+  var errorsButton = $('statusBar-errors');
+  if (errorsButton) {
+    errorsButton.addEventListener('click', function() {
+      showErrorsInEditor();
+      showContent(Config.Constants.ContentSection.Errors);
+    });
+  }
 
   // Delegates for list row actions
   bindListDelegates();
@@ -3804,6 +4006,10 @@ async function loadAll() {
       }
     }
   });
+  
+  // Initialize error handlers
+  var errorHandlerModule = await import('./errorHandler.js');
+  errorHandlerModule.initializeErrorHandlers();
 }
 
 /* ===== Global functions for popup buttons ===== */

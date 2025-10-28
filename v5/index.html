@@ -17,6 +17,7 @@
     <div id="statusBar" class="status-bar">
       <div id="statusBar-title" class="status-bar-title">Dani-Geo-Coins</div>
       <div id="statusBar-user" class="status-bar-user">Not logged in</div>
+      <button id="statusBar-errors" class="error-indicator-btn" style="display: none;"></button>
     </div>
 
     <!-- 0.1) MENU TOP (no longer docked) -->
@@ -198,6 +199,10 @@
           <input type="checkbox" id="set-autoHideTopMenu" style="width: auto; margin: 0;" />
           Auto-hide top menu when viewing content
         </label>
+        <label style="display: flex; align-items: center; gap: 8px;">
+          <input type="checkbox" id="set-errorHandler" style="width: auto; margin: 0;" />
+          Enable Global Error Handler (Admin Only)
+        </label>
       </div>
     </div>
 
@@ -226,6 +231,19 @@
       </div>
       <div class="section-content">
         <div id="jsoneditor" style="width: 100%; height: 400px; max-height: 60vh;"></div>
+      </div>
+    </div>
+
+    <!-- 1.10) ERRORS -->
+    <div id="errors" class="section">
+      <div id="errors-header" class="section-header">
+        <div class="title-left">
+          <span class="chev" id="chev-errors">▼</span>
+          <span class="title-text">Application Errors</span>
+        </div>
+      </div>
+      <div class="section-content">
+        <div id="errors-json-editor" style="width: 100%; height: 500px; max-height: 60vh; border: 1px solid #ccc;"></div>
       </div>
     </div>
 
