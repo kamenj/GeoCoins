@@ -4006,7 +4006,15 @@ async function loadAll() {
     toggleCollapse(Config.Constants.ContentSection.DeveloperTools);
   });
   $(Config.Constants.ElementId.HelpHeader).addEventListener("click", function () {
+    var helpSection = $(Config.Constants.ContentSection.Help);
+    var wasCollapsed = helpSection ? helpSection.classList.contains(Config.Constants.ClassName.Collapsed) : true;
+    
     toggleCollapse(Config.Constants.ContentSection.Help);
+    
+    // If help is being expanded (was collapsed before), sync with current content
+    if (wasCollapsed && State.currentContentId) {
+      syncHelpSection(State.currentContentId);
+    }
   });
   $(Config.Constants.ElementId.ErrorsHeader).addEventListener("click", function () {
     toggleCollapse(Config.Constants.ContentSection.Errors);
