@@ -1362,6 +1362,14 @@ export function showContent(id) {
       // Update layout
       updateMapPointsLayout();
       
+      // Refresh the points table to ensure columns reflect current user context
+      refreshMapPointsTable();
+      
+      // Set up the divider drag handlers (needs to be done after elements are visible)
+      setTimeout(function() {
+        setupMapPointsDivider();
+      }, 50);
+      
       // Initialize map after a short delay to ensure container is rendered
       setTimeout(function() {
         initializeLeafletMap();
@@ -3700,50 +3708,94 @@ function bindListDelegates() {
 }
 
 /* ===== Draggable Divider for MapPoints ===== */
+// Store handler references to allow cleanup
+var dividerHandlers = {
+  mouseDown: null,
+  mouseMove: null,
+  mouseUp: null,
+  touchStart: null,
+  touchMove: null,
+  touchEnd: null,
+  isDragging: false,
+  startX: 0,
+  startY: 0,
+  startWidth: 0,
+  startHeight: 0
+};
+
 export function setupMapPointsDivider() {
   var divider = $("mapPointsDivider");
   var container = $("mapPoints-container");
   var listDiv = $("mapPointsList");
   var mapDiv = $("mapPointsGeoView");
   
-  if (!divider || !container || !listDiv || !mapDiv) return;
+  if (!divider || !container || !listDiv || !mapDiv) {
+    console.log("setupMapPointsDivider: Missing elements", {
+      divider: !!divider,
+      container: !!container,
+      listDiv: !!listDiv,
+      mapDiv: !!mapDiv
+    });
+    return;
+  }
   
-  var isDragging = false;
-  var startX = 0;
-  var startY = 0;
-  var startWidth = 0;
-  var startHeight = 0;
+  console.log("setupMapPointsDivider: Setting up drag handlers");
   
-  function onMouseDown(e) {
+  // Remove old listeners if they exist
+  if (dividerHandlers.mouseDown) {
+    divider.removeEventListener("mousedown", dividerHandlers.mouseDown);
+    document.removeEventListener("mousemove", dividerHandlers.mouseMove);
+    document.removeEventListener("mouseup", dividerHandlers.mouseUp);
+    divider.removeEventListener("touchstart", dividerHandlers.touchStart);
+    document.removeEventListener("touchmove", dividerHandlers.touchMove);
+    document.removeEventListener("touchend", dividerHandlers.touchEnd);
+  }
+  
+  dividerHandlers.mouseDown = function(e) {
+    console.log("Divider mousedown event triggered");
+    
     // Only allow dragging when both views are visible
     if (!State.mapPointsView.showList || !State.mapPointsView.showMap) {
+      console.log("Dragging not allowed - views:", State.mapPointsView);
       return;
     }
     
-    isDragging = true;
+    console.log("Starting drag");
+    dividerHandlers.isDragging = true;
     divider.classList.add("dragging");
     
     var isHorizontal = container.classList.contains("layout-horizontal");
+    console.log("Layout is horizontal:", isHorizontal);
     
     if (isHorizontal) {
-      startX = e.clientX;
-      startWidth = listDiv.getBoundingClientRect().width;
+      dividerHandlers.startX = e.clientX;
+      dividerHandlers.startWidth = listDiv.getBoundingClientRect().width;
     } else {
-      startY = e.clientY;
-      startHeight = listDiv.getBoundingClientRect().height;
+      dividerHandlers.startY = e.clientY;
+      dividerHandlers.startHeight = listDiv.getBoundingClientRect().height;
     }
     
+    // Prevent text selection and default behavior
     e.preventDefault();
-  }
+    e.stopPropagation();
+    
+    // Add body styles to prevent selection during drag
+    document.body.style.userSelect = 'none';
+    document.body.style.cursor = isHorizontal ? 'ew-resize' : 'ns-resize';
+  };
   
-  function onMouseMove(e) {
-    if (!isDragging) return;
+  dividerHandlers.mouseMove = function(e) {
+    if (!dividerHandlers.isDragging) return;
     
     var isHorizontal = container.classList.contains("layout-horizontal");
     
     if (isHorizontal) {
-      var deltaX = e.clientX - startX;
-      var newWidth = startWidth + deltaX;
+      var deltaX = e.clientX - dividerHandlers.startX;
+      
+      // Only apply changes if delta is significant (avoid micro-jumps)
+      if (Math.abs(deltaX) < 1) return;
+      
+      var newWidth = dividerHandlers.startWidth + deltaX;
       
       // Apply constraints
       var minWidth = parseInt(getComputedStyle(container).getPropertyValue('--list-min-row-width')) || 300;
@@ -3756,8 +3808,12 @@ export function setupMapPointsDivider() {
       container.style.setProperty('--list-dock-left-width', newWidth + 'px');
       listDiv.style.width = newWidth + 'px';
     } else {
-      var deltaY = e.clientY - startY;
-      var newHeight = startHeight + deltaY;
+      var deltaY = e.clientY - dividerHandlers.startY;
+      
+      // Only apply changes if delta is significant (avoid micro-jumps)
+      if (Math.abs(deltaY) < 1) return;
+      
+      var newHeight = dividerHandlers.startHeight + deltaY;
       
       // Apply constraints
       var minHeight = 200; // Minimum height for list
@@ -3771,19 +3827,20 @@ export function setupMapPointsDivider() {
       listDiv.style.height = newHeight + 'px';
     }
     
-    // Invalidate map size
-    if (State.leafletMap) {
-      State.leafletMap.invalidateSize();
-    }
+    // Don't invalidate map during drag - only at the end (performance optimization)
     
     e.preventDefault();
-  }
+  };
   
-  function onMouseUp(e) {
-    if (!isDragging) return;
+  dividerHandlers.mouseUp = function(e) {
+    if (!dividerHandlers.isDragging) return;
     
-    isDragging = false;
+    dividerHandlers.isDragging = false;
     divider.classList.remove("dragging");
+    
+    // Restore body styles
+    document.body.style.userSelect = '';
+    document.body.style.cursor = '';
     
     // Final map invalidation
     if (State.leafletMap) {
@@ -3791,33 +3848,37 @@ export function setupMapPointsDivider() {
         State.leafletMap.invalidateSize();
       }, 50);
     }
-  }
+  };
   
-  // Mouse events
-  divider.addEventListener("mousedown", onMouseDown);
-  document.addEventListener("mousemove", onMouseMove);
-  document.addEventListener("mouseup", onMouseUp);
-  
-  // Touch events for mobile
-  divider.addEventListener("touchstart", function(e) {
+  dividerHandlers.touchStart = function(e) {
     if (e.touches.length === 1) {
       var touch = e.touches[0];
-      onMouseDown({ clientX: touch.clientX, clientY: touch.clientY, preventDefault: function() { e.preventDefault(); } });
+      dividerHandlers.mouseDown({ clientX: touch.clientX, clientY: touch.clientY, preventDefault: function() { e.preventDefault(); } });
     }
-  });
+  };
   
-  document.addEventListener("touchmove", function(e) {
-    if (isDragging && e.touches.length === 1) {
+  dividerHandlers.touchMove = function(e) {
+    if (dividerHandlers.isDragging && e.touches.length === 1) {
       var touch = e.touches[0];
-      onMouseMove({ clientX: touch.clientX, clientY: touch.clientY, preventDefault: function() { e.preventDefault(); } });
+      dividerHandlers.mouseMove({ clientX: touch.clientX, clientY: touch.clientY, preventDefault: function() { e.preventDefault(); } });
     }
-  });
+  };
   
-  document.addEventListener("touchend", function(e) {
-    if (isDragging) {
-      onMouseUp({ preventDefault: function() { e.preventDefault(); } });
+  dividerHandlers.touchEnd = function(e) {
+    if (dividerHandlers.isDragging) {
+      dividerHandlers.mouseUp({ preventDefault: function() { e.preventDefault(); } });
     }
-  });
+  };
+  
+  // Attach new listeners
+  divider.addEventListener("mousedown", dividerHandlers.mouseDown);
+  document.addEventListener("mousemove", dividerHandlers.mouseMove);
+  document.addEventListener("mouseup", dividerHandlers.mouseUp);
+  
+  // Touch events for mobile
+  divider.addEventListener("touchstart", dividerHandlers.touchStart);
+  document.addEventListener("touchmove", dividerHandlers.touchMove);
+  document.addEventListener("touchend", dividerHandlers.touchEnd);
 }
 
 /* ===== Init ===== */
