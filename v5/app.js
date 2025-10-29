@@ -1782,6 +1782,109 @@ export function canCurrentUserEditPoint(point) {
   return false;
 }
 
+/* ===== Wildcard Filter Helper ===== */
+/**
+ * Converts a wildcard pattern (like SQL LIKE) to a regex and tests against a value
+ * Supports * as wildcard (matches any characters)
+ * Supports OR operator using | or 'or' (case-insensitive)
+ * Supports AND operator using 'and' (case-insensitive) - for multi-field filters only
+ * Examples:
+ *   "P*" matches "Pending", "Park"
+ *   "*den" matches "Hidden", "Garden"
+ *   "*und*" matches "Found", "Underground"
+ *   "a*|b*" or "a* or b*" matches "Alice", "Bob", "Adam", "Betty"
+ *   "pending|hidden" matches "pending", "hidden"
+ * @param {string} pattern - The wildcard pattern (can contain | or 'or' for OR logic)
+ * @param {string} value - The value to test (can be a string or array for multi-value matching)
+ * @returns {boolean} - True if pattern matches value
+ */
+function matchWildcard(pattern, value) {
+  if (!pattern) return true;
+  if (!value) return false;
+  
+  // Check if this is an AND operation (contains ' and ' but not within a value context)
+  var hasAnd = /\s+and\s+/i.test(pattern);
+  
+  if (hasAnd) {
+    // AND operation - all patterns must match (useful for role filters)
+    var andPatterns = pattern.split(/\s+and\s+/i);
+    for (var j = 0; j < andPatterns.length; j++) {
+      var andPattern = andPatterns[j].trim();
+      if (!andPattern) continue;
+      
+      // For AND, we need to check if this pattern matches
+      // This is primarily useful when value is an array or multi-value
+      if (!matchSinglePattern(andPattern, value)) {
+        return false;
+      }
+    }
+    return true;
+  }
+  
+  // OR operation (default)
+  return matchSinglePattern(pattern, value);
+}
+
+/**
+ * Helper function to match a single pattern (which may contain OR operators)
+ * @param {string} pattern - The pattern to match
+ * @param {string|array} value - The value(s) to test against
+ * @returns {boolean} - True if pattern matches
+ */
+function matchSinglePattern(pattern, value) {
+  // Split pattern by OR operators (| or 'or' with word boundaries)
+  var normalizedPattern = pattern.replace(/\s+or\s+/gi, '|');
+  var patterns = normalizedPattern.split('|');
+  
+  // Test each OR pattern - if any matches, return true
+  for (var i = 0; i < patterns.length; i++) {
+    var currentPattern = patterns[i].trim();
+    if (!currentPattern) continue;
+    
+    // If value is an array, check if pattern matches any element
+    if (Array.isArray(value)) {
+      for (var k = 0; k < value.length; k++) {
+        if (testPattern(currentPattern, value[k])) {
+          return true;
+        }
+      }
+    } else {
+      // Single value
+      if (testPattern(currentPattern, value)) {
+        return true;
+      }
+    }
+  }
+  
+  return false;
+}
+
+/**
+ * Test a single pattern against a single value
+ * @param {string} pattern - The pattern (may contain wildcards)
+ * @param {string} value - The value to test
+ * @returns {boolean} - True if matches
+ */
+function testPattern(pattern, value) {
+  if (!value) return false;
+  var strValue = String(value);
+  
+  // Check if pattern contains wildcard
+  if (pattern.indexOf('*') === -1) {
+    // No wildcard, use simple case-insensitive substring match
+    return strValue.toLowerCase().indexOf(pattern.toLowerCase()) >= 0;
+  }
+  
+  // Convert wildcard pattern to regex
+  var regexPattern = pattern
+    .replace(/[.+?^${}()[\]\\]/g, '\\$&')  // Escape special chars
+    .replace(/\*/g, '.*');                   // Replace * with .*
+  
+  // Create regex with case-insensitive flag
+  var regex = new RegExp('^' + regexPattern + '$', 'i');
+  return regex.test(strValue);
+}
+
 /* ===== Users ===== */
 export async function addUser(u) {
   var result = await DB.addUser(u);
@@ -1815,12 +1918,28 @@ function getTableColumns(viewMode) {
       { title: "#", field: "index", width: 60, headerSort: false, formatter: function(cell) { 
         return cell.getRow().getPosition(); 
       }},
-      { title: "Username", field: "username", headerFilter: "input", sorter: "string" },
-      { title: "Name", field: "name", headerFilter: "input", sorter: "string" },
+      { title: "Username", field: "username", headerFilter: "input", sorter: "string", 
+        headerFilterFunc: function(headerValue, rowValue, rowData, filterParams) {
+          return matchWildcard(headerValue, rowValue);
+        }
+      },
+      { title: "Name", field: "name", headerFilter: "input", sorter: "string",
+        headerFilterFunc: function(headerValue, rowValue, rowData, filterParams) {
+          return matchWildcard(headerValue, rowValue);
+        }
+      },
       { title: "Role", field: "roles", headerFilter: "input", sorter: "string", formatter: function(cell) {
         var user = cell.getRow().getData();
         return getRolesDisplay(user);
-      }},
+      },
+        headerFilterFunc: function(headerValue, rowValue, rowData, filterParams) {
+          // Get roles array for matching
+          var rolesArray = getRolesArray(rowData);
+          
+          // Pass the roles array to matchWildcard for AND/OR support
+          return matchWildcard(headerValue, rolesArray);
+        }
+      },
       { title: "Actions", field: "actions", headerSort: false, width: 150, formatter: function(cell) {
         var user = cell.getRow().getData();
         return renderCommandHTML({ payload: user.username }, Config.Constants.CommandName.UsersDeleteRow) + " " +
@@ -1834,15 +1953,22 @@ function getTableColumns(viewMode) {
         headerFilter: "input", 
         sorter: "string",
         headerFilterFunc: function(headerValue, rowValue, rowData, filterParams) {
-          // Custom filter that searches in username, name, and roles
-          var searchTerm = headerValue.toLowerCase();
-          var username = (rowData.username || '').toLowerCase();
-          var name = (rowData.name || '').toLowerCase();
-          var rolesDisplay = getRolesDisplay(rowData).toLowerCase();
+          // Custom filter that searches in username, name, and roles with wildcard support
+          var username = rowData.username || '';
+          var name = rowData.name || '';
+          var rolesArray = getRolesArray(rowData);
           
-          return username.indexOf(searchTerm) >= 0 || 
-                 name.indexOf(searchTerm) >= 0 || 
-                 rolesDisplay.indexOf(searchTerm) >= 0;
+          // Check username and name
+          if (matchWildcard(headerValue, username) || matchWildcard(headerValue, name)) {
+            return true;
+          }
+          
+          // Check roles (supports AND/OR operators with array)
+          if (matchWildcard(headerValue, rolesArray)) {
+            return true;
+          }
+          
+          return false;
         },
         formatter: function(cell) {
           var user = cell.getRow().getData();
@@ -1874,13 +2000,26 @@ function getPointsTableColumns(viewMode) {
       return '<button class="' + Config.Constants.ClassName.LinkBtn + '" ' + 
              Config.Constants.Attribute.DataOpenPoint + '="' + point.id + '">' +
              (point.title || "(no title)") + '</button>';
-    }},
-    { title: "User", field: "username", headerFilter: "input", sorter: "string" },
+    },
+      headerFilterFunc: function(headerValue, rowValue, rowData, filterParams) {
+        return matchWildcard(headerValue, rowValue);
+      }
+    },
+    { title: "User", field: "username", headerFilter: "input", sorter: "string",
+      headerFilterFunc: function(headerValue, rowValue, rowData, filterParams) {
+        return matchWildcard(headerValue, rowValue);
+      }
+    },
     { title: "Status", field: "status", headerFilter: "input", sorter: "string", formatter: function(cell) {
       var status = cell.getValue() || "pending";
       var badge = '<span class="role-badge">' + status + '</span>';
       return badge;
-    }},
+    },
+      headerFilterFunc: function(headerValue, rowValue, rowData, filterParams) {
+        var status = rowValue || "pending";
+        return matchWildcard(headerValue, status);
+      }
+    },
     // Code column hidden - users can enter code via "Enter Code" button
     // { title: "Code", field: "code", headerFilter: "input", sorter: "string", formatter: function(cell) {
     //   var point = cell.getRow().getData();
@@ -1890,7 +2029,11 @@ function getPointsTableColumns(viewMode) {
     // }},
     { title: "Found By", field: "foundBy", headerFilter: "input", sorter: "string", formatter: function(cell) {
       return cell.getValue() || "";
-    }},
+    },
+      headerFilterFunc: function(headerValue, rowValue, rowData, filterParams) {
+        return matchWildcard(headerValue, rowValue);
+      }
+    },
     { title: "Latitude", field: "lat", headerFilter: "input", sorter: "number", formatter: function(cell) {
       return Number(cell.getValue()).toFixed(6);
     }},
@@ -1906,17 +2049,18 @@ function getPointsTableColumns(viewMode) {
       headerFilter: "input", 
       sorter: "string",
       headerFilterFunc: function(headerValue, rowValue, rowData, filterParams) {
-        // Custom filter that searches in title, username, status, and coordinates
-        var searchTerm = headerValue.toLowerCase();
-        var title = (rowData.title || '').toLowerCase();
-        var username = (rowData.username || '').toLowerCase();
-        var status = (rowData.status || '').toLowerCase();
-        var coords = (rowData.lat + ', ' + rowData.lng).toLowerCase();
+        // Custom filter that searches in title, username, status, foundBy, and coordinates with wildcard support
+        var title = rowData.title || '';
+        var username = rowData.username || '';
+        var status = rowData.status || '';
+        var foundBy = rowData.foundBy || '';
+        var coords = rowData.lat + ', ' + rowData.lng;
         
-        return title.indexOf(searchTerm) >= 0 || 
-               username.indexOf(searchTerm) >= 0 || 
-               status.indexOf(searchTerm) >= 0 ||
-               coords.indexOf(searchTerm) >= 0;
+        return matchWildcard(headerValue, title) || 
+               matchWildcard(headerValue, username) || 
+               matchWildcard(headerValue, status) ||
+               matchWildcard(headerValue, foundBy) ||
+               matchWildcard(headerValue, coords);
       },
       formatter: function(cell) {
         var point = cell.getRow().getData();
