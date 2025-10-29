@@ -38,7 +38,6 @@ function shouldIgnoreError(message) {
 function logError(errorDetails) {
   // Ignore benign errors
   if (shouldIgnoreError(errorDetails.message)) {
-    console.log('Ignored benign error:', errorDetails.message);
     return;
   }
   

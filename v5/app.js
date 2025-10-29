@@ -499,6 +499,10 @@ const Config = {
         caption: "Login",
         menu: { location: "menu.mapPoints.title" },
         action: function () {
+          // Exit fullscreen mode if active before showing login
+          if (State.fullScreen.active) {
+            exitMapPointsFullScreen();
+          }
           showContent("login");
         },
         visible: function() {
