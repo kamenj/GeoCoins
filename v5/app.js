@@ -1953,22 +1953,9 @@ function getTableColumns(viewMode) {
         headerFilter: "input", 
         sorter: "string",
         headerFilterFunc: function(headerValue, rowValue, rowData, filterParams) {
-          // Custom filter that searches in username, name, and roles with wildcard support
+          // Filter only by username field in compact view
           var username = rowData.username || '';
-          var name = rowData.name || '';
-          var rolesArray = getRolesArray(rowData);
-          
-          // Check username and name
-          if (matchWildcard(headerValue, username) || matchWildcard(headerValue, name)) {
-            return true;
-          }
-          
-          // Check roles (supports AND/OR operators with array)
-          if (matchWildcard(headerValue, rolesArray)) {
-            return true;
-          }
-          
-          return false;
+          return matchWildcard(headerValue, username);
         },
         formatter: function(cell) {
           var user = cell.getRow().getData();
@@ -2175,18 +2162,9 @@ function getPointsTableColumns(viewMode) {
         return container;
       },
       headerFilterFunc: function(headerValue, rowValue, rowData, filterParams) {
-        // Custom filter that searches in title, username, status, foundBy, and coordinates with wildcard support
+        // Filter only by title field in compact view
         var title = rowData.title || '';
-        var username = rowData.username || '';
-        var status = rowData.status || '';
-        var foundBy = rowData.foundBy || '';
-        var coords = rowData.lat + ', ' + rowData.lng;
-        
-        return matchWildcard(headerValue, title) || 
-               matchWildcard(headerValue, username) || 
-               matchWildcard(headerValue, status) ||
-               matchWildcard(headerValue, foundBy) ||
-               matchWildcard(headerValue, coords);
+        return matchWildcard(headerValue, title);
       },
       formatter: function(cell) {
         var point = cell.getRow().getData();
