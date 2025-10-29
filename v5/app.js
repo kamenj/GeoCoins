@@ -1915,9 +1915,64 @@ function getTableColumns(viewMode) {
   
   var columns = {
     details: [
-      { title: "#", field: "index", width: 60, headerSort: false, formatter: function(cell) { 
-        return cell.getRow().getPosition(); 
-      }},
+      { 
+        title: "#", 
+        field: "index", 
+        widthGrow: 0,
+        widthShrink: 1,
+        minWidth: 40,
+        headerSort: false, 
+        formatter: function(cell) { 
+          return cell.getRow().getPosition(); 
+        },
+        titleFormatter: function(cell, formatterParams, onRendered) {
+          var container = document.createElement('div');
+          container.style.display = 'flex';
+          container.style.alignItems = 'center';
+          container.style.justifyContent = 'center';
+          container.style.width = '100%';
+          var currentView = Config.UsersTable.view;
+          if (currentView !== 'details') {
+            var detailsBtn = document.createElement('button');
+            detailsBtn.textContent = '#';
+            detailsBtn.className = 'cmd-btn view-toggle-btn';
+            detailsBtn.title = 'Details View';
+            detailsBtn.onclick = function(e) {
+              e.stopPropagation();
+              e.preventDefault();
+              var menuBottomEl = $(Config.Constants.ElementId.MenuBottom);
+              var wasCollapsed = menuBottomEl ? menuBottomEl.classList.contains(Config.Constants.ClassName.Collapsed) : true;
+              Config.UsersTable.view = "details";
+              refreshUsersTable();
+              renderMenusFor(State.currentContentId);
+              setTimeout(function() {
+                setCollapsed(Config.Constants.ElementId.MenuBottom, wasCollapsed);
+              }, 0);
+            };
+            container.appendChild(detailsBtn);
+          }
+          if (currentView !== 'compact') {
+            var compactBtn = document.createElement('button');
+            compactBtn.textContent = '#';
+            compactBtn.className = 'cmd-btn view-toggle-btn';
+            compactBtn.title = 'Compact View';
+            compactBtn.onclick = function(e) {
+              e.stopPropagation();
+              e.preventDefault();
+              var menuBottomEl = $(Config.Constants.ElementId.MenuBottom);
+              var wasCollapsed = menuBottomEl ? menuBottomEl.classList.contains(Config.Constants.ClassName.Collapsed) : true;
+              Config.UsersTable.view = "compact";
+              refreshUsersTable();
+              renderMenusFor(State.currentContentId);
+              setTimeout(function() {
+                setCollapsed(Config.Constants.ElementId.MenuBottom, wasCollapsed);
+              }, 0);
+            };
+            container.appendChild(compactBtn);
+          }
+          return container;
+        }
+      },
       { title: "Username", field: "username", headerFilter: "input", sorter: "string", 
         headerFilterFunc: function(headerValue, rowValue, rowData, filterParams) {
           return matchWildcard(headerValue, rowValue);
@@ -1933,10 +1988,7 @@ function getTableColumns(viewMode) {
         return getRolesDisplay(user);
       },
         headerFilterFunc: function(headerValue, rowValue, rowData, filterParams) {
-          // Get roles array for matching
           var rolesArray = getRolesArray(rowData);
-          
-          // Pass the roles array to matchWildcard for AND/OR support
           return matchWildcard(headerValue, rolesArray);
         }
       },
@@ -1944,7 +1996,8 @@ function getTableColumns(viewMode) {
         var user = cell.getRow().getData();
         return renderCommandHTML({ payload: user.username }, Config.Constants.CommandName.UsersDeleteRow) + " " +
                renderCommandHTML({ payload: user.username }, Config.Constants.CommandName.UsersEditRow);
-      }}
+      }
+      }
     ],
     compact: [
       { 
@@ -1953,7 +2006,6 @@ function getTableColumns(viewMode) {
         headerFilter: "input", 
         sorter: "string",
         headerFilterFunc: function(headerValue, rowValue, rowData, filterParams) {
-          // Filter only by username field in compact view
           var username = rowData.username || '';
           return matchWildcard(headerValue, username);
         },
@@ -1962,16 +2014,65 @@ function getTableColumns(viewMode) {
           var rolesDisplay = getRolesDisplay(user);
           var rolesBadge = rolesDisplay ? ' <span class="role-badge">' + rolesDisplay + '</span>' : '';
           return '<strong>' + user.username + '</strong> - ' + (user.name || '') + rolesBadge;
-        }
+        },
+        titleFormatter: function(cell, formatterParams, onRendered) {
+          var container = document.createElement('div');
+          container.style.display = 'flex';
+          container.style.alignItems = 'center';
+          container.style.justifyContent = 'center';
+          container.style.width = '100%';
+          var currentView = Config.UsersTable.view;
+          if (currentView !== 'details') {
+            var detailsBtn = document.createElement('button');
+            detailsBtn.textContent = '#';
+            detailsBtn.className = 'cmd-btn view-toggle-btn';
+            detailsBtn.title = 'Details View';
+            detailsBtn.onclick = function(e) {
+              e.stopPropagation();
+              e.preventDefault();
+              var menuBottomEl = $(Config.Constants.ElementId.MenuBottom);
+              var wasCollapsed = menuBottomEl ? menuBottomEl.classList.contains(Config.Constants.ClassName.Collapsed) : true;
+              Config.UsersTable.view = "details";
+              refreshUsersTable();
+              renderMenusFor(State.currentContentId);
+              setTimeout(function() {
+                setCollapsed(Config.Constants.ElementId.MenuBottom, wasCollapsed);
+              }, 0);
+            };
+            container.appendChild(detailsBtn);
+          }
+          if (currentView !== 'compact') {
+            var compactBtn = document.createElement('button');
+            compactBtn.textContent = '#';
+            compactBtn.className = 'cmd-btn view-toggle-btn';
+            compactBtn.title = 'Compact View';
+            compactBtn.onclick = function(e) {
+              e.stopPropagation();
+              e.preventDefault();
+              var menuBottomEl = $(Config.Constants.ElementId.MenuBottom);
+              var wasCollapsed = menuBottomEl ? menuBottomEl.classList.contains(Config.Constants.ClassName.Collapsed) : true;
+              Config.UsersTable.view = "compact";
+              refreshUsersTable();
+              renderMenusFor(State.currentContentId);
+              setTimeout(function() {
+                setCollapsed(Config.Constants.ElementId.MenuBottom, wasCollapsed);
+              }, 0);
+            };
+            container.appendChild(compactBtn);
+          }
+          return container;
+        },
+        headerVertical: true
       },
       { title: "Actions", field: "actions", headerSort: false, width: 150, formatter: function(cell) {
         var user = cell.getRow().getData();
         return renderCommandHTML({ payload: user.username }, Config.Constants.CommandName.UsersDeleteRow) + " " +
                renderCommandHTML({ payload: user.username }, Config.Constants.CommandName.UsersEditRow);
-      }}
+      },
+        headerVertical: true
+      }
     ]
   };
-  
   return columns[viewMode] || columns.details;
 }
 
