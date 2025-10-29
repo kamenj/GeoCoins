@@ -1353,6 +1353,16 @@ export function showContent(id) {
       setVal("login-password", Config.Debug.DefaultPassword);
     }
     
+    // Set focus to username field when login view is displayed
+    if (State.currentContentId === Constants.ContentSection.Login) {
+      setTimeout(function() {
+        var usernameInput = $("login-username");
+        if (usernameInput) {
+          usernameInput.focus();
+        }
+      }, 100);
+    }
+    
     // Initialize map when MapPoints section is shown
     if (State.currentContentId === Constants.ContentSection.MapPoints) {
       // Apply initial view state from config
@@ -4782,6 +4792,26 @@ async function loadAll() {
   $(Config.Constants.ElementId.LoginHeader).addEventListener("click", function () {
     toggleCollapse(Config.Constants.ContentSection.Login);
   });
+  
+  // Login form: Enter key handler (desktop mode)
+  var loginUsernameInput = $("login-username");
+  var loginPasswordInput = $("login-password");
+  if (loginUsernameInput) {
+    loginUsernameInput.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        handleLogin();
+      }
+    });
+  }
+  if (loginPasswordInput) {
+    loginPasswordInput.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        handleLogin();
+      }
+    });
+  }
   $(Config.Constants.ElementId.UsersListHeader).addEventListener("click", function () {
     toggleCollapse(Config.Constants.ContentSection.UsersList);
   });
