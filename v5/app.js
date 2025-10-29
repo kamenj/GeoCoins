@@ -3348,25 +3348,47 @@ export function enterMapPointsFullScreen() {
   State.fullScreen.preFullScreenState = {
     scrollY: window.scrollY || window.pageYOffset,
     visibleSections: [],
-    menuBottomParent: null
+    collapsedStates: {},
+    menuBottomParent: null,
+    menuBottomNextSibling: null
   };
   
-  // Record which sections were visible before full screen
+  // Record which sections were visible and collapsed before full screen
   for (var i = 0; i < Config.CONTENT_SECTIONS.length; i++) {
     var sectionId = Config.CONTENT_SECTIONS[i];
     var section = $(sectionId);
     if (section && section.style.display !== 'none') {
       State.fullScreen.preFullScreenState.visibleSections.push(sectionId);
     }
+    // Save collapsed state
+    if (section) {
+      State.fullScreen.preFullScreenState.collapsedStates[sectionId] = section.classList.contains(Config.Constants.ClassName.Collapsed);
+    }
+  }
+  
+  // Also save collapsed states for menus
+  var menuTop = $(Constants.ElementId.MenuTop);
+  if (menuTop) {
+    State.fullScreen.preFullScreenState.collapsedStates[Constants.ElementId.MenuTop] = menuTop.classList.contains(Config.Constants.ClassName.Collapsed);
+  }
+  
+  var menuBottom = $(Constants.ElementId.MenuBottom);
+  if (menuBottom) {
+    State.fullScreen.preFullScreenState.collapsedStates[Constants.ElementId.MenuBottom] = menuBottom.classList.contains(Config.Constants.ClassName.Collapsed);
+  }
+  
+  var help = $(Constants.ContentSection.Help);
+  if (help) {
+    State.fullScreen.preFullScreenState.collapsedStates[Constants.ContentSection.Help] = help.classList.contains(Config.Constants.ClassName.Collapsed);
   }
   
   // Set full screen active
   State.fullScreen.active = true;
   
-  // Save menuBottom's original parent BEFORE any operations
-  var menuBottom = $(Constants.ElementId.MenuBottom);
+  // Save menuBottom's original parent and next sibling BEFORE any operations
   if (menuBottom) {
     State.fullScreen.preFullScreenState.menuBottomParent = menuBottom.parentNode;
+    State.fullScreen.preFullScreenState.menuBottomNextSibling = menuBottom.nextSibling;
   }
   
   // Add fullscreen CSS class to body
@@ -3389,25 +3411,38 @@ export function enterMapPointsFullScreen() {
   // Hide top menu
   setSectionVisible(Constants.ElementId.MenuTop, false);
   
-  // Ensure MapPoints is visible and expanded
+  // Ensure MapPoints is visible (but don't change its collapsed state)
   var mapPoints = $(Constants.ContentSection.MapPoints);
   if (mapPoints) {
     mapPoints.style.display = 'flex';
+    // Don't force expand - keep the collapsed state as it was
   }
   
   // Scroll to top to show the full MapPoints view
   window.scrollTo(0, 0);
   
   // Move menuBottom to be a direct child of body (to show in fullscreen)
+  // But preserve its collapsed state
   var menuBottom = $(Constants.ElementId.MenuBottom);
+  var menuBottomWasCollapsed = menuBottom ? menuBottom.classList.contains(Constants.ClassName.Collapsed) : false;
   if (menuBottom) {
     document.body.appendChild(menuBottom);
     menuBottom.style.display = 'flex';
-    menuBottom.classList.remove(Constants.ClassName.Collapsed);
+    // Don't force expand - keep collapsed state
+    if (!menuBottomWasCollapsed) {
+      menuBottom.classList.remove(Constants.ClassName.Collapsed);
+    }
   }
   
   // Re-render menus to update button visibility (Full Screen -> Exit Full Screen)
   renderMenusFor(State.currentContentId);
+  
+  // Restore menuBottom collapsed state after re-render
+  setTimeout(function() {
+    if (menuBottom && menuBottomWasCollapsed) {
+      setCollapsed(Constants.ElementId.MenuBottom, true);
+    }
+  }, 50);
   
   // Enter browser fullscreen mode (hides browser UI)
   var elem = document.documentElement;
@@ -3471,10 +3506,24 @@ export function exitMapPointsFullScreen() {
     }
   }
   
-  // Restore menuBottom to its original parent
+  // Restore menuBottom to its original parent and position
   var menuBottom = $(Constants.ElementId.MenuBottom);
   if (menuBottom && State.fullScreen.preFullScreenState.menuBottomParent) {
-    State.fullScreen.preFullScreenState.menuBottomParent.appendChild(menuBottom);
+    // Use insertBefore to restore to exact original position (before Help section)
+    var parent = State.fullScreen.preFullScreenState.menuBottomParent;
+    var nextSibling = State.fullScreen.preFullScreenState.menuBottomNextSibling;
+    
+    if (nextSibling && nextSibling.parentNode === parent) {
+      parent.insertBefore(menuBottom, nextSibling);
+    } else {
+      parent.appendChild(menuBottom);
+    }
+    
+    // Ensure menuBottom has proper display style restored
+    menuBottom.style.display = '';
+    // Remove any flex styling that was added during fullscreen
+    menuBottom.style.flex = '';
+    menuBottom.style.order = '';
   }
   
   // Restore full screen state
@@ -3483,12 +3532,38 @@ export function exitMapPointsFullScreen() {
   // Remove fullscreen CSS class from body
   document.body.classList.remove('fullscreen-mode');
   
+  // Restore body padding
+  document.body.style.padding = '';
+  document.body.style.margin = '';
+  document.body.style.overflow = '';
+  document.body.style.display = '';
+  document.body.style.flexDirection = '';
+  document.body.style.height = '';
+  document.body.style.width = '';
+  
   // Restore previously visible sections
   var visibleSections = State.fullScreen.preFullScreenState.visibleSections || [];
   for (var i = 0; i < Config.CONTENT_SECTIONS.length; i++) {
     var sectionId = Config.CONTENT_SECTIONS[i];
     var wasVisible = visibleSections.indexOf(sectionId) !== -1;
     setSectionVisible(sectionId, wasVisible);
+  }
+  
+  // Restore collapsed states for content sections (but not menus yet - they'll be re-rendered)
+  var collapsedStates = State.fullScreen.preFullScreenState.collapsedStates || {};
+  for (var sectionId in collapsedStates) {
+    if (collapsedStates.hasOwnProperty(sectionId)) {
+      // Skip menus - we'll restore their state after renderMenusFor
+      if (sectionId === Constants.ElementId.MenuTop || 
+          sectionId === Constants.ElementId.MenuBottom) {
+        continue;
+      }
+      var section = $(sectionId);
+      if (section) {
+        var wasCollapsed = collapsedStates[sectionId];
+        setCollapsed(sectionId, wasCollapsed);
+      }
+    }
   }
   
   // Show status bar
@@ -3502,11 +3577,31 @@ export function exitMapPointsFullScreen() {
     setSectionVisible(Constants.ElementId.MenuTop, true);
   }
   
-  // Restore scroll position
-  var scrollY = State.fullScreen.preFullScreenState.scrollY || 0;
-  window.scrollTo(0, scrollY);
+  // Ensure Help section is visible (it should always be visible)
+  setSectionVisible(Constants.ContentSection.Help, true);
   
-  // Clear pre-full screen state
+  // Restore scroll position - but ensure menuBottom is visible
+  var scrollY = State.fullScreen.preFullScreenState.scrollY || 0;
+  
+  // Wait a moment for layout to settle, then scroll and check menuBottom visibility
+  setTimeout(function() {
+    window.scrollTo(0, scrollY);
+    
+    // Ensure menuBottom is visible in viewport
+    if (menuBottom) {
+      var menuBottomRect = menuBottom.getBoundingClientRect();
+      var viewportHeight = window.innerHeight;
+      
+      // If menuBottom is below the viewport, scroll to make it visible
+      if (menuBottomRect.top > viewportHeight) {
+        menuBottom.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      }
+    }
+  }, 150);
+  
+  // Clear pre-full screen state - but save collapsed states for menus
+  var savedMenuTopCollapsed = collapsedStates[Constants.ElementId.MenuTop];
+  var savedMenuBottomCollapsed = collapsedStates[Constants.ElementId.MenuBottom];
   State.fullScreen.preFullScreenState = null;
   
   // Re-fit the viewport to the normal layout
@@ -3539,6 +3634,16 @@ export function exitMapPointsFullScreen() {
   
   // Re-render menu to show Full Screen button again
   renderMenusFor(State.currentContentId);
+  
+  // Restore menu collapsed states AFTER renderMenusFor
+  setTimeout(function() {
+    if (savedMenuTopCollapsed !== undefined) {
+      setCollapsed(Constants.ElementId.MenuTop, savedMenuTopCollapsed);
+    }
+    if (savedMenuBottomCollapsed !== undefined) {
+      setCollapsed(Constants.ElementId.MenuBottom, savedMenuBottomCollapsed);
+    }
+  }, 50);
 }
 
 export function updateMapPointsLayout() {

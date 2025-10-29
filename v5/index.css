@@ -83,6 +83,8 @@ body {
   border-radius: 6px;
   background: var(--card);
   margin: 10px 0;
+  position: relative;
+  z-index: 1;
 }
 .section-header {
   position: relative;
@@ -291,6 +293,12 @@ tr.selected { background: var(--highlight); }
 .dock-top { top: 6px; }
 .dock-top-menu { top: 46px; } /* below status bar: 6px + 32px height + 2px border + 6px spacing */
 .dock-bottom { bottom: 6px; }
+
+/* Ensure menuBottom appears above help section when both are visible */
+#menuBottom {
+  position: relative;
+  z-index: 10;
+}
 
 /* Title command area */
 .cmd-bar.title-cmds {
