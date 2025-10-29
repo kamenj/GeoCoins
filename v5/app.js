@@ -3457,13 +3457,18 @@ export function exitMapPointsFullScreen() {
     return;
   }
   
-  // Exit browser fullscreen mode
-  if (document.exitFullscreen) {
-    document.exitFullscreen();
-  } else if (document.webkitExitFullscreen) { /* Safari */
-    document.webkitExitFullscreen();
-  } else if (document.msExitFullscreen) { /* IE11 */
-    document.msExitFullscreen();
+  // Exit browser fullscreen mode only if currently in fullscreen
+  var isInFullscreen = document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement;
+  if (isInFullscreen) {
+    if (document.exitFullscreen) {
+      document.exitFullscreen().catch(function(err) {
+        console.warn('Failed to exit fullscreen:', err);
+      });
+    } else if (document.webkitExitFullscreen) { /* Safari */
+      document.webkitExitFullscreen();
+    } else if (document.msExitFullscreen) { /* IE11 */
+      document.msExitFullscreen();
+    }
   }
   
   // Restore menuBottom to its original parent
