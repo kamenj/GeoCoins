@@ -957,10 +957,65 @@ body.fullscreen-mode > #mapPoints .section-content {
 
 body.fullscreen-mode > #mapPoints #mapPoints-container {
   flex: 1;
-  height: auto !important;
+  height: 100% !important;
   min-height: 0;
   margin: 0;
   display: flex !important;
+}
+
+body.fullscreen-mode > #mapPoints .mappoints-container.show-list-only .mappoints-list {
+  flex: 1 !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  padding: 0 !important;
+  height: auto !important;
+  width: 100% !important;
+  border: none !important;
+  border-radius: 0 !important;
+  margin: 0 !important;
+}
+
+body.fullscreen-mode > #mapPoints .mappoints-container.show-list-only .mappoints-list .tabulator {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  height: 1px !important;
+  border: none !important;
+  border-radius: 0 !important;
+}
+
+/* In both mode (list + map), make list fill height but keep width flexible for divider */
+body.fullscreen-mode > #mapPoints .mappoints-list {
+  height: 100% !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  flex-shrink: 1 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  min-height: 0 !important;
+  border: none !important;
+  border-radius: 0 !important;
+}
+
+body.fullscreen-mode > #mapPoints .mappoints-list .tabulator {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  height: 1px !important;
+  border: none !important;
+  border-radius: 0 !important;
+}
+
+body.fullscreen-mode > #mapPoints .mappoints-geoview {
+  height: 100% !important;
+  border: none !important;
+  border-radius: 0 !important;
+  margin: 0 !important;
+}
+
+body.fullscreen-mode > #mapPoints .mappoints-geoview {
+  height: 100% !important;
 }
 
 /* MenuBottom is now a direct child of body in fullscreen */

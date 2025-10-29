@@ -3421,13 +3421,35 @@ export function enterMapPointsFullScreen() {
     elem.msRequestFullscreen();
   }
   
-  // Refresh map to adjust to new size
+  // Refresh map and table to adjust to new size
   setTimeout(function() {
+    // Update Tabulator to use full available space
+    if (State.pointsTable) {
+      // Calculate the height we want the tabulator to be
+      var listDiv = document.querySelector('.mappoints-list');
+      var targetHeight = listDiv ? listDiv.offsetHeight : 700;
+      
+      // Access Tabulator's internal options and modify maxHeight
+      if (State.pointsTable.options) {
+        State.pointsTable.options.maxHeight = "none";
+      }
+      
+      // Get the tabulator div and remove inline max-height style
+      var tabulatorDiv = document.querySelector('.mappoints-list .tabulator');
+      if (tabulatorDiv) {
+        tabulatorDiv.style.maxHeight = 'none';
+      }
+      
+      // Set height to the calculated pixel value
+      State.pointsTable.setHeight(targetHeight);
+      State.pointsTable.redraw(true);
+    }
+    
     if (State.leafletMap && State.mapPointsView.showMap) {
       State.leafletMap.invalidateSize();
       refreshMapMarkers();
     }
-  }, 100);
+  }, 300);
 }
 
 export function exitMapPointsFullScreen() {
@@ -3484,6 +3506,23 @@ export function exitMapPointsFullScreen() {
   
   // Re-fit the viewport to the normal layout
   setTimeout(function() {
+    // Restore Tabulator height and maxHeight to original settings
+    if (State.pointsTable) {
+      // Restore maxHeight option
+      if (State.pointsTable.options) {
+        State.pointsTable.options.maxHeight = Config.PointsTable.maxHeight;
+      }
+      
+      // Clear inline max-height style (let Tabulator manage it)
+      var tabulatorDiv = document.querySelector('.mappoints-list .tabulator');
+      if (tabulatorDiv) {
+        tabulatorDiv.style.maxHeight = '';
+      }
+      
+      State.pointsTable.setHeight(Config.PointsTable.height);
+      State.pointsTable.redraw(true);
+    }
+    
     fitContentToViewport(Constants.ContentSection.MapPoints);
     
     // Refresh map to adjust to new size
