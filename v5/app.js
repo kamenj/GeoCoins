@@ -430,8 +430,8 @@ const Config = {
         name: "users.editRow",
         caption: "Edit",
         menu: { location: "list.row" },
-        action: function (username) {
-          openUserDetails(username);
+        action: async function (username) {
+          await openUserDetails(username);
         },
         visible: true,
         enabled: true,
@@ -638,14 +638,8 @@ const Config = {
         caption: "Delete",
         menu: { location: "list.row" },
         action: async function (id) {
-          // Find the point to check permissions
-          var point = null;
-          for (var i = 0; i < State.mapPoints.length; i++) {
-            if (Number(State.mapPoints[i].id) === Number(id)) {
-              point = State.mapPoints[i];
-              break;
-            }
-          }
+          // Fetch the point to check permissions
+          var point = await findPointById(id);
           
           if (!point) {
             await customAlert('Error', 'Point not found');
@@ -660,12 +654,11 @@ const Config = {
           
           var result = await DB.deletePoint(Number(id));
           if (result.success) {
-            State.mapPoints = State.mapPoints.filter(function (p) {
-              return Number(p.id) !== Number(id);
-            });
+            // Invalidate cache
+            invalidatePointCache(id);
             refreshMapPointsTable();
             // Update status bar to reflect changes
-            updateStatusBar();
+            await updateStatusBar();
           }
         },
         visible: true,
@@ -996,7 +989,7 @@ const Config = {
       visible: function() {
         // Only show for users with tester or developer role
         if (!State.currentUser) return false;
-        var user = findUser(State.currentUser);
+        var user = findUserFromCache(State.currentUser);
         if (!user) return false;
         return hasRole(user, 'tester') || hasRole(user, 'developer');
       },
@@ -1012,7 +1005,7 @@ const Config = {
       visible: function() {
         // Only show for users with tester or developer role
         if (!State.currentUser) return false;
-        var user = findUser(State.currentUser);
+        var user = findUserFromCache(State.currentUser);
         if (!user) return false;
         return hasRole(user, 'tester') || hasRole(user, 'developer');
       },
@@ -1035,8 +1028,8 @@ const Config = {
 const State = {
   currentContentId: null,
   message_BefireDisplayContentID: null,
-  users: [],
-  mapPoints: [],
+  users: [], // Array of user IDs only (for server mode) - populated on demand
+  mapPoints: [], // Array of point IDs only (for server mode) - populated on demand
   currentUser: null,
   settings: { 
     theme: Config.Constants.Theme.Light, 
@@ -1062,6 +1055,9 @@ const State = {
     active: false, // Whether full screen mode is active
     preFullScreenState: null, // Store the state before entering full screen for restoration
   },
+  // Cache for recently accessed items (server mode optimization)
+  _userCache: {}, // username -> user object
+  _pointCache: {}, // id -> point object
 };
 
 // Expose Config and State to window for errorHandler.js
@@ -1097,61 +1093,74 @@ export function load(k, def) {
 }
 
 /* ===== Coin Counting Functions ===== */
-export function getCoinsFoundByUser(username) {
+// Server mode compatible: these functions fetch data through DB API
+export async function getCoinsFoundByUser(username) {
   if (!username) return 0;
+  var result = await DB.getAllPoints();
+  if (!result.success) return 0;
+  var points = result.data || [];
   var count = 0;
-  for (var i = 0; i < State.mapPoints.length; i++) {
-    var point = State.mapPoints[i];
-    if (point.foundBy === username) {
+  for (var i = 0; i < points.length; i++) {
+    if (points[i].foundBy === username) {
       count++;
     }
   }
   return count;
 }
 
-export function getCoinsHiddenByUser(username) {
+export async function getCoinsHiddenByUser(username) {
   if (!username) return 0;
+  var result = await DB.getAllPoints();
+  if (!result.success) return 0;
+  var points = result.data || [];
   var count = 0;
-  for (var i = 0; i < State.mapPoints.length; i++) {
-    var point = State.mapPoints[i];
-    if (point.username === username && point.status === 'hidden') {
+  for (var i = 0; i < points.length; i++) {
+    if (points[i].username === username && points[i].status === 'hidden') {
       count++;
     }
   }
   return count;
 }
 
-export function getTotalCoinsInGame() {
-  return State.mapPoints.length;
+export async function getTotalCoinsInGame() {
+  var result = await DB.getAllPoints();
+  if (!result.success) return 0;
+  return (result.data || []).length;
 }
 
-export function getCoinsFoundInGame() {
+export async function getCoinsFoundInGame() {
+  var result = await DB.getAllPoints();
+  if (!result.success) return 0;
+  var points = result.data || [];
   var count = 0;
-  for (var i = 0; i < State.mapPoints.length; i++) {
-    var point = State.mapPoints[i];
-    if (point.status === 'found') {
+  for (var i = 0; i < points.length; i++) {
+    if (points[i].status === 'found') {
       count++;
     }
   }
   return count;
 }
 
-export function getCoinsHiddenInGame() {
+export async function getCoinsHiddenInGame() {
+  var result = await DB.getAllPoints();
+  if (!result.success) return 0;
+  var points = result.data || [];
   var count = 0;
-  for (var i = 0; i < State.mapPoints.length; i++) {
-    var point = State.mapPoints[i];
-    if (point.status === 'hidden') {
+  for (var i = 0; i < points.length; i++) {
+    if (points[i].status === 'hidden') {
       count++;
     }
   }
   return count;
 }
 
-export function getCoinsPendingInGame() {
+export async function getCoinsPendingInGame() {
+  var result = await DB.getAllPoints();
+  if (!result.success) return 0;
+  var points = result.data || [];
   var count = 0;
-  for (var i = 0; i < State.mapPoints.length; i++) {
-    var point = State.mapPoints[i];
-    if (point.status === 'pending') {
+  for (var i = 0; i < points.length; i++) {
+    if (points[i].status === 'pending') {
       count++;
     }
   }
@@ -1159,13 +1168,13 @@ export function getCoinsPendingInGame() {
 }
 
 /* ===== Status Bar ===== */
-export function setStatusBarTitle(title) {
+export async function setStatusBarTitle(title) {
   // Add coin counts to title if user is logged in
   if (State.currentUser) {
-    var foundByUser = getCoinsFoundByUser(State.currentUser);
-    var hiddenByUser = getCoinsHiddenByUser(State.currentUser);
-    var totalFound = getCoinsFoundInGame();
-    var totalHidden = getCoinsHiddenInGame();
+    var foundByUser = await getCoinsFoundByUser(State.currentUser);
+    var hiddenByUser = await getCoinsHiddenByUser(State.currentUser);
+    var totalFound = await getCoinsFoundInGame();
+    var totalHidden = await getCoinsHiddenInGame();
     // Exclude pending coins from total count (only count found + hidden)
     var totalCoins = totalFound + totalHidden;
     
@@ -1175,12 +1184,12 @@ export function setStatusBarTitle(title) {
     setText(Config.Constants.ElementId.StatusBarTitle, title);
   }
 }
-export function setStatusBarUser(username) {
+export async function setStatusBarUser(username) {
   var userText = username ? "User: " + username : "Not logged in";
   
   // Add roles if user is logged in
   if (username) {
-    var user = findUser(username);
+    var user = await findUser(username);
     if (user) {
       var rolesDisplay = getRolesDisplay(user);
       if (rolesDisplay) {
@@ -1191,9 +1200,9 @@ export function setStatusBarUser(username) {
   
   setText(Config.Constants.ElementId.StatusBarUser, userText);
 }
-export function updateStatusBar() {
-  setStatusBarTitle(Config.AppTitle);
-  setStatusBarUser(State.currentUser);
+export async function updateStatusBar() {
+  await setStatusBarTitle(Config.AppTitle);
+  await setStatusBarUser(State.currentUser);
   updateErrorIndicator();
 }
 
@@ -1886,27 +1895,75 @@ function testPattern(pattern, value) {
 }
 
 /* ===== Users ===== */
+// Server mode compatible: all operations go through DB API
 export async function addUser(u) {
   var result = await DB.addUser(u);
   if (result.success) {
-    State.users.push(u);
+    // Invalidate cache
+    delete State._userCache[u.username];
+    // Note: We don't store the user in State.users anymore
   }
   return result;
 }
 export async function removeUserByUsername(username) {
   var result = await DB.deleteUser(username);
   if (result.success) {
-    State.users = State.users.filter(function (u) {
-      return u.username !== username;
-    });
+    // Invalidate cache
+    delete State._userCache[username];
+    // Note: We don't store users in State.users anymore
   }
   return result;
 }
-export function findUser(username) {
-  for (var i = 0; i < State.users.length; i++) {
-    if (State.users[i].username === username) return State.users[i];
+export async function findUser(username) {
+  // Check cache first
+  if (State._userCache[username]) {
+    return State._userCache[username];
+  }
+  
+  // Fetch from DB
+  var result = await DB.getUserByUsername(username);
+  if (result.success && result.data) {
+    // Cache it
+    State._userCache[username] = result.data;
+    return result.data;
   }
   return null;
+}
+
+/* ===== Map Points - Server Mode Compatible ===== */
+// Helper function to find a point by ID (with caching)
+export async function findPointById(id) {
+  var numId = Number(id);
+  
+  // Check cache first
+  if (State._pointCache[numId]) {
+    return State._pointCache[numId];
+  }
+  
+  // Fetch from DB
+  var result = await DB.getPointById(numId);
+  if (result.success && result.data) {
+    // Cache it
+    State._pointCache[numId] = result.data;
+    return result.data;
+  }
+  return null;
+}
+
+// Synchronous helper to check user from cache (for UI rendering)
+export function findUserFromCache(username) {
+  // Only returns from cache, doesn't fetch
+  return State._userCache[username] || null;
+}
+
+// Invalidate point cache
+export function invalidatePointCache(id) {
+  if (id !== undefined && id !== null) {
+    delete State._pointCache[Number(id)];
+  } else {
+    // Clear entire cache
+    State._pointCache = {};
+  }
 }
 
 function getTableColumns(viewMode) {
@@ -2367,96 +2424,101 @@ export function refreshUsersTable() {
   var tableDiv = $(Config.Constants.ElementId.UsersTable);
   var empty = $(Config.Constants.ElementId.UsersEmpty);
   
-  if (State.users.length === 0) {
-    tableDiv.style.display = "none";
-    empty.style.display = "block";
-    if (State.usersTable) {
-      State.usersTable.destroy();
-      State.usersTable = null;
+  // Fetch users from DB for display
+  DB.getAllUsers().then(function(result) {
+    var users = result.success ? (result.data || []) : [];
+    
+    if (users.length === 0) {
+      tableDiv.style.display = "none";
+      empty.style.display = "block";
+      if (State.usersTable) {
+        State.usersTable.destroy();
+        State.usersTable = null;
+      }
+      return;
     }
-    return;
-  }
-  
-  tableDiv.style.display = "block";
-  empty.style.display = "none";
-  
-  // Save current filter state before updating (only if table is already initialized)
-  if (State.usersTable && State.usersTable.initialized) {
-    try {
-      State.usersTableFilters = State.usersTable.getHeaderFilters();
-    } catch(e) {
-      // Ignore errors if table not ready
-      State.usersTableFilters = null;
+    
+    tableDiv.style.display = "block";
+    empty.style.display = "none";
+    
+    // Save current filter state before updating (only if table is already initialized)
+    if (State.usersTable && State.usersTable.initialized) {
+      try {
+        State.usersTableFilters = State.usersTable.getHeaderFilters();
+      } catch(e) {
+        // Ignore errors if table not ready
+        State.usersTableFilters = null;
+      }
     }
-  }
-  
-  // Get current view mode from config
-  var viewMode = Config.UsersTable.view || "details";
-  var columns = getTableColumns(viewMode);
-  
-  // Initialize or update the Tabulator table
-  if (!State.usersTable) {
-    // Create new Tabulator instance
-    State.usersTable = new Tabulator("#" + Config.Constants.ElementId.UsersTable, {
-      data: State.users,
-      layout: Config.UsersTable.layout,
-      height: Config.UsersTable.height,
-      maxHeight: Config.UsersTable.maxHeight,
-      columns: columns,
-      initialSort: Config.UsersTable.initialSort,
-      pagination: Config.UsersTable.pagination,
-      paginationSize: Config.UsersTable.paginationSize,
-      rowFormatter: function(row) {
-        // Add alternating row colors
-        if (Config.UsersTable.rowAlternating) {
-          var rowIndex = row.getPosition();
-          if (rowIndex % 2 === 0) {
-            row.getElement().classList.add("tabulator-row-even");
-          } else {
-            row.getElement().classList.add("tabulator-row-odd");
+    
+    // Get current view mode from config
+    var viewMode = Config.UsersTable.view || "details";
+    var columns = getTableColumns(viewMode);
+    
+    // Initialize or update the Tabulator table
+    if (!State.usersTable) {
+      // Create new Tabulator instance
+      State.usersTable = new Tabulator("#" + Config.Constants.ElementId.UsersTable, {
+        data: users,
+        layout: Config.UsersTable.layout,
+        height: Config.UsersTable.height,
+        maxHeight: Config.UsersTable.maxHeight,
+        columns: columns,
+        initialSort: Config.UsersTable.initialSort,
+        pagination: Config.UsersTable.pagination,
+        paginationSize: Config.UsersTable.paginationSize,
+        rowFormatter: function(row) {
+          // Add alternating row colors
+          if (Config.UsersTable.rowAlternating) {
+            var rowIndex = row.getPosition();
+            if (rowIndex % 2 === 0) {
+              row.getElement().classList.add("tabulator-row-even");
+            } else {
+              row.getElement().classList.add("tabulator-row-odd");
+            }
           }
         }
-      }
-    });
-    
-    // Add row click handler to show selection indicator
-    State.usersTable.on("rowClick", function(e, row) {
-      // Remove selection indicator from all rows
-      var allRows = State.usersTable.getRows();
-      for (var i = 0; i < allRows.length; i++) {
-        allRows[i].getElement().classList.remove("row-selected");
-      }
-      // Add selection indicator to clicked row
-      row.getElement().classList.add("row-selected");
-    });
-    
-    // Restore filter state after table is built
-    State.usersTable.on("tableBuilt", function() {
-      if (State.usersTableFilters && State.usersTableFilters.length > 0) {
-        for (var i = 0; i < State.usersTableFilters.length; i++) {
-          var filter = State.usersTableFilters[i];
-          State.usersTable.setHeaderFilterValue(filter.field, filter.value);
-        }
-      }
-    });
-  } else {
-    // Update existing table with new data and columns
-    // Wait for table to be ready before updating
-    if (State.usersTable.initialized) {
-      State.usersTable.setColumns(columns);
-      State.usersTable.setData(State.users);
+      });
       
-      // Restore filter state after update
-      if (State.usersTableFilters && State.usersTableFilters.length > 0) {
-        setTimeout(function() {
+      // Add row click handler to show selection indicator
+      State.usersTable.on("rowClick", function(e, row) {
+        // Remove selection indicator from all rows
+        var allRows = State.usersTable.getRows();
+        for (var i = 0; i < allRows.length; i++) {
+          allRows[i].getElement().classList.remove("row-selected");
+        }
+        // Add selection indicator to clicked row
+        row.getElement().classList.add("row-selected");
+      });
+      
+      // Restore filter state after table is built
+      State.usersTable.on("tableBuilt", function() {
+        if (State.usersTableFilters && State.usersTableFilters.length > 0) {
           for (var i = 0; i < State.usersTableFilters.length; i++) {
             var filter = State.usersTableFilters[i];
             State.usersTable.setHeaderFilterValue(filter.field, filter.value);
           }
-        }, 100);
+        }
+      });
+    } else {
+      // Update existing table with new data and columns
+      // Wait for table to be ready before updating
+      if (State.usersTable.initialized) {
+        State.usersTable.setColumns(columns);
+        State.usersTable.setData(users);
+        
+        // Restore filter state after update
+        if (State.usersTableFilters && State.usersTableFilters.length > 0) {
+          setTimeout(function() {
+            for (var i = 0; i < State.usersTableFilters.length; i++) {
+              var filter = State.usersTableFilters[i];
+              State.usersTable.setHeaderFilterValue(filter.field, filter.value);
+            }
+          }, 100);
+        }
       }
     }
-  }
+  });
 }
 
 function fillUserDetails(u, mode) {
@@ -2497,8 +2559,8 @@ function fillUserDetails(u, mode) {
     }
   }
 }
-export function openUserDetails(username) {
-  var u = findUser(username);
+export async function openUserDetails(username) {
+  var u = await findUser(username);
   if (!u) return;
   showContent("userDetails");
   fillUserDetails(u, "edit");
@@ -2584,18 +2646,15 @@ export async function saveUserDetails() {
     // Update existing user
     var result = await DB.updateUser(oldU, userData);
     if (result.success) {
-      // Update local state
-      for (var i = 0; i < State.users.length; i++) {
-        if (State.users[i].username === oldU) {
-          State.users[i] = { ...State.users[i], ...userData };
-        }
-      }
+      // Invalidate cache
+      delete State._userCache[oldU];
+      delete State._userCache[newU];
       
       // Update current user if needed
       if (State.currentUser === oldU) {
         State.currentUser = newU;
         await DB.setCurrentUser(newU);
-        updateStatusBar(); // Update status bar if current user changed
+        await updateStatusBar(); // Update status bar if current user changed
       }
       
       refreshUsersTable();
@@ -2620,7 +2679,9 @@ export async function saveUserDetails() {
         // Auto-login after registration
         State.currentUser = newU;
         await DB.setCurrentUser(State.currentUser);
-        updateStatusBar();
+        // Cache the user data for menu rendering
+        State._userCache[newU] = newUser;
+        await updateStatusBar();
         showContent(null); // Just show main content, no success message
       } else {
         // mode === "add" - admin adding a user
@@ -2669,7 +2730,9 @@ export async function handleLogin() {
   if (result.success && result.data) {
     State.currentUser = result.data.username;
     await DB.setCurrentUser(State.currentUser);
-    updateStatusBar();
+    // Cache the user data immediately for menu rendering
+    State._userCache[result.data.username] = result.data;
+    await updateStatusBar();
     // No message on successful login - just proceed
     showContent(null);
   } else {
@@ -2679,7 +2742,9 @@ export async function handleLogin() {
 export async function logout() {
   State.currentUser = null;
   await DB.clearCurrentUser();
-  updateStatusBar();
+  // Clear user cache on logout
+  State._userCache = {};
+  await updateStatusBar();
   await customAlert("Logout", "You have been logged out.");
   // Show map points in view-only mode after logout
   showContent("mapPoints");
@@ -2732,12 +2797,107 @@ export function refreshMapPointsTable() {
   var tableDiv = $(Config.Constants.ElementId.MpsTable);
   var empty = $(Config.Constants.ElementId.MpsEmpty);
   
-  if (State.mapPoints.length === 0) {
-    tableDiv.style.display = "none";
-    empty.style.display = "block";
-    if (State.pointsTable) {
-      State.pointsTable.destroy();
-      State.pointsTable = null;
+  // Fetch points from DB for display
+  DB.getAllPoints().then(function(result) {
+    var points = result.success ? (result.data || []) : [];
+    
+    if (points.length === 0) {
+      tableDiv.style.display = "none";
+      empty.style.display = "block";
+      if (State.pointsTable) {
+        State.pointsTable.destroy();
+        State.pointsTable = null;
+      }
+      
+      // Also refresh map markers if map is initialized
+      if (State.leafletMap) {
+        refreshMapMarkers();
+      }
+      
+      // Update status bar to reflect changes
+      updateStatusBar();
+      return;
+    }
+    
+    tableDiv.style.display = "block";
+    empty.style.display = "none";
+    
+    // Save current filter state before updating (only if table is already initialized)
+    if (State.pointsTable && State.pointsTable.initialized) {
+      try {
+        State.pointsTableFilters = State.pointsTable.getHeaderFilters();
+      } catch(e) {
+        // Ignore errors if table not ready
+        State.pointsTableFilters = null;
+      }
+    }
+    
+    // Get current view mode from config
+    var viewMode = Config.PointsTable.view || "details";
+    var columns = getPointsTableColumns(viewMode);
+    
+    // Initialize or update the Tabulator table
+    if (!State.pointsTable) {
+      // Create new Tabulator instance
+      State.pointsTable = new Tabulator("#" + Config.Constants.ElementId.MpsTable, {
+        data: points,
+        layout: Config.PointsTable.layout,
+        height: Config.PointsTable.height,
+        maxHeight: Config.PointsTable.maxHeight,
+        columns: columns,
+        initialSort: Config.PointsTable.initialSort,
+        pagination: Config.PointsTable.pagination,
+        paginationSize: Config.PointsTable.paginationSize,
+        rowFormatter: function(row) {
+          // Add alternating row colors
+          if (Config.PointsTable.rowAlternating) {
+            var rowIndex = row.getPosition();
+            if (rowIndex % 2 === 0) {
+              row.getElement().classList.add("tabulator-row-even");
+            } else {
+              row.getElement().classList.add("tabulator-row-odd");
+            }
+          }
+        }
+      });
+      
+      // Add row click handler to show selection indicator
+      State.pointsTable.on("rowClick", function(e, row) {
+        // Remove selection indicator from all rows
+        var allRows = State.pointsTable.getRows();
+        for (var i = 0; i < allRows.length; i++) {
+          allRows[i].getElement().classList.remove("row-selected");
+        }
+        // Add selection indicator to clicked row
+        row.getElement().classList.add("row-selected");
+      });
+      
+      // Restore filter state after table is built
+      State.pointsTable.on("tableBuilt", function() {
+        if (State.pointsTableFilters && State.pointsTableFilters.length > 0) {
+          for (var i = 0; i < State.pointsTableFilters.length; i++) {
+            var filter = State.pointsTableFilters[i];
+            State.pointsTable.setHeaderFilterValue(filter.field, filter.value);
+          }
+        }
+      });
+    } else {
+      // Update existing table with new data and columns
+      // Wait for table to be ready before updating
+      if (State.pointsTable.initialized) {
+        State.pointsTable.setColumns(columns);
+        State.pointsTable.setData(points);
+        
+        // Restore filter state after update
+        if (State.pointsTableFilters && State.pointsTableFilters.length > 0) {
+          setTimeout(function() {
+            for (var i = 0; i < State.pointsTableFilters.length; i++) {
+              var filter = State.pointsTableFilters[i];
+              State.pointsTable.setHeaderFilterValue(filter.field, filter.value);
+            }
+          }, 100);
+        }
+      }
     }
     
     // Also refresh map markers if map is initialized
@@ -2747,97 +2907,7 @@ export function refreshMapPointsTable() {
     
     // Update status bar to reflect changes
     updateStatusBar();
-    return;
-  }
-  
-  tableDiv.style.display = "block";
-  empty.style.display = "none";
-  
-  // Save current filter state before updating (only if table is already initialized)
-  if (State.pointsTable && State.pointsTable.initialized) {
-    try {
-      State.pointsTableFilters = State.pointsTable.getHeaderFilters();
-    } catch(e) {
-      // Ignore errors if table not ready
-      State.pointsTableFilters = null;
-    }
-  }
-  
-  // Get current view mode from config
-  var viewMode = Config.PointsTable.view || "details";
-  var columns = getPointsTableColumns(viewMode);
-  
-  // Initialize or update the Tabulator table
-  if (!State.pointsTable) {
-    // Create new Tabulator instance
-    State.pointsTable = new Tabulator("#" + Config.Constants.ElementId.MpsTable, {
-      data: State.mapPoints,
-      layout: Config.PointsTable.layout,
-      height: Config.PointsTable.height,
-      maxHeight: Config.PointsTable.maxHeight,
-      columns: columns,
-      initialSort: Config.PointsTable.initialSort,
-      pagination: Config.PointsTable.pagination,
-      paginationSize: Config.PointsTable.paginationSize,
-      rowFormatter: function(row) {
-        // Add alternating row colors
-        if (Config.PointsTable.rowAlternating) {
-          var rowIndex = row.getPosition();
-          if (rowIndex % 2 === 0) {
-            row.getElement().classList.add("tabulator-row-even");
-          } else {
-            row.getElement().classList.add("tabulator-row-odd");
-          }
-        }
-      }
-    });
-    
-    // Add row click handler to show selection indicator
-    State.pointsTable.on("rowClick", function(e, row) {
-      // Remove selection indicator from all rows
-      var allRows = State.pointsTable.getRows();
-      for (var i = 0; i < allRows.length; i++) {
-        allRows[i].getElement().classList.remove("row-selected");
-      }
-      // Add selection indicator to clicked row
-      row.getElement().classList.add("row-selected");
-    });
-    
-    // Restore filter state after table is built
-    State.pointsTable.on("tableBuilt", function() {
-      if (State.pointsTableFilters && State.pointsTableFilters.length > 0) {
-        for (var i = 0; i < State.pointsTableFilters.length; i++) {
-          var filter = State.pointsTableFilters[i];
-          State.pointsTable.setHeaderFilterValue(filter.field, filter.value);
-        }
-      }
-    });
-  } else {
-    // Update existing table with new data and columns
-    // Wait for table to be ready before updating
-    if (State.pointsTable.initialized) {
-      State.pointsTable.setColumns(columns);
-      State.pointsTable.setData(State.mapPoints);
-      
-      // Restore filter state after update
-      if (State.pointsTableFilters && State.pointsTableFilters.length > 0) {
-        setTimeout(function() {
-          for (var i = 0; i < State.pointsTableFilters.length; i++) {
-            var filter = State.pointsTableFilters[i];
-            State.pointsTable.setHeaderFilterValue(filter.field, filter.value);
-          }
-        }, 100);
-      }
-    }
-  }
-  
-  // Also refresh map markers if map is initialized
-  if (State.leafletMap) {
-    refreshMapMarkers();
-  }
-  
-  // Update status bar to reflect changes
-  updateStatusBar();
+  });
 }
 
 export function clearMapPointForm() {
@@ -2905,11 +2975,8 @@ export async function saveMapPoint() {
     }
   }
 }
-export function openMapPointDetails(id) {
-  var p = null;
-  for (var i = 0; i < State.mapPoints.length; i++) {
-    if (Number(State.mapPoints[i].id) === Number(id)) p = State.mapPoints[i];
-  }
+export async function openMapPointDetails(id) {
+  var p = await findPointById(id);
   if (!p) return;
   
   // Navigate map to this point if map is initialized and map view is visible
@@ -2973,11 +3040,8 @@ export function openMapPointDetailsForAdd() {
   showContent("mapPointDetails");
 }
 
-export function openMapPointDetailsForEdit(id) {
-  var p = null;
-  for (var i = 0; i < State.mapPoints.length; i++) {
-    if (Number(State.mapPoints[i].id) === Number(id)) p = State.mapPoints[i];
-  }
+export async function openMapPointDetailsForEdit(id) {
+  var p = await findPointById(id);
   if (!p) return;
   
   // Check if user has permission to edit
@@ -3035,17 +3099,21 @@ export async function saveMapPointFromDetails() {
     return showMessage("Longitude must be between -180 and 180.", "mapPointDetails");
   }
   
-  // Check title uniqueness
+  // Check title uniqueness - fetch all points from DB
   var currentId = Config.MapPointDetails.mode === "edit" ? Number(idStr) : null;
-  for (var i = 0; i < State.mapPoints.length; i++) {
-    var point = State.mapPoints[i];
-    // Skip the current point when editing
-    if (currentId !== null && Number(point.id) === currentId) {
-      continue;
-    }
-    // Check if another point has the same title
-    if (point.title && point.title.trim().toLowerCase() === title.toLowerCase()) {
-      return showMessage("A map point with this title already exists. Please use a unique title.", "mapPointDetails");
+  var allPointsResult = await DB.getAllPoints();
+  if (allPointsResult.success) {
+    var allPoints = allPointsResult.data || [];
+    for (var i = 0; i < allPoints.length; i++) {
+      var point = allPoints[i];
+      // Skip the current point when editing
+      if (currentId !== null && Number(point.id) === currentId) {
+        continue;
+      }
+      // Check if another point has the same title
+      if (point.title && point.title.trim().toLowerCase() === title.toLowerCase()) {
+        return showMessage("A map point with this title already exists. Please use a unique title.", "mapPointDetails");
+      }
     }
   }
   
@@ -3063,14 +3131,11 @@ export async function saveMapPointFromDetails() {
     
     var result = await DB.addPoint(newPointData);
     if (result.success) {
-      // Reload points from DB to get the updated list
-      var pointsResult = await DB.getAllPoints();
-      if (pointsResult.success) {
-        State.mapPoints = pointsResult.data || [];
-      }
+      // Invalidate cache
+      invalidatePointCache();
       refreshMapPointsTable();
       // Update status bar to reflect changes
-      updateStatusBar();
+      await updateStatusBar();
       showContent("mapPoints");
     } else {
       showMessage("Failed to add point: " + result.error, "mapPointDetails");
@@ -3090,15 +3155,11 @@ export async function saveMapPointFromDetails() {
     
     var result = await DB.updatePoint(id, pointData);
     if (result.success) {
-      for (var i = 0; i < State.mapPoints.length; i++) {
-        if (Number(State.mapPoints[i].id) === id) {
-          State.mapPoints[i] = result.data;
-          break;
-        }
-      }
+      // Invalidate cache
+      invalidatePointCache(id);
       refreshMapPointsTable();
       // Update status bar to reflect changes
-      updateStatusBar();
+      await updateStatusBar();
       showContent("mapPoints");
     } else {
       showMessage("Failed to update point: " + result.error, "mapPointDetails");
@@ -3126,12 +3187,11 @@ export async function deleteMapPointFromDetails() {
   
   var result = await DB.deletePoint(id);
   if (result.success) {
-    State.mapPoints = State.mapPoints.filter(function (x) {
-      return Number(x.id) !== id;
-    });
+    // Invalidate cache
+    invalidatePointCache(id);
     refreshMapPointsTable();
     // Update status bar to reflect changes
-    updateStatusBar();
+    await updateStatusBar();
     showContent("mapPoints");
   } else {
     showMessage("Failed to delete point: " + result.error, "mapPointDetails");
@@ -3675,56 +3735,62 @@ export function refreshMapMarkers() {
     }
   });
   
-  // Add markers for all points
-  var bounds = [];
-  for (var i = 0; i < State.mapPoints.length; i++) {
-    var point = State.mapPoints[i];
-    if (point.lat && point.lng) {
-      // Get appropriate icon based on status
-      var status = point.status || 'pending';
-      var icon = getMarkerIconForStatus(status);
-      
-      // Create marker with custom icon
-      var marker = L.marker([point.lat, point.lng], { icon: icon }).addTo(State.leafletMap);
-      
-      // Build popup content with status badge
-      var statusBadge = getStatusBadgeHTML(status);
-      
-      // Check if current user can enter code (seeker/admin, not owner, not found yet, not pending)
-      var isOwner = State.currentUser && point.username === State.currentUser;
-      var canEnterCode = canCurrentUserSeekPoints() && !isOwner && point.status !== 'found' && point.status !== 'pending';
-      var canEdit = canCurrentUserEditPoint(point);
-      
-      var popupContent = '<b>' + (point.title || 'Untitled') + '</b>' + statusBadge + '<br>' +
-                        'User: ' + (point.username || 'Unknown') + '<br>' +
-                        (point.foundBy ? 'Found by: ' + point.foundBy + '<br>' : '') +
-                        (point.desc || '') + '<br>';
-      
-      // Add Enter Code button for seekers/admins on unfound, non-pending points they don't own
-      if (canEnterCode) {
-        popupContent += '<button onclick="window.appEnterPointCode(' + point.id + ')" style="margin-top:5px;">Enter Code</button> ';
+  // Fetch points from DB and render markers
+  DB.getAllPoints().then(function(result) {
+    if (!result.success) return;
+    
+    var points = result.data || [];
+    var bounds = [];
+    
+    for (var i = 0; i < points.length; i++) {
+      var point = points[i];
+      if (point.lat && point.lng) {
+        // Get appropriate icon based on status
+        var status = point.status || 'pending';
+        var icon = getMarkerIconForStatus(status);
+        
+        // Create marker with custom icon
+        var marker = L.marker([point.lat, point.lng], { icon: icon }).addTo(State.leafletMap);
+        
+        // Build popup content with status badge
+        var statusBadge = getStatusBadgeHTML(status);
+        
+        // Check if current user can enter code (seeker/admin, not owner, not found yet, not pending)
+        var isOwner = State.currentUser && point.username === State.currentUser;
+        var canEnterCode = canCurrentUserSeekPoints() && !isOwner && point.status !== 'found' && point.status !== 'pending';
+        var canEdit = canCurrentUserEditPoint(point);
+        
+        var popupContent = '<b>' + (point.title || 'Untitled') + '</b>' + statusBadge + '<br>' +
+                          'User: ' + (point.username || 'Unknown') + '<br>' +
+                          (point.foundBy ? 'Found by: ' + point.foundBy + '<br>' : '') +
+                          (point.desc || '') + '<br>';
+        
+        // Add Enter Code button for seekers/admins on unfound, non-pending points they don't own
+        if (canEnterCode) {
+          popupContent += '<button onclick="window.appEnterPointCode(' + point.id + ')" style="margin-top:5px;">Enter Code</button> ';
+        }
+        
+        // Only show Delete button if user has permission
+        if (canEdit) {
+          popupContent += '<button onclick="window.appDeleteMapPoint(' + point.id + ')" style="margin-top:5px;">Delete</button>';
+        }
+        
+        marker.bindPopup(popupContent);
+        bounds.push([point.lat, point.lng]);
       }
-      
-      // Only show Delete button if user has permission
-      if (canEdit) {
-        popupContent += '<button onclick="window.appDeleteMapPoint(' + point.id + ')" style="margin-top:5px;">Delete</button>';
-      }
-      
-      marker.bindPopup(popupContent);
-      bounds.push([point.lat, point.lng]);
     }
-  }
-  
-  // Add temp marker location to bounds if it exists
-  if (State.tempPlacemark) {
-    var tempLatLng = State.tempPlacemark.getLatLng();
-    bounds.push([tempLatLng.lat, tempLatLng.lng]);
-  }
-  
-  // Fit map to show all markers if there are any
-  if (bounds.length > 0) {
-    State.leafletMap.fitBounds(bounds, { padding: [50, 50] });
-  }
+    
+    // Add temp marker location to bounds if it exists
+    if (State.tempPlacemark) {
+      var tempLatLng = State.tempPlacemark.getLatLng();
+      bounds.push([tempLatLng.lat, tempLatLng.lng]);
+    }
+    
+    // Fit map to show all markers if there are any
+    if (bounds.length > 0) {
+      State.leafletMap.fitBounds(bounds, { padding: [50, 50] });
+    }
+  });
 }
 
 /* ===== Settings ===== */
@@ -3741,7 +3807,8 @@ export function openSettings() {
   // Error handler checkbox (admin only)
   var errorHandlerCheckbox = $('set-errorHandler');
   if (errorHandlerCheckbox) {
-    var isAdmin = State.currentUser && hasRole(State.currentUser, 'admin');
+    var currentUser = findUserFromCache(State.currentUser);
+    var isAdmin = currentUser && hasRole(currentUser, 'admin');
     var errorHandlerRow = errorHandlerCheckbox.closest('tr');
     if (errorHandlerRow) {
       errorHandlerRow.style.display = isAdmin ? '' : 'none';
@@ -3759,7 +3826,8 @@ export async function applySettings() {
   // Save error handler setting (admin only)
   var errorHandlerCheckbox = $('set-errorHandler');
   if (errorHandlerCheckbox) {
-    var isAdmin = State.currentUser && hasRole(State.currentUser, 'admin');
+    var currentUser = findUserFromCache(State.currentUser);
+    var isAdmin = currentUser && hasRole(currentUser, 'admin');
     if (isAdmin) {
       Config.Errors_GlobalHandlerEnabled = errorHandlerCheckbox.checked;
       // Reinitialize error handlers
@@ -3837,14 +3905,18 @@ function applyEditorFontSize() {
   }
 }
 
-export function showDbInEditor() {
+export async function showDbInEditor() {
   // Initialize editor if needed
   initializeJsonEditor();
   
+  // Fetch data from DB
+  var usersResult = await DB.getAllUsers();
+  var pointsResult = await DB.getAllPoints();
+  
   // Prepare database data
   var dbData = {
-    users: State.users,
-    points: State.mapPoints
+    users: usersResult.success ? (usersResult.data || []) : [],
+    points: pointsResult.success ? (pointsResult.data || []) : []
   };
   
   // Set the data in the editor
@@ -3879,10 +3951,6 @@ export async function saveDbFromEditor() {
       return;
     }
     
-    // Clear existing data in State first
-    State.users = [];
-    State.mapPoints = [];
-    
     // Clear localStorage directly to avoid default SAMPLE data being loaded
     localStorage.removeItem(Config.LS.users);
     localStorage.removeItem(Config.LS.points);
@@ -3891,16 +3959,9 @@ export async function saveDbFromEditor() {
     localStorage.setItem(Config.LS.users, JSON.stringify(dbData.users));
     localStorage.setItem(Config.LS.points, JSON.stringify(dbData.points));
     
-    // Reload data from DB to update State
-    var usersResult = await DB.getAllUsers();
-    var pointsResult = await DB.getAllPoints();
-    
-    if (usersResult.success) {
-      State.users = usersResult.data;
-    }
-    if (pointsResult.success) {
-      State.mapPoints = pointsResult.data;
-    }
+    // Clear caches
+    State._userCache = {};
+    State._pointCache = {};
     
     // Refresh UI
     refreshUsersTable();
@@ -3972,7 +4033,7 @@ function on_before_command_added(target_menu, cmd) {
     
     // Only show Users List button if user is admin
     if (cmd.name === Config.Constants.CommandName.ShowUsers) {
-      var currentUser = findUser(State.currentUser);
+      var currentUser = findUserFromCache(State.currentUser);
       if (!currentUser || !hasRole(currentUser, "admin")) {
         return null; // Skip Users List button if not admin
       }
@@ -3980,7 +4041,7 @@ function on_before_command_added(target_menu, cmd) {
     
     // Only show Developer Tools button if user is admin
     if (cmd.name === Config.Constants.CommandName.ShowDeveloperTools) {
-      var currentUser = findUser(State.currentUser);
+      var currentUser = findUserFromCache(State.currentUser);
       if (!currentUser || !hasRole(currentUser, "admin")) {
         return null; // Skip Developer Tools button if not admin
       }
@@ -4275,11 +4336,11 @@ function executeCommandByName(name, payload) {
 function bindListDelegates() {
   var uTable = $(Config.Constants.ElementId.UsersTable);
   if (uTable) {
-    uTable.addEventListener("click", function (e) {
+    uTable.addEventListener("click", async function (e) {
       var t = e.target;
       if (t && t.classList && t.classList.contains(Config.Constants.ClassName.LinkBtn)) {
         var username = t.getAttribute(Config.Constants.Attribute.DataOpenUser);
-        openUserDetails(username);
+        await openUserDetails(username);
         return;
       }
       if (t && t.classList && t.classList.contains(Config.Constants.ClassName.Cmd)) {
@@ -4476,28 +4537,30 @@ async function loadAll() {
   DB.initDB(Config.Database);
   console.log("Database initialized in mode:", DB.getDBMode());
   
-  // Load users from DB
+  // Server mode: Don't load users/points into State.users/State.mapPoints
+  // They will be fetched on-demand through DB APIs
+  // Just verify DB is accessible
   var usersResult = await DB.getAllUsers();
-  if (usersResult.success) {
-    State.users = usersResult.data || [];
-  } else {
-    console.error("Failed to load users:", usersResult.error);
-    State.users = [];
+  if (!usersResult.success) {
+    console.error("Failed to access users:", usersResult.error);
   }
 
-  // Load map points from DB
   var pointsResult = await DB.getAllPoints();
-  if (pointsResult.success) {
-    State.mapPoints = pointsResult.data || [];
-  } else {
-    console.error("Failed to load points:", pointsResult.error);
-    State.mapPoints = [];
+  if (!pointsResult.success) {
+    console.error("Failed to access points:", pointsResult.error);
   }
 
   // Load current user from DB
   var currentUserResult = await DB.getCurrentUser();
   if (currentUserResult.success && Config.AutoLoadCachedUser) {
     State.currentUser = currentUserResult.data;
+    // Pre-cache the current user for menu rendering
+    if (State.currentUser) {
+      var userResult = await DB.getUserByUsername(State.currentUser);
+      if (userResult.success && userResult.data) {
+        State._userCache[State.currentUser] = userResult.data;
+      }
+    }
   } else {
     State.currentUser = null;
   }
@@ -4527,7 +4590,7 @@ async function loadAll() {
   document.title = Config.AppTitle;
 
   // Initialize status bar
-  updateStatusBar();
+  await updateStatusBar();
 
   // Initially, no content -> default menu commands (but keep Help visible)
   for (var i = 0; i < Config.CONTENT_SECTIONS.length; i++) {
@@ -4708,14 +4771,8 @@ window.appDeleteTempMarker = function() {
 
 // Delete existing map point from popup
 window.appDeleteMapPoint = async function(pointId) {
-  // Find the point first to check permissions
-  var point = null;
-  for (var i = 0; i < State.mapPoints.length; i++) {
-    if (Number(State.mapPoints[i].id) === Number(pointId)) {
-      point = State.mapPoints[i];
-      break;
-    }
-  }
+  // Fetch the point first to check permissions
+  var point = await findPointById(pointId);
   
   if (!point) {
     await customAlert('Error', 'Point not found');
@@ -4734,13 +4791,12 @@ window.appDeleteMapPoint = async function(pointId) {
   
   var result = await DB.deletePoint(pointId);
   if (result.success) {
-    State.mapPoints = State.mapPoints.filter(function (x) {
-      return Number(x.id) !== Number(pointId);
-    });
+    // Invalidate cache
+    invalidatePointCache(pointId);
     refreshMapPointsTable();
     refreshMapMarkers();
     // Update status bar to reflect changes
-    updateStatusBar();
+    await updateStatusBar();
   } else {
     await customAlert('Error', 'Failed to delete point: ' + result.error);
   }
@@ -4748,14 +4804,8 @@ window.appDeleteMapPoint = async function(pointId) {
 
 // Enter code to find a point
 window.appEnterPointCode = async function(pointId) {
-  // Find the point
-  var point = null;
-  for (var i = 0; i < State.mapPoints.length; i++) {
-    if (Number(State.mapPoints[i].id) === Number(pointId)) {
-      point = State.mapPoints[i];
-      break;
-    }
-  }
+  // Fetch the point
+  var point = await findPointById(pointId);
   
   if (!point) {
     await customAlert('Error', 'Point not found');
@@ -4791,19 +4841,14 @@ window.appEnterPointCode = async function(pointId) {
     // Update in database
     var result = await DB.updatePoint(point.id, point);
     if (result.success) {
-      // Update local state
-      for (var i = 0; i < State.mapPoints.length; i++) {
-        if (Number(State.mapPoints[i].id) === Number(pointId)) {
-          State.mapPoints[i] = point;
-          break;
-        }
-      }
+      // Invalidate cache
+      invalidatePointCache(point.id);
       
       // Refresh UI
       refreshMapPointsTable();
       refreshMapMarkers();
       // Update status bar to reflect the new found coin
-      updateStatusBar();
+      await updateStatusBar();
       await customAlert('Congratulations!', 'You found the point!');
     } else {
       await customAlert('Error', 'Failed to update point: ' + result.error);
