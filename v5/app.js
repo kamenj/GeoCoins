@@ -57,6 +57,7 @@ const Constants = {
     PointsShowList: "points.showList",
     PointsShowMap: "points.showMap",
     PointsShowBoth: "points.showBoth",
+    PointsFullScreen: "points.fullScreen",
     // Map point details commands
     MpdSave: "mpd.save",
     MpdDelete: "mpd.delete",
@@ -617,6 +618,18 @@ const Config = {
         enabled: true,
       },
       {
+        name: "points.fullScreen",
+        caption: "Full Screen",
+        menu: { location: "menu.bottom.title" },
+        action: function () {
+          enterMapPointsFullScreen();
+        },
+        visible: function() {
+          return !State.fullScreen.active;
+        },
+        enabled: true,
+      },
+      {
         name: "points.deleteRow",
         caption: "Delete",
         menu: { location: "list.row" },
@@ -669,7 +682,12 @@ const Config = {
         caption: "Cancel",
         menu: { location: "menu.bottom.title" },
         action: function () {
-          showContent(null);
+          // If in fullscreen mode, exit fullscreen instead of hiding content
+          if (State.fullScreen.active) {
+            exitMapPointsFullScreen();
+          } else {
+            showContent(null);
+          }
         },
         visible: true,
         enabled: true,
@@ -1036,6 +1054,10 @@ const State = {
   pointsTableFilters: null, // Store table filter state
   Errors: [], // Global error log
   errorsJsonEditor: null, // JSONEditor instance for Errors view
+  fullScreen: {
+    active: false, // Whether full screen mode is active
+    preFullScreenState: null, // Store the state before entering full screen for restoration
+  },
 };
 
 // Expose Config and State to window for errorHandler.js
@@ -2885,6 +2907,161 @@ export function toggleMapPointsView(mode) {
   renderMenusFor(State.currentContentId);
 }
 
+/* ===== Full Screen Mode for MapPoints ===== */
+export function enterMapPointsFullScreen() {
+  // Save the current state before entering full screen
+  State.fullScreen.preFullScreenState = {
+    scrollY: window.scrollY || window.pageYOffset,
+    visibleSections: [],
+    menuBottomParent: null
+  };
+  
+  // Record which sections were visible before full screen
+  for (var i = 0; i < Config.CONTENT_SECTIONS.length; i++) {
+    var sectionId = Config.CONTENT_SECTIONS[i];
+    var section = $(sectionId);
+    if (section && section.style.display !== 'none') {
+      State.fullScreen.preFullScreenState.visibleSections.push(sectionId);
+    }
+  }
+  
+  // Set full screen active
+  State.fullScreen.active = true;
+  
+  // Save menuBottom's original parent BEFORE any operations
+  var menuBottom = $(Constants.ElementId.MenuBottom);
+  if (menuBottom) {
+    State.fullScreen.preFullScreenState.menuBottomParent = menuBottom.parentNode;
+  }
+  
+  // Add fullscreen CSS class to body
+  document.body.classList.add('fullscreen-mode');
+  
+  // Hide all sections except MapPoints
+  for (var j = 0; j < Config.CONTENT_SECTIONS.length; j++) {
+    var id = Config.CONTENT_SECTIONS[j];
+    if (id !== Constants.ContentSection.MapPoints) {
+      setSectionVisible(id, false);
+    }
+  }
+  
+  // Hide status bar
+  var statusBar = $(Constants.ElementId.StatusBar);
+  if (statusBar) {
+    statusBar.style.display = 'none';
+  }
+  
+  // Hide top menu
+  setSectionVisible(Constants.ElementId.MenuTop, false);
+  
+  // Ensure MapPoints is visible and expanded
+  var mapPoints = $(Constants.ContentSection.MapPoints);
+  if (mapPoints) {
+    mapPoints.style.display = 'flex';
+  }
+  
+  // Scroll to top to show the full MapPoints view
+  window.scrollTo(0, 0);
+  
+  // Move menuBottom to be a direct child of body (to show in fullscreen)
+  var menuBottom = $(Constants.ElementId.MenuBottom);
+  if (menuBottom) {
+    document.body.appendChild(menuBottom);
+    menuBottom.style.display = 'flex';
+    menuBottom.classList.remove(Constants.ClassName.Collapsed);
+  }
+  
+  // Re-render menus to update button visibility (Full Screen -> Exit Full Screen)
+  renderMenusFor(State.currentContentId);
+  
+  // Enter browser fullscreen mode (hides browser UI)
+  var elem = document.documentElement;
+  if (elem.requestFullscreen) {
+    elem.requestFullscreen().catch(function(err) {
+      console.log("Error attempting to enable fullscreen:", err);
+    });
+  } else if (elem.webkitRequestFullscreen) { /* Safari */
+    elem.webkitRequestFullscreen();
+  } else if (elem.msRequestFullscreen) { /* IE11 */
+    elem.msRequestFullscreen();
+  }
+  
+  // Refresh map to adjust to new size
+  setTimeout(function() {
+    if (State.leafletMap && State.mapPointsView.showMap) {
+      State.leafletMap.invalidateSize();
+      refreshMapMarkers();
+    }
+  }, 100);
+}
+
+export function exitMapPointsFullScreen() {
+  if (!State.fullScreen.active || !State.fullScreen.preFullScreenState) {
+    return;
+  }
+  
+  // Exit browser fullscreen mode
+  if (document.exitFullscreen) {
+    document.exitFullscreen();
+  } else if (document.webkitExitFullscreen) { /* Safari */
+    document.webkitExitFullscreen();
+  } else if (document.msExitFullscreen) { /* IE11 */
+    document.msExitFullscreen();
+  }
+  
+  // Restore menuBottom to its original parent
+  var menuBottom = $(Constants.ElementId.MenuBottom);
+  if (menuBottom && State.fullScreen.preFullScreenState.menuBottomParent) {
+    State.fullScreen.preFullScreenState.menuBottomParent.appendChild(menuBottom);
+  }
+  
+  // Restore full screen state
+  State.fullScreen.active = false;
+  
+  // Remove fullscreen CSS class from body
+  document.body.classList.remove('fullscreen-mode');
+  
+  // Restore previously visible sections
+  var visibleSections = State.fullScreen.preFullScreenState.visibleSections || [];
+  for (var i = 0; i < Config.CONTENT_SECTIONS.length; i++) {
+    var sectionId = Config.CONTENT_SECTIONS[i];
+    var wasVisible = visibleSections.indexOf(sectionId) !== -1;
+    setSectionVisible(sectionId, wasVisible);
+  }
+  
+  // Show status bar
+  var statusBar = $(Constants.ElementId.StatusBar);
+  if (statusBar) {
+    statusBar.style.display = '';
+  }
+  
+  // Show top menu (unless autoHide setting is active)
+  if (!State.settings.autoHideTopMenu || !State.currentContentId) {
+    setSectionVisible(Constants.ElementId.MenuTop, true);
+  }
+  
+  // Restore scroll position
+  var scrollY = State.fullScreen.preFullScreenState.scrollY || 0;
+  window.scrollTo(0, scrollY);
+  
+  // Clear pre-full screen state
+  State.fullScreen.preFullScreenState = null;
+  
+  // Re-fit the viewport to the normal layout
+  setTimeout(function() {
+    fitContentToViewport(Constants.ContentSection.MapPoints);
+    
+    // Refresh map to adjust to new size
+    if (State.leafletMap && State.mapPointsView.showMap) {
+      State.leafletMap.invalidateSize();
+      refreshMapMarkers();
+    }
+  }, 100);
+  
+  // Re-render menu to show Full Screen button again
+  renderMenusFor(State.currentContentId);
+}
+
 export function updateMapPointsLayout() {
   var container = $("mapPoints-container");
   if (!container) return;
@@ -3401,6 +3578,7 @@ function on_before_command_added(target_menu, cmd) {
       Config.Constants.CommandName.PointsShowList,
       Config.Constants.CommandName.PointsShowMap,
       Config.Constants.CommandName.PointsShowBoth,
+      Config.Constants.CommandName.PointsFullScreen,
       Config.Constants.CommandName.PointsCancel,
       Config.Constants.CommandName.PointsLogin
     ];
@@ -4109,6 +4287,28 @@ async function loadAll() {
           }, 50);
         }
       }
+    }
+  });
+  
+  // Handle fullscreen changes (e.g., user presses ESC key to exit fullscreen)
+  document.addEventListener('fullscreenchange', function() {
+    // Check if we exited fullscreen but State still thinks we're in fullscreen
+    if (!document.fullscreenElement && State.fullScreen.active) {
+      exitMapPointsFullScreen();
+    }
+  });
+  
+  // Safari uses a different event name
+  document.addEventListener('webkitfullscreenchange', function() {
+    if (!document.webkitFullscreenElement && State.fullScreen.active) {
+      exitMapPointsFullScreen();
+    }
+  });
+  
+  // IE11 uses a different event name
+  document.addEventListener('MSFullscreenChange', function() {
+    if (!document.msFullscreenElement && State.fullScreen.active) {
+      exitMapPointsFullScreen();
     }
   });
   

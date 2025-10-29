@@ -835,4 +835,84 @@ tr.selected { background: var(--highlight); }
   }
 }
 
+/* ===== Fullscreen Mode ===== */
+body.fullscreen-mode {
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+}
+
+/* In fullscreen, only show mapPoints and menuBottom (which are direct children of body) */
+body.fullscreen-mode > *:not(#mapPoints):not(#menuBottom) {
+  display: none !important;
+}
+
+body.fullscreen-mode > #mapPoints {
+  margin: 0;
+  border: none;
+  border-radius: 0;
+  display: flex !important;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+body.fullscreen-mode > #mapPoints #mapPoints-header {
+  flex-shrink: 0;
+  background: var(--accent);
+  color: white;
+  border-bottom: 1px solid var(--accent-hover);
+}
+
+body.fullscreen-mode > #mapPoints .section-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+  min-height: 0;
+}
+
+body.fullscreen-mode > #mapPoints #mapPoints-container {
+  flex: 1;
+  height: auto !important;
+  min-height: 0;
+  margin: 0;
+  display: flex !important;
+}
+
+/* MenuBottom is now a direct child of body in fullscreen */
+body.fullscreen-mode > #menuBottom {
+  margin: 0;
+  border: none;
+  border-top: 2px solid var(--accent);
+  border-radius: 0;
+  flex-shrink: 0;
+  display: flex !important;
+  flex-direction: column;
+  background: var(--card);
+  height: auto;
+  min-height: 60px;
+  order: 2;
+}
+
+body.fullscreen-mode > #menuBottom #menuBottom-header {
+  display: flex !important;
+}
+
+body.fullscreen-mode > #menuBottom .section-content {
+  display: block !important;
+}
+
+/* Force visibility even if collapsed class somehow remains */
+body.fullscreen-mode > #menuBottom.collapsed .section-content {
+  display: block !important;
+}
+
+
 
