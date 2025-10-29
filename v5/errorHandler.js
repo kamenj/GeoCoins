@@ -83,7 +83,7 @@ export function installGlobalErrorHandler() {
     return false;
   };
 
-  console.log('Global error handler installed');
+  // console.log('Global error handler installed');
 }
 
 /**
@@ -108,7 +108,7 @@ export function installPromiseRejectionHandler() {
     event.preventDefault();
   });
 
-  console.log('Promise rejection handler installed');
+  // console.log('Promise rejection handler installed');
 }
 
 /**
@@ -116,14 +116,14 @@ export function installPromiseRejectionHandler() {
  */
 export function initializeErrorHandlers() {
   if (!window.Config || !window.Config.Errors_GlobalHandlerEnabled) {
-    console.log('Error handlers disabled in config');
+    // console.log('Error handlers disabled in config');
     return;
   }
 
   installGlobalErrorHandler();
   installPromiseRejectionHandler();
   
-  console.log('Error handlers initialized');
+  // console.log('Error handlers initialized');
 }
 
 /**

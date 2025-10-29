@@ -2005,9 +2005,14 @@ export function refreshUsersTable() {
   tableDiv.style.display = "block";
   empty.style.display = "none";
   
-  // Save current filter state before updating
-  if (State.usersTable) {
-    State.usersTableFilters = State.usersTable.getHeaderFilters();
+  // Save current filter state before updating (only if table is already initialized)
+  if (State.usersTable && State.usersTable.initialized) {
+    try {
+      State.usersTableFilters = State.usersTable.getHeaderFilters();
+    } catch(e) {
+      // Ignore errors if table not ready
+      State.usersTableFilters = null;
+    }
   }
   
   // Get current view mode from config
@@ -2039,28 +2044,31 @@ export function refreshUsersTable() {
       }
     });
     
-    // Restore filter state after table is initialized
-    if (State.usersTableFilters && State.usersTableFilters.length > 0) {
-      setTimeout(function() {
+    // Restore filter state after table is built
+    State.usersTable.on("tableBuilt", function() {
+      if (State.usersTableFilters && State.usersTableFilters.length > 0) {
         for (var i = 0; i < State.usersTableFilters.length; i++) {
           var filter = State.usersTableFilters[i];
           State.usersTable.setHeaderFilterValue(filter.field, filter.value);
         }
-      }, 100);
-    }
+      }
+    });
   } else {
     // Update existing table with new data and columns
-    State.usersTable.setColumns(columns);
-    State.usersTable.setData(State.users);
-    
-    // Restore filter state after update
-    if (State.usersTableFilters && State.usersTableFilters.length > 0) {
-      setTimeout(function() {
-        for (var i = 0; i < State.usersTableFilters.length; i++) {
-          var filter = State.usersTableFilters[i];
-          State.usersTable.setHeaderFilterValue(filter.field, filter.value);
-        }
-      }, 100);
+    // Wait for table to be ready before updating
+    if (State.usersTable.initialized) {
+      State.usersTable.setColumns(columns);
+      State.usersTable.setData(State.users);
+      
+      // Restore filter state after update
+      if (State.usersTableFilters && State.usersTableFilters.length > 0) {
+        setTimeout(function() {
+          for (var i = 0; i < State.usersTableFilters.length; i++) {
+            var filter = State.usersTableFilters[i];
+            State.usersTable.setHeaderFilterValue(filter.field, filter.value);
+          }
+        }, 100);
+      }
     }
   }
 }
@@ -2359,9 +2367,14 @@ export function refreshMapPointsTable() {
   tableDiv.style.display = "block";
   empty.style.display = "none";
   
-  // Save current filter state before updating
-  if (State.pointsTable) {
-    State.pointsTableFilters = State.pointsTable.getHeaderFilters();
+  // Save current filter state before updating (only if table is already initialized)
+  if (State.pointsTable && State.pointsTable.initialized) {
+    try {
+      State.pointsTableFilters = State.pointsTable.getHeaderFilters();
+    } catch(e) {
+      // Ignore errors if table not ready
+      State.pointsTableFilters = null;
+    }
   }
   
   // Get current view mode from config
@@ -2393,28 +2406,31 @@ export function refreshMapPointsTable() {
       }
     });
     
-    // Restore filter state after table is initialized
-    if (State.pointsTableFilters && State.pointsTableFilters.length > 0) {
-      setTimeout(function() {
+    // Restore filter state after table is built
+    State.pointsTable.on("tableBuilt", function() {
+      if (State.pointsTableFilters && State.pointsTableFilters.length > 0) {
         for (var i = 0; i < State.pointsTableFilters.length; i++) {
           var filter = State.pointsTableFilters[i];
           State.pointsTable.setHeaderFilterValue(filter.field, filter.value);
         }
-      }, 100);
-    }
+      }
+    });
   } else {
     // Update existing table with new data and columns
-    State.pointsTable.setColumns(columns);
-    State.pointsTable.setData(State.mapPoints);
-    
-    // Restore filter state after update
-    if (State.pointsTableFilters && State.pointsTableFilters.length > 0) {
-      setTimeout(function() {
-        for (var i = 0; i < State.pointsTableFilters.length; i++) {
-          var filter = State.pointsTableFilters[i];
-          State.pointsTable.setHeaderFilterValue(filter.field, filter.value);
-        }
-      }, 100);
+    // Wait for table to be ready before updating
+    if (State.pointsTable.initialized) {
+      State.pointsTable.setColumns(columns);
+      State.pointsTable.setData(State.mapPoints);
+      
+      // Restore filter state after update
+      if (State.pointsTableFilters && State.pointsTableFilters.length > 0) {
+        setTimeout(function() {
+          for (var i = 0; i < State.pointsTableFilters.length; i++) {
+            var filter = State.pointsTableFilters[i];
+            State.pointsTable.setHeaderFilterValue(filter.field, filter.value);
+          }
+        }, 100);
+      }
     }
   }
   
@@ -2903,12 +2919,19 @@ export function updateMapPointsLayout() {
     }
   }
   
-  var rect = container.getBoundingClientRect();
-  var width = rect.width;
-  var height = rect.height;
+  // Get viewport dimensions to determine orientation
+  var viewportWidth = window.innerWidth;
+  var viewportHeight = window.innerHeight;
   
-  // Determine layout based on aspect ratio
-  if (width > height) {
+  // Determine layout based on viewport aspect ratio
+  // If viewport width > height: landscape (horizontal layout: list left, map right)
+  // If viewport height >= width: portrait (vertical layout: list top, map bottom)
+  var isLandscape = viewportWidth > viewportHeight;
+  
+  var currentLayout = container.classList.contains("layout-horizontal") ? "horizontal" : "vertical";
+  var targetLayout = isLandscape ? "horizontal" : "vertical";
+  
+  if (isLandscape) {
     // Horizontal layout: list on left, map on right
     container.classList.remove("layout-vertical");
     container.classList.add("layout-horizontal");
@@ -2933,12 +2956,38 @@ export function updateMapPointsLayout() {
       var formHeight = 350; // Approximate height of the form inputs
       dockTopHeight = formHeight + (Config.MapPointsList.MinRowsVisible * rowHeight);
     }
+    
+    // Ensure list doesn't exceed 60% of container height to leave room for map
+    var containerHeight = container.offsetHeight;
+    var maxListHeight = Math.floor(containerHeight * 0.6); // List takes max 60%
+    var minMapHeight = 200; // Minimum height for map
+    var dividerHeight = 8;
+    
+    // Calculate the maximum list height that leaves enough room for map and divider
+    var maxAllowedListHeight = containerHeight - minMapHeight - dividerHeight;
+    
+    if (dockTopHeight > maxAllowedListHeight) {
+      dockTopHeight = Math.max(maxListHeight, maxAllowedListHeight);
+    }
+    
     container.style.setProperty('--list-dock-top-height', dockTopHeight + 'px');
   }
   
   // Apply min row width
   var minRowWidth = Config.MapPointsList.MinRowWidth || 300;
   container.style.setProperty('--list-min-row-width', minRowWidth + 'px');
+  
+  // Re-setup divider after layout change to ensure handlers work correctly
+  // Only re-setup if layout actually changed
+  if (currentLayout !== targetLayout) {
+    setTimeout(function() {
+      setupMapPointsDivider();
+      // Also invalidate map after layout change
+      if (State.leafletMap && State.mapPointsView.showMap) {
+        State.leafletMap.invalidateSize();
+      }
+    }, 150);
+  }
 }
 
 export function initializeLeafletMap() {
@@ -3730,16 +3779,8 @@ export function setupMapPointsDivider() {
   var mapDiv = $("mapPointsGeoView");
   
   if (!divider || !container || !listDiv || !mapDiv) {
-    console.log("setupMapPointsDivider: Missing elements", {
-      divider: !!divider,
-      container: !!container,
-      listDiv: !!listDiv,
-      mapDiv: !!mapDiv
-    });
     return;
   }
-  
-  console.log("setupMapPointsDivider: Setting up drag handlers");
   
   // Remove old listeners if they exist
   if (dividerHandlers.mouseDown) {
@@ -3752,20 +3793,15 @@ export function setupMapPointsDivider() {
   }
   
   dividerHandlers.mouseDown = function(e) {
-    console.log("Divider mousedown event triggered");
-    
     // Only allow dragging when both views are visible
     if (!State.mapPointsView.showList || !State.mapPointsView.showMap) {
-      console.log("Dragging not allowed - views:", State.mapPointsView);
       return;
     }
     
-    console.log("Starting drag");
     dividerHandlers.isDragging = true;
     divider.classList.add("dragging");
     
     var isHorizontal = container.classList.contains("layout-horizontal");
-    console.log("Layout is horizontal:", isHorizontal);
     
     if (isHorizontal) {
       dividerHandlers.startX = e.clientX;
