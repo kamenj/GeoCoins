@@ -625,6 +625,49 @@ tr.selected { background: var(--highlight); }
   font-size: inherit;
 }
 
+/* View toggle buttons in table header */
+.tabulator .tabulator-col-title .view-toggle-btn {
+  padding: 3px 8px;
+  font-size: 0.8em;
+  min-width: 24px;
+  height: 22px;
+  background: var(--accent);
+  color: white;
+  border: 1px solid var(--accent);
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-weight: 600;
+  line-height: 1;
+  vertical-align: middle;
+}
+
+.tabulator .tabulator-col-title .view-toggle-btn:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+  transform: scale(1.05);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.tabulator .tabulator-col-title .view-toggle-btn:active {
+  transform: scale(0.98);
+  box-shadow: none;
+}
+
+/* Ensure the header column content is properly aligned */
+.tabulator .tabulator-col .tabulator-col-content {
+  display: flex;
+  align-items: center;
+  padding: 6px 8px;
+}
+
+.tabulator .tabulator-col .tabulator-col-title {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+
 .tabulator .tabulator-cell button.link-btn {
   background: none;
   border: none;

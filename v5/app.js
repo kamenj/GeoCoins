@@ -1992,9 +1992,76 @@ function getPointsTableColumns(viewMode) {
   // Returns column definitions for Tabulator for the points table based on view mode
   
   var baseDetailsColumns = [
-    { title: "#", field: "index", width: 60, headerSort: false, formatter: function(cell) { 
-      return cell.getRow().getPosition(); 
-    }},
+    { 
+      title: "#", 
+      field: "index", 
+      widthGrow: 0,
+      widthShrink: 1,
+      minWidth: 40,
+      headerSort: false, 
+      formatter: function(cell) { 
+        return cell.getRow().getPosition(); 
+      },
+      titleFormatter: function(cell, formatterParams, onRendered) {
+        // Create container for button only
+        var container = document.createElement('div');
+        container.style.display = 'flex';
+        container.style.alignItems = 'center';
+        container.style.justifyContent = 'center';
+        container.style.width = '100%';
+        
+        // Add view toggle button with # as text
+        var currentView = Config.PointsTable.view;
+        
+        // Details button - shows # when in compact view
+        if (currentView !== 'details') {
+          var detailsBtn = document.createElement('button');
+          detailsBtn.textContent = '#';
+          detailsBtn.className = 'cmd-btn view-toggle-btn';
+          detailsBtn.title = 'Details View';
+          detailsBtn.onclick = function(e) {
+            e.stopPropagation();
+            e.preventDefault();
+            var menuBottomEl = $(Config.Constants.ElementId.MenuBottom);
+            var wasCollapsed = menuBottomEl ? menuBottomEl.classList.contains(Config.Constants.ClassName.Collapsed) : true;
+            
+            Config.PointsTable.view = "details";
+            refreshMapPointsTable();
+            renderMenusFor(State.currentContentId);
+            
+            setTimeout(function() {
+              setCollapsed(Config.Constants.ElementId.MenuBottom, wasCollapsed);
+            }, 0);
+          };
+          container.appendChild(detailsBtn);
+        }
+        
+        // Compact button - shows # when in details view
+        if (currentView !== 'compact') {
+          var compactBtn = document.createElement('button');
+          compactBtn.textContent = '#';
+          compactBtn.className = 'cmd-btn view-toggle-btn';
+          compactBtn.title = 'Compact View';
+          compactBtn.onclick = function(e) {
+            e.stopPropagation();
+            e.preventDefault();
+            var menuBottomEl = $(Config.Constants.ElementId.MenuBottom);
+            var wasCollapsed = menuBottomEl ? menuBottomEl.classList.contains(Config.Constants.ClassName.Collapsed) : true;
+            
+            Config.PointsTable.view = "compact";
+            refreshMapPointsTable();
+            renderMenusFor(State.currentContentId);
+            
+            setTimeout(function() {
+              setCollapsed(Config.Constants.ElementId.MenuBottom, wasCollapsed);
+            }, 0);
+          };
+          container.appendChild(compactBtn);
+        }
+        
+        return container;
+      }
+    },
     { title: "Title", field: "title", headerFilter: "input", sorter: "string", formatter: function(cell) {
       var point = cell.getRow().getData();
       return '<button class="' + Config.Constants.ClassName.LinkBtn + '" ' + 
@@ -2048,6 +2115,65 @@ function getPointsTableColumns(viewMode) {
       field: "title", 
       headerFilter: "input", 
       sorter: "string",
+      titleFormatter: function(cell, formatterParams, onRendered) {
+        // Create container for button only
+        var container = document.createElement('div');
+        container.style.display = 'flex';
+        container.style.alignItems = 'center';
+        container.style.justifyContent = 'center';
+        container.style.width = '100%';
+        
+        // Add view toggle button with # as text
+        var currentView = Config.PointsTable.view;
+        
+        // Details button - shows # when in compact view
+        if (currentView !== 'details') {
+          var detailsBtn = document.createElement('button');
+          detailsBtn.textContent = '#';
+          detailsBtn.className = 'cmd-btn view-toggle-btn';
+          detailsBtn.title = 'Details View';
+          detailsBtn.onclick = function(e) {
+            e.stopPropagation();
+            e.preventDefault();
+            var menuBottomEl = $(Config.Constants.ElementId.MenuBottom);
+            var wasCollapsed = menuBottomEl ? menuBottomEl.classList.contains(Config.Constants.ClassName.Collapsed) : true;
+            
+            Config.PointsTable.view = "details";
+            refreshMapPointsTable();
+            renderMenusFor(State.currentContentId);
+            
+            setTimeout(function() {
+              setCollapsed(Config.Constants.ElementId.MenuBottom, wasCollapsed);
+            }, 0);
+          };
+          container.appendChild(detailsBtn);
+        }
+        
+        // Compact button - shows # when in details view
+        if (currentView !== 'compact') {
+          var compactBtn = document.createElement('button');
+          compactBtn.textContent = '#';
+          compactBtn.className = 'cmd-btn view-toggle-btn';
+          compactBtn.title = 'Compact View';
+          compactBtn.onclick = function(e) {
+            e.stopPropagation();
+            e.preventDefault();
+            var menuBottomEl = $(Config.Constants.ElementId.MenuBottom);
+            var wasCollapsed = menuBottomEl ? menuBottomEl.classList.contains(Config.Constants.ClassName.Collapsed) : true;
+            
+            Config.PointsTable.view = "compact";
+            refreshMapPointsTable();
+            renderMenusFor(State.currentContentId);
+            
+            setTimeout(function() {
+              setCollapsed(Config.Constants.ElementId.MenuBottom, wasCollapsed);
+            }, 0);
+          };
+          container.appendChild(compactBtn);
+        }
+        
+        return container;
+      },
       headerFilterFunc: function(headerValue, rowValue, rowData, filterParams) {
         // Custom filter that searches in title, username, status, foundBy, and coordinates with wildcard support
         var title = rowData.title || '';
