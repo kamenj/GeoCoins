@@ -597,6 +597,7 @@ tr.selected { background: var(--highlight); }
   background-color: var(--bg);
   border-bottom: 1px solid var(--border);
   min-height: 30px;
+  position: relative;
 }
 
 .tabulator .tabulator-row.tabulator-row-even {
@@ -613,6 +614,25 @@ tr.selected { background: var(--highlight); }
 
 .tabulator .tabulator-row.tabulator-selected {
   background-color: var(--highlight);
+}
+
+/* Add left padding to first cell in all rows to make room for selection arrow */
+.tabulator .tabulator-row .tabulator-cell:first-child {
+  padding-left: 28px;
+  position: relative;
+}
+
+/* Selected row indicator - right arrow */
+.tabulator .tabulator-row.row-selected .tabulator-cell:first-child::before {
+  content: '▶';
+  position: absolute;
+  left: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--accent);
+  font-size: 0.85em;
+  font-weight: bold;
+  pointer-events: none;
 }
 
 /* Cells */

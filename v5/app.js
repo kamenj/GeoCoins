@@ -2419,6 +2419,17 @@ export function refreshUsersTable() {
       }
     });
     
+    // Add row click handler to show selection indicator
+    State.usersTable.on("rowClick", function(e, row) {
+      // Remove selection indicator from all rows
+      var allRows = State.usersTable.getRows();
+      for (var i = 0; i < allRows.length; i++) {
+        allRows[i].getElement().classList.remove("row-selected");
+      }
+      // Add selection indicator to clicked row
+      row.getElement().classList.add("row-selected");
+    });
+    
     // Restore filter state after table is built
     State.usersTable.on("tableBuilt", function() {
       if (State.usersTableFilters && State.usersTableFilters.length > 0) {
@@ -2779,6 +2790,17 @@ export function refreshMapPointsTable() {
           }
         }
       }
+    });
+    
+    // Add row click handler to show selection indicator
+    State.pointsTable.on("rowClick", function(e, row) {
+      // Remove selection indicator from all rows
+      var allRows = State.pointsTable.getRows();
+      for (var i = 0; i < allRows.length; i++) {
+        allRows[i].getElement().classList.remove("row-selected");
+      }
+      // Add selection indicator to clicked row
+      row.getElement().classList.add("row-selected");
     });
     
     // Restore filter state after table is built
