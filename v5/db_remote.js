@@ -1,125 +1,28 @@
 /**
  * db_remote.js - Remote database API implementation
  * Handles all communication with the remote server via JSON API calls
+ * 
+ * This file provides backward compatibility with the original flat API structure.
+ * The new modular structure is available in the db_remote/ subfolder.
  */
 
-/**
- * Remote database configuration
- */
-const remoteConfig = {
-  baseUrl: "http://localhost:3000/api",
-  endpoints: {
-    users: "/users",
-    points: "/points",
-    auth: "/auth",
-    settings: "/settings",
-    currentUser: "/current-user",
-    reset: "/reset",
-  },
-  headers: {
-    "Content-Type": "application/json",
-  },
-  timeout: 30000, // 30 seconds
-};
+// Import the new modular API
+import { 
+  initRemoteDB, 
+  getRemoteConfig, 
+  setAuthToken,
+  UsersAPI,
+  PointsAPI,
+  AuthAPI,
+  SettingsAPI,
+  AdminAPI
+} from "./db_remote/index.js";
 
-/**
- * Initialize remote database configuration
- * @param {object} config - Configuration object
- */
-export function initRemoteDB(config) {
-  if (config.baseUrl) {
-    remoteConfig.baseUrl = config.baseUrl;
-  }
-  if (config.endpoints) {
-    remoteConfig.endpoints = { ...remoteConfig.endpoints, ...config.endpoints };
-  }
-  if (config.headers) {
-    remoteConfig.headers = { ...remoteConfig.headers, ...config.headers };
-  }
-  if (config.timeout) {
-    remoteConfig.timeout = config.timeout;
-  }
-}
-
-/**
- * Get current remote configuration
- * @returns {object} Current configuration
- */
-export function getRemoteConfig() {
-  return { ...remoteConfig };
-}
-
-/**
- * Set authentication token for API requests
- * @param {string} token - Authentication token
- */
-export function setAuthToken(token) {
-  if (token) {
-    remoteConfig.headers["Authorization"] = `Bearer ${token}`;
-  } else {
-    delete remoteConfig.headers["Authorization"];
-  }
-}
-
-/**
- * Generic fetch wrapper with timeout and error handling
- * @param {string} endpoint - API endpoint (relative to baseUrl)
- * @param {object} options - Fetch options (method, body, headers, etc.)
- * @returns {Promise<object>} Response object with success flag and data/error
- */
-async function fetchWithTimeout(endpoint, options = {}) {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), remoteConfig.timeout);
-  
-  try {
-    const url = `${remoteConfig.baseUrl}${endpoint}`;
-    const response = await fetch(url, {
-      headers: { ...remoteConfig.headers, ...options.headers },
-      signal: controller.signal,
-      ...options,
-    });
-    
-    clearTimeout(timeoutId);
-    
-    // Parse JSON response
-    let data = null;
-    const contentType = response.headers.get("content-type");
-    if (contentType && contentType.includes("application/json")) {
-      data = await response.json();
-    }
-    
-    // Check if request was successful
-    if (!response.ok) {
-      return {
-        success: false,
-        error: data?.error || data?.message || `HTTP ${response.status}: ${response.statusText}`,
-        status: response.status,
-      };
-    }
-    
-    return {
-      success: true,
-      data: data,
-      status: response.status,
-    };
-  } catch (error) {
-    clearTimeout(timeoutId);
-    
-    if (error.name === "AbortError") {
-      return {
-        success: false,
-        error: "Request timeout",
-      };
-    }
-    
-    return {
-      success: false,
-      error: error.message || "Network error",
-    };
-  }
-}
+// Re-export configuration functions
+export { initRemoteDB, getRemoteConfig, setAuthToken };
 
 // ===== USER OPERATIONS =====
+// Backward compatibility wrappers for the original flat API
 
 /**
  * Get all users from remote server
@@ -127,12 +30,7 @@ async function fetchWithTimeout(endpoint, options = {}) {
  * @returns {Promise<object>} Result object with users array
  */
 export async function remoteGetAllUsers(params = {}) {
-  const queryString = new URLSearchParams(params).toString();
-  const endpoint = queryString
-    ? `${remoteConfig.endpoints.users}?${queryString}`
-    : remoteConfig.endpoints.users;
-  
-  return await fetchWithTimeout(endpoint, { method: "GET" });
+  return await UsersAPI.getAll(params);
 }
 
 /**
@@ -141,8 +39,7 @@ export async function remoteGetAllUsers(params = {}) {
  * @returns {Promise<object>} Result object with user data
  */
 export async function remoteGetUserByUsername(username) {
-  const endpoint = `${remoteConfig.endpoints.users}/${encodeURIComponent(username)}`;
-  return await fetchWithTimeout(endpoint, { method: "GET" });
+  return await UsersAPI.getByUsername(username);
 }
 
 /**
@@ -151,10 +48,7 @@ export async function remoteGetUserByUsername(username) {
  * @returns {Promise<object>} Result object with created user data
  */
 export async function remoteAddUser(user) {
-  return await fetchWithTimeout(remoteConfig.endpoints.users, {
-    method: "POST",
-    body: JSON.stringify(user),
-  });
+  return await UsersAPI.add(user);
 }
 
 /**
@@ -164,11 +58,7 @@ export async function remoteAddUser(user) {
  * @returns {Promise<object>} Result object with updated user data
  */
 export async function remoteUpdateUser(username, userData) {
-  const endpoint = `${remoteConfig.endpoints.users}/${encodeURIComponent(username)}`;
-  return await fetchWithTimeout(endpoint, {
-    method: "PUT",
-    body: JSON.stringify(userData),
-  });
+  return await UsersAPI.update(username, userData);
 }
 
 /**
@@ -177,10 +67,7 @@ export async function remoteUpdateUser(username, userData) {
  * @returns {Promise<object>} Result object
  */
 export async function remoteDeleteUser(username) {
-  const endpoint = `${remoteConfig.endpoints.users}/${encodeURIComponent(username)}`;
-  return await fetchWithTimeout(endpoint, {
-    method: "DELETE",
-  });
+  return await UsersAPI.delete(username);
 }
 
 /**
@@ -190,13 +77,11 @@ export async function remoteDeleteUser(username) {
  * @returns {Promise<object>} Result object with user data and token if successful
  */
 export async function remoteAuthenticateUser(username, password) {
-  return await fetchWithTimeout(remoteConfig.endpoints.auth, {
-    method: "POST",
-    body: JSON.stringify({ username, password }),
-  });
+  return await AuthAPI.authenticate(username, password);
 }
 
 // ===== MAP POINTS OPERATIONS =====
+// Backward compatibility wrappers for the original flat API
 
 /**
  * Get all map points from remote server
@@ -204,12 +89,7 @@ export async function remoteAuthenticateUser(username, password) {
  * @returns {Promise<object>} Result object with points array
  */
 export async function remoteGetAllPoints(params = {}) {
-  const queryString = new URLSearchParams(params).toString();
-  const endpoint = queryString
-    ? `${remoteConfig.endpoints.points}?${queryString}`
-    : remoteConfig.endpoints.points;
-  
-  return await fetchWithTimeout(endpoint, { method: "GET" });
+  return await PointsAPI.getAll(params);
 }
 
 /**
@@ -218,8 +98,7 @@ export async function remoteGetAllPoints(params = {}) {
  * @returns {Promise<object>} Result object with point data
  */
 export async function remoteGetPointById(id) {
-  const endpoint = `${remoteConfig.endpoints.points}/${id}`;
-  return await fetchWithTimeout(endpoint, { method: "GET" });
+  return await PointsAPI.getById(id);
 }
 
 /**
@@ -228,10 +107,7 @@ export async function remoteGetPointById(id) {
  * @returns {Promise<object>} Result object with created point data
  */
 export async function remoteAddPoint(point) {
-  return await fetchWithTimeout(remoteConfig.endpoints.points, {
-    method: "POST",
-    body: JSON.stringify(point),
-  });
+  return await PointsAPI.add(point);
 }
 
 /**
@@ -241,11 +117,7 @@ export async function remoteAddPoint(point) {
  * @returns {Promise<object>} Result object with updated point data
  */
 export async function remoteUpdatePoint(id, pointData) {
-  const endpoint = `${remoteConfig.endpoints.points}/${id}`;
-  return await fetchWithTimeout(endpoint, {
-    method: "PUT",
-    body: JSON.stringify(pointData),
-  });
+  return await PointsAPI.update(id, pointData);
 }
 
 /**
@@ -254,22 +126,18 @@ export async function remoteUpdatePoint(id, pointData) {
  * @returns {Promise<object>} Result object
  */
 export async function remoteDeletePoint(id) {
-  const endpoint = `${remoteConfig.endpoints.points}/${id}`;
-  return await fetchWithTimeout(endpoint, {
-    method: "DELETE",
-  });
+  return await PointsAPI.delete(id);
 }
 
 // ===== SETTINGS OPERATIONS =====
+// Backward compatibility wrappers for the original flat API
 
 /**
  * Get user settings from remote server
  * @returns {Promise<object>} Result object with settings
  */
 export async function remoteGetSettings() {
-  return await fetchWithTimeout(remoteConfig.endpoints.settings, {
-    method: "GET",
-  });
+  return await SettingsAPI.get();
 }
 
 /**
@@ -278,22 +146,18 @@ export async function remoteGetSettings() {
  * @returns {Promise<object>} Result object
  */
 export async function remoteSaveSettings(settings) {
-  return await fetchWithTimeout(remoteConfig.endpoints.settings, {
-    method: "PUT",
-    body: JSON.stringify(settings),
-  });
+  return await SettingsAPI.save(settings);
 }
 
 // ===== SESSION OPERATIONS =====
+// Backward compatibility wrappers for the original flat API
 
 /**
  * Get current user from remote server
  * @returns {Promise<object>} Result object with current user
  */
 export async function remoteGetCurrentUser() {
-  return await fetchWithTimeout(remoteConfig.endpoints.currentUser, {
-    method: "GET",
-  });
+  return await AuthAPI.getCurrentUser();
 }
 
 /**
@@ -302,10 +166,7 @@ export async function remoteGetCurrentUser() {
  * @returns {Promise<object>} Result object
  */
 export async function remoteSetCurrentUser(username) {
-  return await fetchWithTimeout(remoteConfig.endpoints.currentUser, {
-    method: "PUT",
-    body: JSON.stringify({ username }),
-  });
+  return await AuthAPI.setCurrentUser(username);
 }
 
 /**
@@ -313,12 +174,11 @@ export async function remoteSetCurrentUser(username) {
  * @returns {Promise<object>} Result object
  */
 export async function remoteClearCurrentUser() {
-  return await fetchWithTimeout(remoteConfig.endpoints.currentUser, {
-    method: "DELETE",
-  });
+  return await AuthAPI.clearCurrentUser();
 }
 
 // ===== BATCH OPERATIONS =====
+// Backward compatibility wrappers for the original flat API
 
 /**
  * Get multiple points by IDs (batch operation)
@@ -326,9 +186,7 @@ export async function remoteClearCurrentUser() {
  * @returns {Promise<object>} Result object with points array
  */
 export async function remoteGetPointsByIds(ids) {
-  const idsParam = ids.join(",");
-  const endpoint = `${remoteConfig.endpoints.points}/batch?ids=${idsParam}`;
-  return await fetchWithTimeout(endpoint, { method: "GET" });
+  return await PointsAPI.getByIds(ids);
 }
 
 /**
@@ -337,21 +195,18 @@ export async function remoteGetPointsByIds(ids) {
  * @returns {Promise<object>} Result object with users array
  */
 export async function remoteGetUsersByUsernames(usernames) {
-  const usernamesParam = usernames.join(",");
-  const endpoint = `${remoteConfig.endpoints.users}/batch?usernames=${usernamesParam}`;
-  return await fetchWithTimeout(endpoint, { method: "GET" });
+  return await UsersAPI.getByUsernames(usernames);
 }
 
 // ===== ADMIN OPERATIONS =====
+// Backward compatibility wrappers for the original flat API
 
 /**
  * Reset all data on remote server (admin only)
  * @returns {Promise<object>} Result object
  */
 export async function remoteResetAllData() {
-  return await fetchWithTimeout(remoteConfig.endpoints.reset, {
-    method: "POST",
-  });
+  return await AdminAPI.resetAllData();
 }
 
 /**
@@ -359,9 +214,7 @@ export async function remoteResetAllData() {
  * @returns {Promise<object>} Result object with statistics
  */
 export async function remoteGetStatistics() {
-  return await fetchWithTimeout("/statistics", {
-    method: "GET",
-  });
+  return await AdminAPI.getStatistics();
 }
 
 /**
@@ -369,12 +222,11 @@ export async function remoteGetStatistics() {
  * @returns {Promise<object>} Result object with server health status
  */
 export async function remoteHealthCheck() {
-  return await fetchWithTimeout("/health", {
-    method: "GET",
-  });
+  return await AdminAPI.healthCheck();
 }
 
 // ===== PAGINATION HELPERS =====
+// Backward compatibility wrappers for the original flat API
 
 /**
  * Get paginated users
@@ -384,12 +236,7 @@ export async function remoteHealthCheck() {
  * @returns {Promise<object>} Result with users array and pagination metadata
  */
 export async function remoteGetUsersPaginated(page = 1, limit = 20, filters = {}) {
-  const params = {
-    page,
-    limit,
-    ...filters,
-  };
-  return await remoteGetAllUsers(params);
+  return await UsersAPI.getPaginated(page, limit, filters);
 }
 
 /**
@@ -400,12 +247,7 @@ export async function remoteGetUsersPaginated(page = 1, limit = 20, filters = {}
  * @returns {Promise<object>} Result with points array and pagination metadata
  */
 export async function remoteGetPointsPaginated(page = 1, limit = 20, filters = {}) {
-  const params = {
-    page,
-    limit,
-    ...filters,
-  };
-  return await remoteGetAllPoints(params);
+  return await PointsAPI.getPaginated(page, limit, filters);
 }
 
 /**
@@ -415,24 +257,17 @@ export async function remoteGetPointsPaginated(page = 1, limit = 20, filters = {
  * @returns {Promise<object>} Result with points array
  */
 export async function remoteGetPointsInBounds(bounds, limit = 100) {
-  const params = {
-    north: bounds.north,
-    south: bounds.south,
-    east: bounds.east,
-    west: bounds.west,
-    limit,
-  };
-  return await remoteGetAllPoints(params);
+  return await PointsAPI.getInBounds(bounds, limit);
 }
 
-// Export all remote API functions
+// Export all remote API functions (backward compatibility)
 export default {
   // Configuration
   initRemoteDB,
   getRemoteConfig,
   setAuthToken,
   
-  // Users
+  // Users (backward compatible flat API)
   remoteGetAllUsers,
   remoteGetUserByUsername,
   remoteAddUser,
@@ -440,33 +275,40 @@ export default {
   remoteDeleteUser,
   remoteAuthenticateUser,
   
-  // Map Points
+  // Map Points (backward compatible flat API)
   remoteGetAllPoints,
   remoteGetPointById,
   remoteAddPoint,
   remoteUpdatePoint,
   remoteDeletePoint,
   
-  // Settings
+  // Settings (backward compatible flat API)
   remoteGetSettings,
   remoteSaveSettings,
   
-  // Session
+  // Session (backward compatible flat API)
   remoteGetCurrentUser,
   remoteSetCurrentUser,
   remoteClearCurrentUser,
   
-  // Batch Operations
+  // Batch Operations (backward compatible flat API)
   remoteGetPointsByIds,
   remoteGetUsersByUsernames,
   
-  // Admin
+  // Admin (backward compatible flat API)
   remoteResetAllData,
   remoteGetStatistics,
   remoteHealthCheck,
   
-  // Pagination
+  // Pagination (backward compatible flat API)
   remoteGetUsersPaginated,
   remoteGetPointsPaginated,
   remoteGetPointsInBounds,
+  
+  // New organized API classes (recommended for new code)
+  Users: UsersAPI,
+  Points: PointsAPI,
+  Auth: AuthAPI,
+  Settings: SettingsAPI,
+  Admin: AdminAPI,
 };

@@ -4,7 +4,14 @@
  */
 
 import { SAMPLE_USERS, SAMPLE_POINTS } from "./data.js";
-import * as RemoteDB from "./db_remote.js";
+import { 
+  initRemoteDB as initRemoteDBConfig,
+  UsersAPI, 
+  PointsAPI, 
+  AuthAPI, 
+  SettingsAPI, 
+  AdminAPI 
+} from "./db_remote/index.js";
 
 // Database modes
 export const DB_MODE = {
@@ -46,7 +53,7 @@ export function initDB(config) {
     
     // Initialize remote DB if config provided
     if (config.remote) {
-      RemoteDB.initRemoteDB(config.remote);
+      initRemoteDBConfig(config.remote);
     }
   }
 }
@@ -94,28 +101,7 @@ function loadFromLocalStorage(key, defaultValue = null) {
 }
 
 // ===== REMOTE API HELPERS =====
-
-async function fetchRemote(endpoint, options = {}) {
-  // This is now deprecated - use db_remote.js functions directly
-  console.warn("fetchRemote is deprecated, using db_remote.js instead");
-  try {
-    const url = `${dbConfig.remote.baseUrl}${endpoint}`;
-    const response = await fetch(url, {
-      headers: dbConfig.remote.headers,
-      ...options,
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const data = await response.json();
-    return { success: true, data };
-  } catch (error) {
-    console.error("Remote fetch error:", error);
-    return { success: false, error: error.message };
-  }
-}
+// Remote operations now handled by the modular db_remote/ API classes
 
 // ===== USER OPERATIONS =====
 
@@ -131,7 +117,7 @@ export async function getAllUsers() {
     );
     return { success: true, data: users };
   } else {
-    return await RemoteDB.remoteGetAllUsers();
+    return await UsersAPI.getAll();
   }
 }
 
@@ -153,7 +139,7 @@ export async function getUserByUsername(username) {
       error: user ? null : "User not found",
     };
   } else {
-    return await RemoteDB.remoteGetUserByUsername(username);
+    return await UsersAPI.getByUsername(username);
   }
 }
 
@@ -184,7 +170,7 @@ export async function addUser(user) {
     const result = saveToLocalStorage(dbConfig.local.storageKeys.users, users);
     return result.success ? { success: true, data: user } : result;
   } else {
-    return await RemoteDB.remoteAddUser(user);
+    return await UsersAPI.add(user);
   }
 }
 
@@ -217,7 +203,7 @@ export async function updateUser(username, userData) {
     const result = saveToLocalStorage(dbConfig.local.storageKeys.users, users);
     return result.success ? { success: true, data: users[index] } : result;
   } else {
-    return await RemoteDB.remoteUpdateUser(username, userData);
+    return await UsersAPI.update(username, userData);
   }
 }
 
@@ -246,7 +232,7 @@ export async function deleteUser(username) {
       ? { success: true, data: { username } }
       : result;
   } else {
-    return await RemoteDB.remoteDeleteUser(username);
+    return await UsersAPI.delete(username);
   }
 }
 
@@ -271,7 +257,7 @@ export async function authenticateUser(username, password) {
       error: user ? null : "Invalid credentials",
     };
   } else {
-    return await RemoteDB.remoteAuthenticateUser(username, password);
+    return await AuthAPI.authenticate(username, password);
   }
 }
 
@@ -296,7 +282,7 @@ export async function getAllPoints(username = null) {
     return { success: true, data: points };
   } else {
     const params = username ? { username } : {};
-    return await RemoteDB.remoteGetAllPoints(params);
+    return await PointsAPI.getAll(params);
   }
 }
 
@@ -318,7 +304,7 @@ export async function getPointById(id) {
       error: point ? null : "Point not found",
     };
   } else {
-    return await RemoteDB.remoteGetPointById(id);
+    return await PointsAPI.getById(id);
   }
 }
 
@@ -344,7 +330,7 @@ export async function addPoint(point) {
     const result = saveToLocalStorage(dbConfig.local.storageKeys.points, points);
     return result.success ? { success: true, data: point } : result;
   } else {
-    return await RemoteDB.remoteAddPoint(point);
+    return await PointsAPI.add(point);
   }
 }
 
@@ -370,7 +356,7 @@ export async function updatePoint(id, pointData) {
     const result = saveToLocalStorage(dbConfig.local.storageKeys.points, points);
     return result.success ? { success: true, data: points[index] } : result;
   } else {
-    return await RemoteDB.remoteUpdatePoint(id, pointData);
+    return await PointsAPI.update(id, pointData);
   }
 }
 
@@ -399,7 +385,7 @@ export async function deletePoint(id) {
       ? { success: true, data: { id } }
       : result;
   } else {
-    return await RemoteDB.remoteDeletePoint(id);
+    return await PointsAPI.delete(id);
   }
 }
 
@@ -417,7 +403,7 @@ export async function getSettings() {
     );
     return { success: true, data: settings };
   } else {
-    return await RemoteDB.remoteGetSettings();
+    return await SettingsAPI.get();
   }
 }
 
@@ -434,7 +420,7 @@ export async function saveSettings(settings) {
     );
     return result.success ? { success: true, data: settings } : result;
   } else {
-    return await RemoteDB.remoteSaveSettings(settings);
+    return await SettingsAPI.save(settings);
   }
 }
 
@@ -450,7 +436,7 @@ export async function getCurrentUser() {
     );
     return { success: true, data: currentUser };
   } else {
-    return await RemoteDB.remoteGetCurrentUser();
+    return await AuthAPI.getCurrentUser();
   }
 }
 
@@ -467,7 +453,7 @@ export async function setCurrentUser(username) {
     );
     return result.success ? { success: true, data: username } : result;
   } else {
-    return await RemoteDB.remoteSetCurrentUser(username);
+    return await AuthAPI.setCurrentUser(username);
   }
 }
 
@@ -483,7 +469,7 @@ export async function clearCurrentUser() {
     );
     return result.success ? { success: true, data: null } : result;
   } else {
-    return await RemoteDB.remoteClearCurrentUser();
+    return await AuthAPI.clearCurrentUser();
   }
 }
 
@@ -503,7 +489,7 @@ export async function resetAllData() {
       return { success: false, error: error.message };
     }
   } else {
-    return await RemoteDB.remoteResetAllData();
+    return await AdminAPI.resetAllData();
   }
 }
 
