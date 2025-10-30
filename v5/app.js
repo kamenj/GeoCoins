@@ -160,8 +160,8 @@ const Config = {
   },
   Constants: Constants,
   AppTitle: "Dani-Geo-Coins v5",
-  ISSUES_VIEW_LINK: "https://github.com/kamenj/SimpleLoginSite/issues",
-  ISSUES_NEW_LINK: "https://github.com/kamenj/SimpleLoginSite/issues/new",
+  ISSUES_VIEW_LINK: "https://github.com/kamenj/GeoCoins/issues",
+  ISSUES_NEW_LINK: "https://github.com/kamenj/GeoCoins/issues/new",
   Errors_GlobalHandlerEnabled: true, // Global error handler (admin setting)
   Debug: {
     UseDefaultCredentials: true,
