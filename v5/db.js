@@ -4,6 +4,7 @@
  */
 
 import { SAMPLE_USERS, SAMPLE_POINTS } from "./data.js";
+import * as RemoteDB from "./db_remote.js";
 
 // Database modes
 export const DB_MODE = {
@@ -42,6 +43,11 @@ let dbConfig = {
 export function initDB(config) {
   if (config) {
     dbConfig = { ...dbConfig, ...config };
+    
+    // Initialize remote DB if config provided
+    if (config.remote) {
+      RemoteDB.initRemoteDB(config.remote);
+    }
   }
 }
 
@@ -90,6 +96,8 @@ function loadFromLocalStorage(key, defaultValue = null) {
 // ===== REMOTE API HELPERS =====
 
 async function fetchRemote(endpoint, options = {}) {
+  // This is now deprecated - use db_remote.js functions directly
+  console.warn("fetchRemote is deprecated, using db_remote.js instead");
   try {
     const url = `${dbConfig.remote.baseUrl}${endpoint}`;
     const response = await fetch(url, {
@@ -123,7 +131,7 @@ export async function getAllUsers() {
     );
     return { success: true, data: users };
   } else {
-    return await fetchRemote(dbConfig.remote.endpoints.users);
+    return await RemoteDB.remoteGetAllUsers();
   }
 }
 
@@ -145,7 +153,7 @@ export async function getUserByUsername(username) {
       error: user ? null : "User not found",
     };
   } else {
-    return await fetchRemote(`${dbConfig.remote.endpoints.users}/${username}`);
+    return await RemoteDB.remoteGetUserByUsername(username);
   }
 }
 
@@ -176,10 +184,7 @@ export async function addUser(user) {
     const result = saveToLocalStorage(dbConfig.local.storageKeys.users, users);
     return result.success ? { success: true, data: user } : result;
   } else {
-    return await fetchRemote(dbConfig.remote.endpoints.users, {
-      method: "POST",
-      body: JSON.stringify(user),
-    });
+    return await RemoteDB.remoteAddUser(user);
   }
 }
 
@@ -212,10 +217,7 @@ export async function updateUser(username, userData) {
     const result = saveToLocalStorage(dbConfig.local.storageKeys.users, users);
     return result.success ? { success: true, data: users[index] } : result;
   } else {
-    return await fetchRemote(`${dbConfig.remote.endpoints.users}/${username}`, {
-      method: "PUT",
-      body: JSON.stringify(userData),
-    });
+    return await RemoteDB.remoteUpdateUser(username, userData);
   }
 }
 
@@ -244,9 +246,7 @@ export async function deleteUser(username) {
       ? { success: true, data: { username } }
       : result;
   } else {
-    return await fetchRemote(`${dbConfig.remote.endpoints.users}/${username}`, {
-      method: "DELETE",
-    });
+    return await RemoteDB.remoteDeleteUser(username);
   }
 }
 
@@ -271,10 +271,7 @@ export async function authenticateUser(username, password) {
       error: user ? null : "Invalid credentials",
     };
   } else {
-    return await fetchRemote(dbConfig.remote.endpoints.auth, {
-      method: "POST",
-      body: JSON.stringify({ username, password }),
-    });
+    return await RemoteDB.remoteAuthenticateUser(username, password);
   }
 }
 
@@ -298,10 +295,8 @@ export async function getAllPoints(username = null) {
     
     return { success: true, data: points };
   } else {
-    const endpoint = username
-      ? `${dbConfig.remote.endpoints.points}?username=${username}`
-      : dbConfig.remote.endpoints.points;
-    return await fetchRemote(endpoint);
+    const params = username ? { username } : {};
+    return await RemoteDB.remoteGetAllPoints(params);
   }
 }
 
@@ -323,7 +318,7 @@ export async function getPointById(id) {
       error: point ? null : "Point not found",
     };
   } else {
-    return await fetchRemote(`${dbConfig.remote.endpoints.points}/${id}`);
+    return await RemoteDB.remoteGetPointById(id);
   }
 }
 
@@ -349,10 +344,7 @@ export async function addPoint(point) {
     const result = saveToLocalStorage(dbConfig.local.storageKeys.points, points);
     return result.success ? { success: true, data: point } : result;
   } else {
-    return await fetchRemote(dbConfig.remote.endpoints.points, {
-      method: "POST",
-      body: JSON.stringify(point),
-    });
+    return await RemoteDB.remoteAddPoint(point);
   }
 }
 
@@ -378,10 +370,7 @@ export async function updatePoint(id, pointData) {
     const result = saveToLocalStorage(dbConfig.local.storageKeys.points, points);
     return result.success ? { success: true, data: points[index] } : result;
   } else {
-    return await fetchRemote(`${dbConfig.remote.endpoints.points}/${id}`, {
-      method: "PUT",
-      body: JSON.stringify(pointData),
-    });
+    return await RemoteDB.remoteUpdatePoint(id, pointData);
   }
 }
 
@@ -410,9 +399,7 @@ export async function deletePoint(id) {
       ? { success: true, data: { id } }
       : result;
   } else {
-    return await fetchRemote(`${dbConfig.remote.endpoints.points}/${id}`, {
-      method: "DELETE",
-    });
+    return await RemoteDB.remoteDeletePoint(id);
   }
 }
 
@@ -430,7 +417,7 @@ export async function getSettings() {
     );
     return { success: true, data: settings };
   } else {
-    return await fetchRemote("/settings");
+    return await RemoteDB.remoteGetSettings();
   }
 }
 
@@ -447,10 +434,7 @@ export async function saveSettings(settings) {
     );
     return result.success ? { success: true, data: settings } : result;
   } else {
-    return await fetchRemote("/settings", {
-      method: "PUT",
-      body: JSON.stringify(settings),
-    });
+    return await RemoteDB.remoteSaveSettings(settings);
   }
 }
 
@@ -466,7 +450,7 @@ export async function getCurrentUser() {
     );
     return { success: true, data: currentUser };
   } else {
-    return await fetchRemote("/current-user");
+    return await RemoteDB.remoteGetCurrentUser();
   }
 }
 
@@ -483,10 +467,7 @@ export async function setCurrentUser(username) {
     );
     return result.success ? { success: true, data: username } : result;
   } else {
-    return await fetchRemote("/current-user", {
-      method: "PUT",
-      body: JSON.stringify({ username }),
-    });
+    return await RemoteDB.remoteSetCurrentUser(username);
   }
 }
 
@@ -502,9 +483,7 @@ export async function clearCurrentUser() {
     );
     return result.success ? { success: true, data: null } : result;
   } else {
-    return await fetchRemote("/current-user", {
-      method: "DELETE",
-    });
+    return await RemoteDB.remoteClearCurrentUser();
   }
 }
 
@@ -524,9 +503,7 @@ export async function resetAllData() {
       return { success: false, error: error.message };
     }
   } else {
-    return await fetchRemote("/reset", {
-      method: "POST",
-    });
+    return await RemoteDB.remoteResetAllData();
   }
 }
 
