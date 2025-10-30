@@ -361,7 +361,7 @@ tr.selected { background: var(--highlight); }
 .mappoints-container.layout-horizontal .mappoints-list {
   width: var(--list-dock-left-width, 400px);
   min-width: var(--list-min-row-width, 300px);
-  overflow-y: auto;
+  overflow: auto; /* Enable both horizontal and vertical scrolling */
   flex-shrink: 0;
 }
 
@@ -412,7 +412,7 @@ tr.selected { background: var(--highlight); }
 
 .mappoints-container.layout-vertical .mappoints-list {
   height: var(--list-dock-top-height, 250px);
-  overflow-y: auto;
+  overflow: auto; /* Enable both horizontal and vertical scrolling */
   flex-shrink: 0;
 }
 
@@ -462,6 +462,22 @@ tr.selected { background: var(--highlight); }
   border-radius: 4px;
   padding: 10px;
   background: var(--bg);
+  overflow: auto; /* Enable both horizontal and vertical scrolling */
+  display: flex;
+  flex-direction: column;
+}
+
+/* Make the table container fill available space */
+#mps-table {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+#mps-table .tabulator {
+  flex: 1;
+  min-height: 0;
 }
 
 /* Hide input form elements - accessible through Edit/View and Add New buttons */
@@ -529,6 +545,12 @@ tr.selected { background: var(--highlight); }
   border-radius: 4px;
   color: var(--fg);
   font-size: inherit;
+  overflow: visible; /* Allow table to show scrollbars */
+}
+
+/* Ensure table holder allows horizontal scrolling */
+.tabulator .tabulator-tableholder {
+  overflow: auto !important;
 }
 
 .tabulator .tabulator-header {
@@ -735,10 +757,18 @@ tr.selected { background: var(--highlight); }
   cursor: pointer;
   margin-right: 4px;
   transition: background 0.2s;
+  width: auto !important;
+  display: inline-block;
 }
 
 .tabulator .tabulator-cell button.cmd:hover {
   background: var(--rowEven);
+}
+
+/* Prevent cmd-btn buttons from stretching in table cells */
+.tabulator .tabulator-cell button.cmd-btn {
+  width: auto !important;
+  display: inline-block;
 }
 
 /* Footer (for pagination if enabled) */
@@ -978,7 +1008,7 @@ body.fullscreen-mode > #mapPoints #mapPoints-container {
 body.fullscreen-mode > #mapPoints .mappoints-container.show-list-only .mappoints-list {
   flex: 1 !important;
   min-height: 0 !important;
-  overflow: hidden !important;
+  overflow: auto !important; /* Allow scrolling in list-only fullscreen mode */
   display: flex !important;
   flex-direction: column !important;
   padding: 0 !important;
@@ -1000,7 +1030,7 @@ body.fullscreen-mode > #mapPoints .mappoints-container.show-list-only .mappoints
 /* In both mode (list + map), make list fill height but keep width flexible for divider */
 body.fullscreen-mode > #mapPoints .mappoints-list {
   height: 100% !important;
-  overflow: hidden !important;
+  overflow: auto !important; /* Allow scrolling in fullscreen mode */
   display: flex !important;
   flex-direction: column !important;
   flex-shrink: 1 !important;

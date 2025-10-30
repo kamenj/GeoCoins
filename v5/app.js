@@ -187,9 +187,9 @@ const Config = {
   },
   PointsTable: {
     view: "details",         // Current view mode: "details" or "compact"
-    layout: "fitDataStretch", // Tabulator layout mode
-    height: "auto",          // Table height (auto fits to content)
-    maxHeight: "500px",      // Maximum table height before scrolling
+    layout: "fitData",       // Tabulator layout mode - allows horizontal scrolling
+    height: "100%",          // Table height (100% to fill parent container)
+    maxHeight: "none",       // No maximum height constraint
     pagination: false,       // Enable pagination
     paginationSize: 10,      // Rows per page
     // Column definitions will be created by getPointsTableColumns() function
@@ -1764,7 +1764,7 @@ export function removeRole(user, roleName) {
 export function canCurrentUserSeekPoints() {
   // Check if current user has seeker or admin role
   if (!State.currentUser) return false;
-  var user = findUser(State.currentUser);
+  var user = findUserFromCache(State.currentUser);
   if (!user) return false;
   return hasRole(user, 'seeker') || hasRole(user, 'admin');
 }
@@ -1772,7 +1772,7 @@ export function canCurrentUserAddPoints() {
   // Check if current user can add points (not seeker-only)
   // Users who are ONLY seekers cannot add points
   if (!State.currentUser) return false;
-  var user = findUser(State.currentUser);
+  var user = findUserFromCache(State.currentUser);
   if (!user) return false;
   var roles = getRolesArray(user);
   
@@ -1789,7 +1789,7 @@ export function canCurrentUserEditPoint(point) {
   // Check if current user can edit/delete a point
   // Only the owner or an admin can edit/delete a point
   if (!State.currentUser || !point) return false;
-  var user = findUser(State.currentUser);
+  var user = findUserFromCache(State.currentUser);
   if (!user) return false;
   
   // Admins can edit any point
@@ -2255,13 +2255,14 @@ function getPointsTableColumns(viewMode) {
       headerFilterFunc: function(headerValue, rowValue, rowData, filterParams) {
         return matchWildcard(headerValue, rowValue);
       }
-    },
-    { title: "Latitude", field: "lat", headerFilter: "input", sorter: "number", formatter: function(cell) {
-      return Number(cell.getValue()).toFixed(6);
-    }},
-    { title: "Longitude", field: "lng", headerFilter: "input", sorter: "number", formatter: function(cell) {
-      return Number(cell.getValue()).toFixed(6);
-    }}
+    }
+    // Latitude and Longitude columns hidden - users can navigate via Navigate button
+    // { title: "Latitude", field: "lat", headerFilter: "input", sorter: "number", formatter: function(cell) {
+    //   return Number(cell.getValue()).toFixed(6);
+    // }},
+    // { title: "Longitude", field: "lng", headerFilter: "input", sorter: "number", formatter: function(cell) {
+    //   return Number(cell.getValue()).toFixed(6);
+    // }}
   ];
   
   var baseCompactColumns = [
@@ -2352,56 +2353,78 @@ function getPointsTableColumns(viewMode) {
     }
   ];
   
-  // Add Actions column only if user is logged in
-  if (State.currentUser) {
-    baseDetailsColumns.push({
-      title: "Actions", field: "actions", headerSort: false, width: 200, formatter: function(cell) {
-        var point = cell.getRow().getData();
-        var isOwner = State.currentUser && point.username === State.currentUser;
-        var canEnterCode = canCurrentUserSeekPoints() && !isOwner && point.status !== 'found' && point.status !== 'pending';
-        var canEdit = canCurrentUserEditPoint(point);
-        
-        var buttons = '';
+  // Add Actions column - always visible (Navigate button for all, other buttons when logged in)
+  baseDetailsColumns.push({
+    title: "Actions", field: "actions", headerSort: false, width: 320, formatter: function(cell) {
+      var point = cell.getRow().getData();
+      var buttons = '';
+      
+      // Add Navigate button for all users (logged in or not)
+      if (point.lat && point.lng) {
+        var googleMapsUrl = 'https://www.google.com/maps?q=' + point.lat + ',' + point.lng;
+        buttons += '<button class="' + Config.Constants.ClassName.CmdBtn + '" onclick="window.open(\'' + googleMapsUrl + '\', \'_blank\')" style="padding:4px 6px;font-size:0.85em;">Navigate</button> ';
+      }
+      
+      // Add Enter Code and Edit/Delete buttons only if user is logged in
+      if (State.currentUser) {
+        var currentUser = findUserFromCache(State.currentUser);
+        var isOwner = point.username === State.currentUser;
+        var isAdmin = currentUser && hasRole(currentUser, 'admin');
+        var isSeeker = currentUser && hasRole(currentUser, 'seeker');
         
         // Add Enter Code button for seekers/admins on unfound, non-pending points they don't own
+        var canEnterCode = (isSeeker || isAdmin) && !isOwner && point.status !== 'found' && point.status !== 'pending';
         if (canEnterCode) {
           buttons += '<button class="' + Config.Constants.ClassName.CmdBtn + '" onclick="window.appEnterPointCode(' + point.id + ')">Enter Code</button> ';
         }
         
-        // Only show Edit/Delete buttons if user has permission
+        // Show Edit/Delete buttons if user is admin or owner
+        var canEdit = isAdmin || isOwner;
         if (canEdit) {
           buttons += renderCommandHTML({ payload: point.id }, Config.Constants.CommandName.PointsDeleteRow) + " " +
                      renderCommandHTML({ payload: point.id }, Config.Constants.CommandName.PointsEditRow);
         }
-        
-        return buttons;
       }
-    });
+      
+      return buttons;
+    }
+  });
 
-    baseCompactColumns.push({
-      title: "Actions", field: "actions", headerSort: false, width: 200, formatter: function(cell) {
-        var point = cell.getRow().getData();
-        var isOwner = State.currentUser && point.username === State.currentUser;
-        var canEnterCode = canCurrentUserSeekPoints() && !isOwner && point.status !== 'found' && point.status !== 'pending';
-        var canEdit = canCurrentUserEditPoint(point);
-        
-        var buttons = '';
+  baseCompactColumns.push({
+    title: "Actions", field: "actions", headerSort: false, width: 320, formatter: function(cell) {
+      var point = cell.getRow().getData();
+      var buttons = '';
+      
+      // Add Navigate button for all users (logged in or not)
+      if (point.lat && point.lng) {
+        var googleMapsUrl = 'https://www.google.com/maps?q=' + point.lat + ',' + point.lng;
+        buttons += '<button class="' + Config.Constants.ClassName.CmdBtn + '" onclick="window.open(\'' + googleMapsUrl + '\', \'_blank\')" style="padding:4px 6px;font-size:0.85em;">Navigate</button> ';
+      }
+      
+      // Add Enter Code and Edit/Delete buttons only if user is logged in
+      if (State.currentUser) {
+        var currentUser = findUserFromCache(State.currentUser);
+        var isOwner = point.username === State.currentUser;
+        var isAdmin = currentUser && hasRole(currentUser, 'admin');
+        var isSeeker = currentUser && hasRole(currentUser, 'seeker');
         
         // Add Enter Code button for seekers/admins on unfound, non-pending points they don't own
+        var canEnterCode = (isSeeker || isAdmin) && !isOwner && point.status !== 'found' && point.status !== 'pending';
         if (canEnterCode) {
           buttons += '<button class="' + Config.Constants.ClassName.CmdBtn + '" onclick="window.appEnterPointCode(' + point.id + ')">Enter Code</button> ';
         }
         
-        // Only show Edit/Delete buttons if user has permission
+        // Show Edit/Delete buttons if user is admin or owner
+        var canEdit = isAdmin || isOwner;
         if (canEdit) {
           buttons += renderCommandHTML({ payload: point.id }, Config.Constants.CommandName.PointsDeleteRow) + " " +
                      renderCommandHTML({ payload: point.id }, Config.Constants.CommandName.PointsEditRow);
         }
-        
-        return buttons;
       }
-    });
-  }
+      
+      return buttons;
+    }
+  });
   
   var columns = {
     details: baseDetailsColumns,
@@ -2807,8 +2830,19 @@ export function refreshMapPointsTable() {
   var tableDiv = $(Config.Constants.ElementId.MpsTable);
   var empty = $(Config.Constants.ElementId.MpsEmpty);
   
+  // Ensure current user is cached before rendering table
+  var cacheUserPromise = State.currentUser && !State._userCache[State.currentUser] 
+    ? DB.getUserByUsername(State.currentUser).then(function(result) {
+        if (result.success && result.data) {
+          State._userCache[State.currentUser] = result.data;
+        }
+      })
+    : Promise.resolve();
+  
   // Fetch points from DB for display
-  DB.getAllPoints().then(function(result) {
+  cacheUserPromise.then(function() {
+    return DB.getAllPoints();
+  }).then(function(result) {
     var points = result.success ? (result.data || []) : [];
     
     if (points.length === 0) {
@@ -2870,6 +2904,13 @@ export function refreshMapPointsTable() {
           }
         }
       });
+      
+      // Force immediate redraw to ensure formatters use cached user data
+      setTimeout(function() {
+        if (State.pointsTable) {
+          State.pointsTable.redraw(true);
+        }
+      }, 0);
       
       // Add row click handler to show selection indicator
       State.pointsTable.on("rowClick", function(e, row) {
@@ -3923,6 +3964,10 @@ export function refreshMapMarkers() {
                           'User: ' + (point.username || 'Unknown') + '<br>' +
                           (point.foundBy ? 'Found by: ' + point.foundBy + '<br>' : '') +
                           (point.desc || '') + '<br>';
+        
+        // Add Navigate button for all users
+        var googleMapsUrl = 'https://www.google.com/maps?q=' + point.lat + ',' + point.lng;
+        popupContent += '<button onclick="window.open(\'' + googleMapsUrl + '\', \'_blank\')" style="margin-top:5px;">Navigate</button> ';
         
         // Add Enter Code button for seekers/admins on unfound, non-pending points they don't own
         if (canEnterCode) {
