@@ -462,7 +462,7 @@ tr.selected { background: var(--highlight); }
   border-radius: 4px;
   padding: 10px;
   background: var(--bg);
-  overflow: auto; /* Enable both horizontal and vertical scrolling */
+  overflow: hidden; /* Changed from auto - let the table handle scrolling */
   display: flex;
   flex-direction: column;
 }
@@ -471,13 +471,11 @@ tr.selected { background: var(--highlight); }
 #mps-table {
   flex: 1;
   min-height: 0;
-  display: flex;
-  flex-direction: column;
 }
 
-#mps-table .tabulator {
-  flex: 1;
-  min-height: 0;
+/* Let JS control all tabulator sizing - don't interfere with CSS */
+#mps-table .tabulator .tabulator-tableholder {
+  overflow: auto !important;
 }
 
 /* Hide input form elements - accessible through Edit/View and Add New buttons */
@@ -545,12 +543,16 @@ tr.selected { background: var(--highlight); }
   border-radius: 4px;
   color: var(--fg);
   font-size: inherit;
-  overflow: visible; /* Allow table to show scrollbars */
+  overflow: hidden; /* Changed from visible to hidden - required for height to work */
+  display: flex;
+  flex-direction: column;
 }
 
-/* Ensure table holder allows horizontal scrolling */
+/* Ensure table holder fills available space and allows scrolling */
 .tabulator .tabulator-tableholder {
   overflow: auto !important;
+  flex: 1;
+  min-height: 0;
 }
 
 .tabulator .tabulator-header {

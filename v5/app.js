@@ -2882,11 +2882,18 @@ export function refreshMapPointsTable() {
     
     // Initialize or update the Tabulator table
     if (!State.pointsTable) {
+      // Calculate initial height based on parent container (mapPointsList)
+      var mapPointsList = document.getElementById('mapPointsList');
+      var mpsTableContainer = document.getElementById('mps-table');
+      // Subtract some space for padding and other elements in the list
+      var listPadding = 20; // padding in .mappoints-list
+      var initialHeight = mapPointsList ? (mapPointsList.clientHeight - listPadding) : 500;
+      
       // Create new Tabulator instance
       State.pointsTable = new Tabulator("#" + Config.Constants.ElementId.MpsTable, {
         data: points,
         layout: Config.PointsTable.layout,
-        height: Config.PointsTable.height,
+        height: initialHeight, // Set initial pixel height
         maxHeight: Config.PointsTable.maxHeight,
         columns: columns,
         initialSort: Config.PointsTable.initialSort,
@@ -2936,6 +2943,14 @@ export function refreshMapPointsTable() {
       // Update existing table with new data and columns
       // Wait for table to be ready before updating
       if (State.pointsTable.initialized) {
+        // Recalculate height based on parent container size
+        var mapPointsList = document.getElementById('mapPointsList');
+        if (mapPointsList && mapPointsList.clientHeight > 0) {
+          var listPadding = 20;
+          var newHeight = mapPointsList.clientHeight - listPadding;
+          State.pointsTable.setHeight(newHeight);
+        }
+        
         State.pointsTable.setColumns(columns);
         State.pointsTable.setData(points);
         
@@ -3792,8 +3807,25 @@ export function updateMapPointsLayout() {
   // Re-setup divider after layout change to ensure handlers work correctly
   // Only re-setup if layout actually changed
   if (currentLayout !== targetLayout) {
+    // Clear inline styles from previous layout mode
+    var listDiv = $("mapPointsList");
+    if (listDiv) {
+      listDiv.style.width = '';
+      listDiv.style.height = '';
+    }
+    
     setTimeout(function() {
       setupMapPointsDivider();
+      
+      // Refresh the table to recalculate its height for the new layout
+      if (State.pointsTable && State.pointsTable.initialized) {
+        var tableFilters = State.pointsTable.getHeaderFilters();
+        State.pointsTable.destroy();
+        State.pointsTable = null;
+        State.pointsTableFilters = tableFilters;
+        refreshMapPointsTable();
+      }
+      
       // Also invalidate map after layout change
       if (State.leafletMap && State.mapPointsView.showMap) {
         State.leafletMap.invalidateSize();
@@ -4676,9 +4708,26 @@ export function setupMapPointsDivider() {
       
       newHeight = Math.max(minHeight, Math.min(newHeight, maxHeight));
       
-      // Update the CSS variable
+      // Update the CSS variable and inline style
       container.style.setProperty('--list-dock-top-height', newHeight + 'px');
       listDiv.style.height = newHeight + 'px';
+      
+      // Immediately update the table height to match the container's content area
+      if (State.pointsTable && State.pointsTable.initialized) {
+        var listPadding = 20; // 10px top + 10px bottom
+        var tableHeight = listDiv.clientHeight - listPadding;
+        State.pointsTable.setHeight(tableHeight);
+        State.pointsTable.element.style.height = tableHeight + 'px';
+        
+        // Also ensure tableholder gets the right height
+        var tableholder = State.pointsTable.element.querySelector('.tabulator-tableholder');
+        if (tableholder) {
+          console.log('During drag - tableholder height:', tableholder.offsetHeight, 'style:', tableholder.style.height);
+        }
+        
+        // Force redraw to update visible rows
+        State.pointsTable.redraw(true);
+      }
     }
     
     // Don't invalidate map during drag - only at the end (performance optimization)
@@ -4696,12 +4745,24 @@ export function setupMapPointsDivider() {
     document.body.style.userSelect = '';
     document.body.style.cursor = '';
     
-    // Final map invalidation
-    if (State.leafletMap) {
-      setTimeout(function() {
+    // Final map invalidation and table resize
+    setTimeout(function() {
+      if (State.leafletMap) {
         State.leafletMap.invalidateSize();
-      }, 50);
-    }
+      }
+      // Destroy and recreate the table with new height
+      if (State.pointsTable && State.pointsTable.initialized) {
+        try {
+          var tableFilters = State.pointsTable.getHeaderFilters();
+          State.pointsTable.destroy();
+          State.pointsTable = null;
+          State.pointsTableFilters = tableFilters;
+          refreshMapPointsTable();
+        } catch (e) {
+          console.warn('Table resize error:', e);
+        }
+      }
+    }, 50);
   };
   
   dividerHandlers.touchStart = function(e) {
@@ -4932,6 +4993,35 @@ async function loadAll() {
       }
     });
     resizeObserver.observe(mapPointsContainer);
+  }
+  
+  // Set up ResizeObserver for mapPointsList (what the splitter actually resizes)
+  var mapPointsListDiv = $("mapPointsList");
+  if (mapPointsListDiv && window.ResizeObserver) {
+    var resizeTimeout;
+    var listResizeObserver = new ResizeObserver(function(entries) {
+      if (State.pointsTable && State.pointsTable.initialized && State.currentContentId === Constants.ContentSection.MapPoints) {
+        // Debounce to avoid excessive updates
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(function() {
+          try {
+            // Just update the height directly, no need to destroy/recreate
+            var listPadding = 20;
+            var newHeight = mapPointsListDiv.clientHeight - listPadding;
+            State.pointsTable.setHeight(newHeight);
+            
+            // Also directly set the height on the DOM element as a fallback
+            var tabulatorEl = State.pointsTable.element;
+            if (tabulatorEl) {
+              tabulatorEl.style.height = newHeight + 'px';
+            }
+          } catch (e) {
+            console.warn('Table resize error:', e);
+          }
+        }, 100);
+      }
+    });
+    listResizeObserver.observe(mapPointsListDiv);
   }
   
   // Also handle window resize for viewport fitting
