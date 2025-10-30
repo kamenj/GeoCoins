@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../../../../../../kzz/kzzNodeServer"
+		}
+	],
+	"settings": {
+		"liveServer.settings.multiRootWorkspaceName": "GeoCoins"
+	}
+}
