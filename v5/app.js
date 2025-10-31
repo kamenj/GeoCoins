@@ -262,12 +262,12 @@ const Config = {
     FitToViewport: false   // If true, auto-adjust container height to fit viewport
   },
   Database: {
-    mode: "LOCAL", // "LOCAL" or "REMOTE"
+    mode: "REMOTE", // "LOCAL" or "REMOTE"
     remote: {
       baseUrl: "http://localhost:3000/api",
       endpoints: {
         users: "/users",
-        points: "/points",
+        points: "/map_points",
         auth: "/auth",
       },
       headers: {

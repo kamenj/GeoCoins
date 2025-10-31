@@ -39,6 +39,12 @@ export async function fetchWithTimeout(endpoint, options = {}) {
         status: response.status,
       };
     }
+
+    // If the server response already has success/data structure, return it directly
+    // Otherwise wrap it in our standard format
+    if (data && typeof data === 'object' && 'success' in data) {
+      return data;
+    }
     
     return {
       success: true,

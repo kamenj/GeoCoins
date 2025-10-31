@@ -9,7 +9,7 @@ export const remoteConfig = {
   baseUrl: "http://localhost:3000/api",
   endpoints: {
     users: "/users",
-    points: "/points",
+    points: "/map_points",
     auth: "/auth",
     settings: "/settings",
     currentUser: "/current-user",

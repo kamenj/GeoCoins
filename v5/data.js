@@ -1,5 +1,19 @@
 // Sample starter data (used when localStorage is empty)
 
+// Map point status mappings (corresponds to map_point_status table)
+export var SAMPLE_MAP_POINT_STATUS = [
+  { id: 1, status_name: "pending", description: "Point is newly created and waiting to be hidden" },
+  { id: 2, status_name: "hidden", description: "Point is hidden and waiting to be found" },
+  { id: 3, status_name: "found", description: "Point has been found by someone" }
+];
+
+// Status ID constants for easy reference
+export const STATUS_ID = {
+  PENDING: 1,
+  HIDDEN: 2,
+  FOUND: 3
+};
+
 // Roles available in the system
 export var SAMPLE_ROLES = [
   { id: 1, name: "admin", description: "System administrator with full access" },
@@ -81,9 +95,9 @@ export var SAMPLE_POINTS = [
     lat: 42.6977,
     lng: 23.3219,
     desc: "Alice's home in Sofia",
-    status: "pending",
+    status_id: 1, // pending
     code: "ALICE123",
-    foundBy: null,
+    found_by: null,
   },
   {
     id: 2,
@@ -92,9 +106,9 @@ export var SAMPLE_POINTS = [
     lat: 42.1354,
     lng: 24.7453,
     desc: "Bob's office in Plovdiv",
-    status: "found",
+    status_id: 3, // found
     code: "BOB456",
-    foundBy: "charlie",
+    found_by: "charlie",
   },
   {
     id: 3,
@@ -103,9 +117,9 @@ export var SAMPLE_POINTS = [
     lat: 42.6950,
     lng: 23.3350,
     desc: "Hidden treasure in the park",
-    status: "hidden",
+    status_id: 2, // hidden
     code: "PARK777",
-    foundBy: null,
+    found_by: null,
   },
   {
     id: 4,
@@ -114,9 +128,9 @@ export var SAMPLE_POINTS = [
     lat: 42.7100,
     lng: 23.3500,
     desc: "Cache hidden in the mountains",
-    status: "hidden",
+    status_id: 2, // hidden
     code: "MOUNT999",
-    foundBy: null,
+    found_by: null,
   },
   {
     id: 5,
@@ -125,9 +139,9 @@ export var SAMPLE_POINTS = [
     lat: 42.6850,
     lng: 23.3100,
     desc: "Hidden spot by the river",
-    status: "hidden",
+    status_id: 2, // hidden
     code: "RIVER555",
-    foundBy: null,
+    found_by: null,
   },
   {
     id: 6,
@@ -136,7 +150,7 @@ export var SAMPLE_POINTS = [
     lat: 42.6800,
     lng: 23.3400,
     desc: "Beautiful spot overlooking the lake",
-    status: "hidden",
+    status_id: 2, // hidden
     code: "LAKE888",
     foundBy: null,
   },
@@ -147,7 +161,7 @@ export var SAMPLE_POINTS = [
     lat: 42.7050,
     lng: 23.3250,
     desc: "Hidden along the forest trail",
-    status: "found",
+    status_id: 3, // found
     code: "FOREST321",
     foundBy: "alice",
   },
@@ -158,7 +172,7 @@ export var SAMPLE_POINTS = [
     lat: 42.6950,
     lng: 23.3280,
     desc: "Right in the heart of the city",
-    status: "pending",
+    status_id: 1, // pending
     code: "CITY654",
     foundBy: null,
   },
@@ -169,7 +183,7 @@ export var SAMPLE_POINTS = [
     lat: 42.6900,
     lng: 23.3150,
     desc: "Under the old bridge",
-    status: "hidden",
+    status_id: 2, // hidden
     code: "BRIDGE987",
     foundBy: null,
   },
@@ -180,7 +194,7 @@ export var SAMPLE_POINTS = [
     lat: 42.7000,
     lng: 23.3320,
     desc: "Hidden in the botanical garden",
-    status: "found",
+    status_id: 3, // found
     code: "GARDEN147",
     foundBy: "evan",
   },
@@ -191,7 +205,7 @@ export var SAMPLE_POINTS = [
     lat: 42.6960,
     lng: 23.3200,
     desc: "Ancient treasure near the old square",
-    status: "hidden",
+    status_id: 2, // hidden
     code: "SQUARE222",
     foundBy: null,
   },
@@ -202,7 +216,7 @@ export var SAMPLE_POINTS = [
     lat: 42.6550,
     lng: 23.3700,
     desc: "Cache hidden on campus grounds",
-    status: "pending",
+    status_id: 1, // pending
     code: "UNI333",
     foundBy: null,
   },
@@ -213,7 +227,7 @@ export var SAMPLE_POINTS = [
     lat: 42.6900,
     lng: 23.3450,
     desc: "Near the old stadium entrance",
-    status: "found",
+    status_id: 3, // found
     code: "STADIUM444",
     foundBy: "charlie",
   },
@@ -224,7 +238,7 @@ export var SAMPLE_POINTS = [
     lat: 42.6980,
     lng: 23.3240,
     desc: "Underground cache near metro",
-    status: "hidden",
+    status_id: 2, // hidden
     code: "METRO555",
     foundBy: null,
   },
@@ -235,7 +249,7 @@ export var SAMPLE_POINTS = [
     lat: 42.6940,
     lng: 23.3310,
     desc: "Hidden at the museum entrance",
-    status: "hidden",
+    status_id: 2, // hidden
     code: "MUSEUM666",
     foundBy: null,
   },
@@ -246,7 +260,7 @@ export var SAMPLE_POINTS = [
     lat: 42.6970,
     lng: 23.3230,
     desc: "Cache with cathedral view",
-    status: "found",
+    status_id: 3, // found
     code: "CHURCH777",
     foundBy: "bob",
   },
@@ -257,7 +271,7 @@ export var SAMPLE_POINTS = [
     lat: 42.6920,
     lng: 23.3290,
     desc: "Busy marketplace treasure",
-    status: "pending",
+    status_id: 1, // pending
     code: "MARKET888",
     foundBy: null,
   },
@@ -268,7 +282,7 @@ export var SAMPLE_POINTS = [
     lat: 42.6890,
     lng: 23.4100,
     desc: "Along the road to airport",
-    status: "hidden",
+    status_id: 2, // hidden
     code: "AIRPORT999",
     foundBy: null,
   },
@@ -279,7 +293,7 @@ export var SAMPLE_POINTS = [
     lat: 42.6500,
     lng: 23.3400,
     desc: "Near the zoo main gate",
-    status: "hidden",
+    status_id: 2, // hidden
     code: "ZOO101",
     foundBy: null,
   },
@@ -290,7 +304,7 @@ export var SAMPLE_POINTS = [
     lat: 42.7020,
     lng: 23.3180,
     desc: "At the base of the monument",
-    status: "found",
+    status_id: 3, // found
     code: "TOWER202",
     foundBy: "alice",
   },
