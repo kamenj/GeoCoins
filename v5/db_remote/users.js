@@ -34,6 +34,16 @@ export class UsersAPI {
   }
 
   /**
+   * Get a user by ID from remote server
+   * @param {number} userId - User ID to find
+   * @returns {Promise<object>} Result object with user data
+   */
+  static async getById(userId) {
+    const endpoint = `${remoteConfig.endpoints.users}/${userId}`;
+    return await fetchWithTimeout(endpoint, { method: "GET" });
+  }
+
+  /**
    * Add a new user to remote server
    * @param {object} user - User object to add
    * @returns {Promise<object>} Result object with created user data

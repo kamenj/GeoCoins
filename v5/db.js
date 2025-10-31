@@ -145,6 +145,23 @@ export async function getUserByUsername(username) {
   }
 }
 
+export async function getUserById(userId) {
+  if (dbConfig.mode === DB_MODE.LOCAL) {
+    const users = loadFromLocalStorage(
+      dbConfig.local.storageKeys.users,
+      SAMPLE_USERS
+    );
+    const user = users.find((u) => u.id == userId);
+    return {
+      success: !!user,
+      data: user,
+      error: user ? null : "User not found",
+    };
+  } else {
+    return await UsersAPI.getById(userId);
+  }
+}
+
 /**
  * Add a new user
  * @param {object} user - User object to add
@@ -653,6 +670,7 @@ export default {
   // Users
   getAllUsers,
   getUserByUsername,
+  getUserById,
   addUser,
   updateUser,
   deleteUser,

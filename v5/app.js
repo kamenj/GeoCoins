@@ -430,8 +430,8 @@ const Config = {
         name: "users.editRow",
         caption: "Edit",
         menu: { location: "list.row" },
-        action: async function (username) {
-          await openUserDetails(username);
+        action: async function (userId) {
+          await openUserDetails(userId);
         },
         visible: true,
         enabled: true,
@@ -1058,6 +1058,7 @@ const State = {
   // Cache for recently accessed items (server mode optimization)
   _userCache: {}, // username -> user object
   _pointCache: {}, // id -> point object
+  markers: {}, // pointId -> Leaflet marker object
 };
 
 // Expose Config and State to window for errorHandler.js
@@ -1924,17 +1925,17 @@ export async function removeUserByUsername(username) {
   }
   return result;
 }
-export async function findUser(username) {
-  // Check cache first
-  if (State._userCache[username]) {
-    return State._userCache[username];
+export async function findUser(userId) {
+  // Check cache first - but invalidate if password is missing (for edit mode)
+  if (State._userCache[userId] && State._userCache[userId].password !== undefined) {
+    return State._userCache[userId];
   }
   
-  // Fetch from DB
-  var result = await DB.getUserByUsername(username);
+  // Fetch from DB by ID (either not cached or cached without password)
+  var result = await DB.getUserById(userId);
   if (result.success && result.data) {
     // Cache it
-    State._userCache[username] = result.data;
+    State._userCache[userId] = result.data;
     return result.data;
   }
   return null;
@@ -2061,8 +2062,8 @@ function getTableColumns(viewMode) {
       },
       { title: "Actions", field: "actions", headerSort: false, width: 150, formatter: function(cell) {
         var user = cell.getRow().getData();
-        return renderCommandHTML({ payload: user.username }, Config.Constants.CommandName.UsersDeleteRow) + " " +
-               renderCommandHTML({ payload: user.username }, Config.Constants.CommandName.UsersEditRow);
+        return renderCommandHTML({ payload: user.id }, Config.Constants.CommandName.UsersDeleteRow) + " " +
+               renderCommandHTML({ payload: user.id }, Config.Constants.CommandName.UsersEditRow);
       }
       }
     ],
@@ -2133,8 +2134,8 @@ function getTableColumns(viewMode) {
       },
       { title: "Actions", field: "actions", headerSort: false, width: 150, formatter: function(cell) {
         var user = cell.getRow().getData();
-        return renderCommandHTML({ payload: user.username }, Config.Constants.CommandName.UsersDeleteRow) + " " +
-               renderCommandHTML({ payload: user.username }, Config.Constants.CommandName.UsersEditRow);
+        return renderCommandHTML({ payload: user.id }, Config.Constants.CommandName.UsersDeleteRow) + " " +
+               renderCommandHTML({ payload: user.id }, Config.Constants.CommandName.UsersEditRow);
       },
         headerVertical: true
       }
@@ -2436,14 +2437,14 @@ function getPointsTableColumns(viewMode) {
 
 function renderUsersRow(u, i) {
   var actionsHTML = [
-    renderCommandHTML({ payload: u.username }, Config.Constants.CommandName.UsersDeleteRow),
-    renderCommandHTML({ payload: u.username }, Config.Constants.CommandName.UsersEditRow),
+    renderCommandHTML({ payload: u.id }, Config.Constants.CommandName.UsersDeleteRow),
+    renderCommandHTML({ payload: u.id }, Config.Constants.CommandName.UsersEditRow),
   ].join(" ");
   var rolesDisplay = getRolesDisplay(u);
   var html = `
     <tr>
       <td>${i + 1}</td>
-      <td><button class="${Config.Constants.ClassName.LinkBtn}" ${Config.Constants.Attribute.DataOpenUser}="${u.username}">${
+      <td><button class="${Config.Constants.ClassName.LinkBtn}" ${Config.Constants.Attribute.DataOpenUser}="${u.id}">${
     u.username
   }</button></td>
       <td>${u.name || ""}</td>
@@ -2592,8 +2593,8 @@ function fillUserDetails(u, mode) {
     }
   }
 }
-export async function openUserDetails(username) {
-  var u = await findUser(username);
+export async function openUserDetails(userId) {
+  var u = await findUser(userId);
   if (!u) return;
   showContent("userDetails");
   fillUserDetails(u, "edit");
@@ -3058,15 +3059,20 @@ export function navigateMapToPoint(point) {
   // Set view to the point with a good zoom level
   State.leafletMap.setView([point.lat, point.lng], 15);
   
-  // Find and open the marker's popup for this point
-  State.leafletMap.eachLayer(function(layer) {
-    if (layer instanceof L.Marker) {
-      var latlng = layer.getLatLng();
-      if (latlng.lat === point.lat && latlng.lng === point.lng) {
-        layer.openPopup();
+  // Open the marker's popup if it exists in our stored markers
+  if (State.markers[point.id]) {
+    State.markers[point.id].openPopup();
+  } else {
+    // Fallback: search through all layers (for backwards compatibility)
+    State.leafletMap.eachLayer(function(layer) {
+      if (layer instanceof L.Marker) {
+        var latlng = layer.getLatLng();
+        if (latlng.lat === point.lat && latlng.lng === point.lng) {
+          layer.openPopup();
+        }
       }
-    }
-  });
+    });
+  }
 }
 
 export function openMapPointDetailsForAdd() {
@@ -3123,7 +3129,7 @@ export async function openMapPointDetailsForEdit(id) {
   setVal("mpd-title", p.title || "");
   setVal("mpd-lat", "" + p.lat);
   setVal("mpd-lng", "" + p.lng);
-  setVal("mpd-desc", p.desc || "");
+  setVal("mpd-desc", p.description || "");
   setVal("mpd-status", p.status || "pending");
   setVal("mpd-code", p.code || "");
   
@@ -3190,7 +3196,7 @@ export async function saveMapPointFromDetails() {
       title: title,
       lat: lat,
       lng: lng,
-      desc: desc,
+      description: desc,
       status: status,
       code: code
     };
@@ -3214,7 +3220,7 @@ export async function saveMapPointFromDetails() {
       title: title,
       lat: lat,
       lng: lng,
-      desc: desc,
+      description: desc,
       status: status,
       code: code
     };
@@ -3245,7 +3251,7 @@ export function editMapPointFromDetails() {
   setVal("mp-title", p.title || "");
   setVal("mp-lat", "" + p.lat);
   setVal("mp-lng", "" + p.lng);
-  setVal("mp-desc", p.desc || "");
+  setVal("mp-desc", p.description || "");
   showContent("mapPoints");
 }
 export async function deleteMapPointFromDetails() {
@@ -3971,6 +3977,9 @@ export function refreshMapMarkers() {
   DB.getAllPoints().then(function(result) {
     if (!result.success) return;
     
+    // Clear existing markers from State
+    State.markers = {};
+    
     var points = result.data || [];
     var bounds = [];
     
@@ -3984,6 +3993,9 @@ export function refreshMapMarkers() {
         // Create marker with custom icon
         var marker = L.marker([point.lat, point.lng], { icon: icon }).addTo(State.leafletMap);
         
+        // Store marker in State for later access
+        State.markers[point.id] = marker;
+        
         // Build popup content with status badge
         var statusBadge = getStatusBadgeHTML(status);
         
@@ -3995,7 +4007,7 @@ export function refreshMapMarkers() {
         var popupContent = '<b>' + (point.title || 'Untitled') + '</b>' + statusBadge + '<br>' +
                           'User: ' + (point.username || 'Unknown') + '<br>' +
                           (point.foundBy ? 'Found by: ' + point.foundBy + '<br>' : '') +
-                          (point.desc || '') + '<br>';
+                          (point.description || '') + '<br>';
         
         // Add Navigate button for all users
         var googleMapsUrl = 'https://www.google.com/maps?q=' + point.lat + ',' + point.lng;
@@ -4575,8 +4587,8 @@ function bindListDelegates() {
     uTable.addEventListener("click", async function (e) {
       var t = e.target;
       if (t && t.classList && t.classList.contains(Config.Constants.ClassName.LinkBtn)) {
-        var username = t.getAttribute(Config.Constants.Attribute.DataOpenUser);
-        await openUserDetails(username);
+        var userId = t.getAttribute(Config.Constants.Attribute.DataOpenUser);
+        await openUserDetails(userId);
         return;
       }
       if (t && t.classList && t.classList.contains(Config.Constants.ClassName.Cmd)) {
