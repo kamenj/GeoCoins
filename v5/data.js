@@ -1,4 +1,14 @@
 // Sample starter data (used when localStorage is empty)
+
+// Roles available in the system
+export var SAMPLE_ROLES = [
+  { id: 1, name: "admin", description: "System administrator with full access" },
+  { id: 2, name: "seeker", description: "User who searches for hidden geocoins" },
+  { id: 3, name: "hider", description: "User who hides geocoins for others to find" },
+  { id: 4, name: "developer", description: "Developer with access to development features" },
+  { id: 5, name: "tester", description: "Tester with access to testing features" }
+];
+
 export var SAMPLE_USERS = [
   {
     id: 1,
@@ -66,7 +76,7 @@ export var SAMPLE_USERS = [
 export var SAMPLE_POINTS = [
   {
     id: 1,
-    username: "alice",
+    user_id: 1, // alice
     title: "Home",
     lat: 42.6977,
     lng: 23.3219,
@@ -77,7 +87,7 @@ export var SAMPLE_POINTS = [
   },
   {
     id: 2,
-    username: "bob",
+    user_id: 2, // bob
     title: "Work",
     lat: 42.1354,
     lng: 24.7453,
@@ -88,7 +98,7 @@ export var SAMPLE_POINTS = [
   },
   {
     id: 3,
-    username: "bob",
+    user_id: 2, // bob
     title: "Park Treasure",
     lat: 42.6950,
     lng: 23.3350,
@@ -99,7 +109,7 @@ export var SAMPLE_POINTS = [
   },
   {
     id: 4,
-    username: "evan",
+    user_id: 5, // evan
     title: "Mountain Cache",
     lat: 42.7100,
     lng: 23.3500,
@@ -110,7 +120,7 @@ export var SAMPLE_POINTS = [
   },
   {
     id: 5,
-    username: "evan",
+    user_id: 5, // evan
     title: "River Spot",
     lat: 42.6850,
     lng: 23.3100,
@@ -121,7 +131,7 @@ export var SAMPLE_POINTS = [
   },
   {
     id: 6,
-    username: "charlie",
+    user_id: 3, // charlie
     title: "Lake View",
     lat: 42.6800,
     lng: 23.3400,
@@ -132,7 +142,7 @@ export var SAMPLE_POINTS = [
   },
   {
     id: 7,
-    username: "bob",
+    user_id: 2, // bob
     title: "Forest Trail",
     lat: 42.7050,
     lng: 23.3250,
@@ -143,7 +153,7 @@ export var SAMPLE_POINTS = [
   },
   {
     id: 8,
-    username: "evan",
+    user_id: 5, // evan
     title: "City Center",
     lat: 42.6950,
     lng: 23.3280,
@@ -154,7 +164,7 @@ export var SAMPLE_POINTS = [
   },
   {
     id: 9,
-    username: "charlie",
+    user_id: 3, // charlie
     title: "Bridge View",
     lat: 42.6900,
     lng: 23.3150,
@@ -165,7 +175,7 @@ export var SAMPLE_POINTS = [
   },
   {
     id: 10,
-    username: "bob",
+    user_id: 2, // bob
     title: "Garden Secret",
     lat: 42.7000,
     lng: 23.3320,
@@ -176,7 +186,7 @@ export var SAMPLE_POINTS = [
   },
   {
     id: 11,
-    username: "alice",
+    user_id: 1, // alice
     title: "Historic Square",
     lat: 42.6960,
     lng: 23.3200,
@@ -187,7 +197,7 @@ export var SAMPLE_POINTS = [
   },
   {
     id: 12,
-    username: "charlie",
+    user_id: 3, // charlie
     title: "University Campus",
     lat: 42.6550,
     lng: 23.3700,
@@ -198,7 +208,7 @@ export var SAMPLE_POINTS = [
   },
   {
     id: 13,
-    username: "bob",
+    user_id: 2, // bob
     title: "Stadium Corner",
     lat: 42.6900,
     lng: 23.3450,
@@ -209,7 +219,7 @@ export var SAMPLE_POINTS = [
   },
   {
     id: 14,
-    username: "evan",
+    user_id: 5, // evan
     title: "Metro Station",
     lat: 42.6980,
     lng: 23.3240,
@@ -220,7 +230,7 @@ export var SAMPLE_POINTS = [
   },
   {
     id: 15,
-    username: "alice",
+    user_id: 1, // alice
     title: "Museum Steps",
     lat: 42.6940,
     lng: 23.3310,
@@ -231,7 +241,7 @@ export var SAMPLE_POINTS = [
   },
   {
     id: 16,
-    username: "charlie",
+    user_id: 3, // charlie
     title: "Cathedral View",
     lat: 42.6970,
     lng: 23.3230,
@@ -242,7 +252,7 @@ export var SAMPLE_POINTS = [
   },
   {
     id: 17,
-    username: "bob",
+    user_id: 2, // bob
     title: "Market Plaza",
     lat: 42.6920,
     lng: 23.3290,
@@ -253,7 +263,7 @@ export var SAMPLE_POINTS = [
   },
   {
     id: 18,
-    username: "evan",
+    user_id: 5, // evan
     title: "Airport Road",
     lat: 42.6890,
     lng: 23.4100,
@@ -264,7 +274,7 @@ export var SAMPLE_POINTS = [
   },
   {
     id: 19,
-    username: "alice",
+    user_id: 1, // alice
     title: "Zoo Entrance",
     lat: 42.6500,
     lng: 23.3400,
@@ -275,7 +285,7 @@ export var SAMPLE_POINTS = [
   },
   {
     id: 20,
-    username: "charlie",
+    user_id: 3, // charlie
     title: "Tower Monument",
     lat: 42.7020,
     lng: 23.3180,

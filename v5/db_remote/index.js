@@ -12,6 +12,7 @@ export { PointsAPI } from "./points.js";
 export { AuthAPI } from "./auth.js";
 export { SettingsAPI } from "./settings.js";
 export { AdminAPI } from "./admin.js";
+export { RolesAPI } from "./roles.js";
 
 // Import for default export
 import { initRemoteDB, getRemoteConfig, setAuthToken } from "./config.js";
@@ -20,6 +21,7 @@ import { PointsAPI } from "./points.js";
 import { AuthAPI } from "./auth.js";
 import { SettingsAPI } from "./settings.js";
 import { AdminAPI } from "./admin.js";
+import { RolesAPI } from "./roles.js";
 
 /**
  * Default export with all APIs organized by category
@@ -36,4 +38,5 @@ export default {
   Auth: AuthAPI,
   Settings: SettingsAPI,
   Admin: AdminAPI,
+  Roles: RolesAPI,
 };

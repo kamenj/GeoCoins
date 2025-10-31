@@ -354,7 +354,7 @@ function savePoints() {
   save(LS.points, mapPoints);
 }
 function clearMapPointForm() {
-  ["mp-id", "mp-username", "mp-title", "mp-lat", "mp-lng", "mp-desc"].forEach(
+  ["mp-id", "mp-user-id", "mp-title", "mp-lat", "mp-lng", "mp-desc"].forEach(
     function (id) {
       setVal(id, "");
     }
@@ -363,7 +363,7 @@ function clearMapPointForm() {
 function getPointFormData() {
   return {
     idStr: getVal("mp-id"),
-    username: getVal("mp-username"),
+    user_id: getVal("mp-user-id"),
     title: getVal("mp-title"),
     lat: getVal("mp-lat"),
     lng: getVal("mp-lng"),
@@ -384,9 +384,15 @@ function renderPointsRow(p, i, selectId) {
   tdTitle.appendChild(btn);
   tr.innerHTML = "<td>" + (i + 1) + "</td>";
   tr.appendChild(tdTitle);
+  // Lookup username from user_id
+  var username = "";
+  if (p.user_id) {
+    var user = users.find(function(u) { return u.id === p.user_id; });
+    username = user ? user.username : "User#" + p.user_id;
+  }
   tr.innerHTML +=
     "<td>" +
-    (p.username || "") +
+    username +
     "</td><td>" +
     (p.lat || "") +
     "</td><td>" +
@@ -433,7 +439,7 @@ function saveMapPoint() {
       return p.id === id
         ? {
             id: id,
-            username: f.username,
+            user_id: Number(f.user_id) || null,
             title: f.title,
             lat: lat,
             lng: lng,
@@ -448,7 +454,7 @@ function saveMapPoint() {
     var nid = nextPointId();
     mapPoints.push({
       id: nid,
-      username: f.username,
+      user_id: Number(f.user_id) || null,
       title: f.title,
       lat: lat,
       lng: lng,
@@ -467,7 +473,15 @@ function openMapPointDetails(id) {
   if (!p) return;
   setVal("mpd-id", p.id);
   setText("mpd-title", p.title || "");
-  setText("mpd-username", p.username || "");
+  // Lookup username from user_id for display
+  var username = "";
+  if (p.user_id) {
+    var user = users.find(function(u) { return u.id === p.user_id; });
+    username = user ? user.username : "User#" + p.user_id;
+  }
+  setText("mpd-username", username);
+  setVal("mpd-user-id", p.user_id || "");
+  setText("mpd-user-id-display", p.user_id || "");
   setText("mpd-lat", String(p.lat));
   setText("mpd-lng", String(p.lng));
   setText("mpd-desc", p.desc || "");
@@ -480,7 +494,7 @@ function editMapPointFromDetails() {
   });
   if (!p) return;
   setVal("mp-id", p.id);
-  setVal("mp-username", p.username || "");
+  setVal("mp-user-id", p.user_id || "");
   setVal("mp-title", p.title || "");
   setVal("mp-lat", String(p.lat));
   setVal("mp-lng", String(p.lng));

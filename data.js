@@ -1,6 +1,7 @@
 // Sample starter data
 var SAMPLE_USERS = [
   {
+    id: 1,
     username: "alice",
     password: "1234",
     name: "Alice",
@@ -8,6 +9,7 @@ var SAMPLE_USERS = [
     gender: "female"
   },
   {
+    id: 2,
     username: "bob",
     password: "1234",
     name: "Bob",
@@ -19,7 +21,7 @@ var SAMPLE_USERS = [
 var SAMPLE_POINTS = [
   {
     id: 0,
-    username: "alice",
+    user_id: 1, // alice's user id
     title: "Home",
     lat: 42.6977,
     lng: 23.3219,
@@ -27,7 +29,7 @@ var SAMPLE_POINTS = [
   },
   {
     id: 1,
-    username: "bob",
+    user_id: 2, // bob's user id
     title: "Work",
     lat: 42.1354,
     lng: 24.7453,

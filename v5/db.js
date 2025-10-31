@@ -3,14 +3,15 @@
  * Supports two modes: LOCAL (using localStorage) and REMOTE (using fetch API)
  */
 
-import { SAMPLE_USERS, SAMPLE_POINTS } from "./data.js";
+import { SAMPLE_USERS, SAMPLE_POINTS, SAMPLE_ROLES } from "./data.js";
 import { 
   initRemoteDB as initRemoteDBConfig,
   UsersAPI, 
   PointsAPI, 
   AuthAPI, 
   SettingsAPI, 
-  AdminAPI 
+  AdminAPI,
+  RolesAPI 
 } from "./db_remote/index.js";
 
 // Database modes
@@ -39,6 +40,7 @@ let dbConfig = {
       points: "app.mapPoints",
       currentUser: "app.currentUser",
       settings: "app.settings",
+      roles: "app.roles",
     },
   },
 };
@@ -484,12 +486,159 @@ export async function resetAllData() {
       localStorage.removeItem(dbConfig.local.storageKeys.points);
       localStorage.removeItem(dbConfig.local.storageKeys.currentUser);
       localStorage.removeItem(dbConfig.local.storageKeys.settings);
+      localStorage.removeItem(dbConfig.local.storageKeys.roles);
       return { success: true };
     } catch (error) {
       return { success: false, error: error.message };
     }
   } else {
     return await AdminAPI.resetAllData();
+  }
+}
+
+// ===== ROLE OPERATIONS =====
+
+/**
+ * Get all roles
+ * @returns {Promise<object>} Result object with roles array
+ */
+export async function getAllRoles() {
+  if (dbConfig.mode === DB_MODE.LOCAL) {
+    const roles = loadFromLocalStorage(
+      dbConfig.local.storageKeys.roles,
+      SAMPLE_ROLES
+    );
+    return { success: true, data: roles };
+  } else {
+    return await RolesAPI.getAll();
+  }
+}
+
+/**
+ * Get roles for a specific user
+ * @param {number} userId - User ID
+ * @returns {Promise<object>} Result object with roles array
+ */
+export async function getUserRoles(userId) {
+  if (dbConfig.mode === DB_MODE.LOCAL) {
+    const users = loadFromLocalStorage(
+      dbConfig.local.storageKeys.users,
+      SAMPLE_USERS
+    );
+    const user = users.find((u) => u.id === userId);
+    if (!user) {
+      return { success: false, error: "User not found" };
+    }
+    return { success: true, data: user.roles || [] };
+  } else {
+    return await RolesAPI.getUserRoles(userId);
+  }
+}
+
+/**
+ * Set roles for a user
+ * @param {number} userId - User ID
+ * @param {array} roles - Array of role names
+ * @returns {Promise<object>} Result object
+ */
+export async function setUserRoles(userId, roles) {
+  if (dbConfig.mode === DB_MODE.LOCAL) {
+    const users = loadFromLocalStorage(
+      dbConfig.local.storageKeys.users,
+      SAMPLE_USERS
+    );
+    const index = users.findIndex((u) => u.id === userId);
+    
+    if (index === -1) {
+      return { success: false, error: "User not found" };
+    }
+    
+    users[index].roles = Array.isArray(roles) ? roles : [];
+    const result = saveToLocalStorage(dbConfig.local.storageKeys.users, users);
+    return result.success 
+      ? { success: true, data: users[index].roles } 
+      : result;
+  } else {
+    // For remote, need to convert role names to IDs
+    const rolesResult = await RolesAPI.getAll();
+    if (!rolesResult.success) return rolesResult;
+    
+    const roleIds = roles.map(roleName => {
+      const role = rolesResult.data.find(r => r.name === roleName);
+      return role ? role.id : null;
+    }).filter(id => id !== null);
+    
+    return await RolesAPI.setUserRoles(userId, roleIds);
+  }
+}
+
+/**
+ * Add a role to a user
+ * @param {number} userId - User ID
+ * @param {string} roleName - Role name
+ * @returns {Promise<object>} Result object
+ */
+export async function addUserRole(userId, roleName) {
+  if (dbConfig.mode === DB_MODE.LOCAL) {
+    const users = loadFromLocalStorage(
+      dbConfig.local.storageKeys.users,
+      SAMPLE_USERS
+    );
+    const index = users.findIndex((u) => u.id === userId);
+    
+    if (index === -1) {
+      return { success: false, error: "User not found" };
+    }
+    
+    const roles = Array.isArray(users[index].roles) ? users[index].roles : [];
+    if (roles.indexOf(roleName) === -1) {
+      roles.push(roleName);
+      users[index].roles = roles;
+      const result = saveToLocalStorage(dbConfig.local.storageKeys.users, users);
+      return result.success 
+        ? { success: true, data: users[index].roles } 
+        : result;
+    }
+    return { success: true, data: roles };
+  } else {
+    // For remote, need to get role ID first
+    const roleResult = await RolesAPI.getByName(roleName);
+    if (!roleResult.success) return roleResult;
+    
+    return await RolesAPI.assignRoleToUser(userId, roleResult.data.id);
+  }
+}
+
+/**
+ * Remove a role from a user
+ * @param {number} userId - User ID
+ * @param {string} roleName - Role name
+ * @returns {Promise<object>} Result object
+ */
+export async function removeUserRole(userId, roleName) {
+  if (dbConfig.mode === DB_MODE.LOCAL) {
+    const users = loadFromLocalStorage(
+      dbConfig.local.storageKeys.users,
+      SAMPLE_USERS
+    );
+    const index = users.findIndex((u) => u.id === userId);
+    
+    if (index === -1) {
+      return { success: false, error: "User not found" };
+    }
+    
+    const roles = Array.isArray(users[index].roles) ? users[index].roles : [];
+    users[index].roles = roles.filter(r => r !== roleName);
+    const result = saveToLocalStorage(dbConfig.local.storageKeys.users, users);
+    return result.success 
+      ? { success: true, data: users[index].roles } 
+      : result;
+  } else {
+    // For remote, need to get role ID first
+    const roleResult = await RolesAPI.getByName(roleName);
+    if (!roleResult.success) return roleResult;
+    
+    return await RolesAPI.removeRoleFromUser(userId, roleResult.data.id);
   }
 }
 
@@ -523,4 +672,11 @@ export default {
   setCurrentUser,
   clearCurrentUser,
   resetAllData,
+  
+  // Roles
+  getAllRoles,
+  getUserRoles,
+  setUserRoles,
+  addUserRole,
+  removeUserRole,
 };

@@ -117,7 +117,7 @@
   </div>
   <div class="section-content">
     <input type="hidden" id="mp-id" />
-    <label>Owner Username <input id="mp-username" /></label>
+    <label>User ID <input id="mp-user-id" type="number" /></label>
     <label>Title <input id="mp-title" /></label>
     <label>Latitude <input id="mp-lat" /></label>
     <label>Longitude <input id="mp-lng" /></label>
@@ -146,8 +146,9 @@
   </div>
   <div class="section-content">
     <input type="hidden" id="mpd-id" />
+    <input type="hidden" id="mpd-user-id" />
     <div><b>Title:</b> <span id="mpd-title"></span></div>
-    <div><b>User:</b> <span id="mpd-username"></span></div>
+    <div><b>User:</b> <span id="mpd-username"></span> <small>(ID: <span id="mpd-user-id-display"></span>)</small></div>
     <div><b>Lat:</b> <span id="mpd-lat"></span></div>
     <div><b>Lng:</b> <span id="mpd-lng"></span></div>
     <div><b>Description:</b> <div id="mpd-desc"></div></div>
