@@ -4757,19 +4757,20 @@ export function setupMapPointsDivider() {
     document.body.style.userSelect = '';
     document.body.style.cursor = '';
     
-    // Final map invalidation and table resize
+    // Final map invalidation - no need to destroy/recreate table
     setTimeout(function() {
       if (State.leafletMap) {
         State.leafletMap.invalidateSize();
       }
-      // Destroy and recreate the table with new height
+      // Just ensure table height is correct (already handled during drag)
       if (State.pointsTable && State.pointsTable.initialized) {
         try {
-          var tableFilters = State.pointsTable.getHeaderFilters();
-          State.pointsTable.destroy();
-          State.pointsTable = null;
-          State.pointsTableFilters = tableFilters;
-          refreshMapPointsTable();
+          var listDiv = $("mapPointsList");
+          if (listDiv) {
+            var listPadding = 20;
+            var tableHeight = listDiv.clientHeight - listPadding;
+            State.pointsTable.setHeight(tableHeight);
+          }
         } catch (e) {
           console.warn('Table resize error:', e);
         }
