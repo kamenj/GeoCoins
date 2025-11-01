@@ -2652,7 +2652,9 @@ export async function saveUserDetails() {
   
   // Check if username already exists (skip check if editing the same user)
   if (mode !== "edit" || oldU !== newU) {
-    if (findUser(newU)) {
+    // Use dedicated endpoint that returns 200 OK with exists flag (no 404 errors)
+    var checkResult = await DB.checkUsernameExists(newU);
+    if (checkResult.success && checkResult.exists) {
       return await customAlert("Validation Error", "Username already exists. Please choose a different username.");
     }
   }
@@ -2840,10 +2842,11 @@ export function refreshMapPointsTable() {
   var empty = $(Config.Constants.ElementId.MpsEmpty);
   
   // Ensure current user is cached before rendering table
-  var cacheUserPromise = State.currentUser && !State._userCache[State.currentUser] 
-    ? DB.getUserByUsername(State.currentUser).then(function(result) {
+  var currentUsername = getCurrentUsername();
+  var cacheUserPromise = currentUsername && !State._userCache[currentUsername] 
+    ? DB.getUserByUsername(currentUsername).then(function(result) {
         if (result.success && result.data) {
-          State._userCache[State.currentUser] = result.data;
+          State._userCache[currentUsername] = result.data;
         }
       })
     : Promise.resolve();
@@ -4804,7 +4807,7 @@ export function setupMapPointsDivider() {
 async function loadAll() {
   // Initialize the database with configuration
   DB.initDB(Config.Database);
-  console.log("Database initialized in mode:", DB.getDBMode());
+  // Database initialized in mode: DB.getDBMode()
   
   // Server mode: Don't load users/points into State.users/State.mapPoints
   // They will be fetched on-demand through DB APIs
@@ -4824,11 +4827,8 @@ async function loadAll() {
   if (currentUserResult.success && Config.AutoLoadCachedUser) {
     State.currentUser = currentUserResult.data;
     // Pre-cache the current user for menu rendering
-    if (State.currentUser) {
-      var userResult = await DB.getUserByUsername(State.currentUser);
-      if (userResult.success && userResult.data) {
-        State._userCache[State.currentUser] = userResult.data;
-      }
+    if (State.currentUser && State.currentUser.username) {
+      State._userCache[State.currentUser.username] = State.currentUser;
     }
   } else {
     State.currentUser = null;

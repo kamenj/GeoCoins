@@ -128,7 +128,7 @@ export async function getAllUsers() {
  * @param {string} username - Username to find
  * @returns {Promise<object>} Result object with user data
  */
-export async function getUserByUsername(username) {
+export async function getUserByUsername(username, silent = false) {
   if (dbConfig.mode === DB_MODE.LOCAL) {
     const users = loadFromLocalStorage(
       dbConfig.local.storageKeys.users,
@@ -141,7 +141,24 @@ export async function getUserByUsername(username) {
       error: user ? null : "User not found",
     };
   } else {
-    return await UsersAPI.getByUsername(username);
+    return await UsersAPI.getByUsername(username, silent);
+  }
+}
+
+export async function checkUsernameExists(username) {
+  if (dbConfig.mode === DB_MODE.LOCAL) {
+    const users = loadFromLocalStorage(
+      dbConfig.local.storageKeys.users,
+      SAMPLE_USERS
+    );
+    const exists = users.some((u) => u.username === username);
+    return {
+      success: true,
+      exists: exists,
+      username: username,
+    };
+  } else {
+    return await UsersAPI.checkUsernameExists(username);
   }
 }
 
@@ -671,6 +688,7 @@ export default {
   getAllUsers,
   getUserByUsername,
   getUserById,
+  checkUsernameExists,
   addUser,
   updateUser,
   deleteUser,

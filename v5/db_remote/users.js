@@ -26,11 +26,12 @@ export class UsersAPI {
   /**
    * Get a user by username from remote server
    * @param {string} username - Username to find
+   * @param {boolean} silent - If true, suppress console errors (useful for existence checks)
    * @returns {Promise<object>} Result object with user data
    */
-  static async getByUsername(username) {
+  static async getByUsername(username, silent = false) {
     const endpoint = `${remoteConfig.endpoints.users}/${encodeURIComponent(username)}`;
-    return await fetchWithTimeout(endpoint, { method: "GET" });
+    return await fetchWithTimeout(endpoint, { method: "GET", silent });
   }
 
   /**
@@ -106,5 +107,15 @@ export class UsersAPI {
       ...filters,
     };
     return await this.getAll(params);
+  }
+
+  /**
+   * Check if a username exists (returns 200 OK with exists flag)
+   * @param {string} username - Username to check
+   * @returns {Promise<object>} Result with exists: true/false
+   */
+  static async checkUsernameExists(username) {
+    const endpoint = `${remoteConfig.endpoints.users}/check/${encodeURIComponent(username)}`;
+    return await fetchWithTimeout(endpoint, { method: "GET" });
   }
 }
