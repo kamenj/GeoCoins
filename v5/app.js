@@ -175,8 +175,8 @@ const Config = {
   UsersTable: {
     view: "details",         // Current view mode: "details" or "compact"
     layout: "fitDataStretch", // Tabulator layout mode
-    height: "auto",          // Table height (auto fits to content)
-    maxHeight: "500px",      // Maximum table height before scrolling
+    height: "400px",         // Table height - fixed height enables scrolling
+    maxHeight: "400px",      // Maximum table height before scrolling
     pagination: false,       // Enable pagination
     paginationSize: 10,      // Rows per page
     // Column definitions will be created by getTableColumns() function
