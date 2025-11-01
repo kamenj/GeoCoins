@@ -107,6 +107,54 @@ tr.selected { background: var(--highlight); }
 .row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .grow { flex: 1; }
 
+/* ===== Menu Buttons Layout ===== */
+.menu-buttons-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: nowrap;
+  overflow: hidden;
+}
+
+.menu-expand-btn {
+  margin-left: auto;
+  min-width: 40px !important;
+  padding: 6px 10px;
+}
+
+.menu-buttons-bottom {
+  margin-top: 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--card);
+}
+
+.menu-buttons-bottom-header {
+  padding: 6px 10px;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 0.9em;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.menu-buttons-bottom-content {
+  padding: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.menu-buttons-bottom.collapsed .menu-buttons-bottom-content {
+  display: none;
+}
+
+.menu-buttons-bottom.collapsed .menu-buttons-bottom-header {
+  border-bottom: none;
+}
+
 /* ===== Hover styles ===== */
 button:hover {
   background: var(--rowEven);

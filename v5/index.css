@@ -102,7 +102,14 @@ body {
   align-items: center;
   gap: 8px;
 }
-.title-left { display: flex; align-items: center; gap: 6px; }
+.title-left { 
+  display: flex; 
+  align-items: center; 
+  gap: 6px;
+  flex-shrink: 1; /* Allow title to shrink if needed */
+  min-width: 0; /* Allow flex item to shrink below content size */
+  white-space: nowrap; /* Keep title on one line */
+}
 .section-header .chev { color: var(--accent); }
 .section-content { padding: 10px; }
 .collapsed .section-content { display: none; }
@@ -116,6 +123,10 @@ button {
   color: var(--fg);
   cursor: pointer;
   transition: background 0.2s, border-color 0.2s;
+  text-align: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 button.primary {
   background: var(--accent);
@@ -310,6 +321,19 @@ tr.selected { background: var(--highlight); }
   display: inline-flex;
   gap: 6px;
   align-items: center;
+  flex-wrap: nowrap;
+  overflow: visible;
+  flex-shrink: 0; /* Don't let it shrink smaller than content needs */
+  min-width: 0; /* Allow it to grow as needed */
+}
+
+/* Menu expand button for overflow */
+.menu-expand-btn {
+  margin-left: auto;
+  min-width: 40px !important;
+  padding: 6px 10px;
+  flex-shrink: 0;
+  display: none; /* Hidden by default, shown when there are overflow items */
 }
 
 /* Separator for view toggle buttons */
@@ -330,11 +354,28 @@ tr.selected { background: var(--highlight); }
 }
 .cmd-btn {
   width: 100%;
-  text-align: left;
+  text-align: center;
   padding: 8px;
   white-space: nowrap;
   overflow: visible;
   min-width: fit-content;
+  justify-content: center;
+}
+
+/* Main menu multi-column grid layout - applied dynamically by JS when buttons exceed maxWidth */
+
+/* Bottom commands section (overflow area) */
+[id$="-bottom-commands"] {
+  display: none; /* Hidden by default */
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+[id$="-bottom-commands"].visible {
+  display: flex;
 }
 
 /* Hide/show helpers (JS sets display property) */

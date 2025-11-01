@@ -1,3 +1,11 @@
+/* ===== Config ===== */
+var Config = {
+  MenuButtons: {
+    minWidth: 80,
+    minHeight: 30
+  }
+};
+
 /* ===== Keys & Globals ===== */
 var LS = {
   users: "app.users",
@@ -100,13 +108,100 @@ function toggleCollapse(id) {
   var isCollapsed = el.classList.contains("collapsed");
   setCollapsed(id, !isCollapsed);
 }
+function ensureButtonSizes() {
+  var buttons = document.querySelectorAll('.section-content button, .menu-buttons button');
+  buttons.forEach(function(btn) {
+    if (Config.MenuButtons.minWidth) {
+      btn.style.minWidth = Config.MenuButtons.minWidth + 'px';
+    }
+    if (Config.MenuButtons.minHeight) {
+      btn.style.minHeight = Config.MenuButtons.minHeight + 'px';
+    }
+  });
+}
+
+function handleMenuOverflow(menuId) {
+  var menu = $(menuId);
+  if (!menu) return;
+  
+  var topRow = menu.querySelector('.menu-buttons-top');
+  var bottomContainer = menu.querySelector('.menu-buttons-bottom');
+  if (!topRow || !bottomContainer) return;
+  
+  var bottomRow = bottomContainer.querySelector('.menu-buttons-bottom-content');
+  if (!bottomRow) return;
+  
+  var buttons = Array.from(topRow.querySelectorAll('button:not(.menu-expand-btn)'));
+  var expandBtn = topRow.querySelector('.menu-expand-btn');
+  
+  if (buttons.length === 0) return;
+  
+  // Get available width (subtract padding and expand button width if present)
+  var availableWidth = topRow.clientWidth;
+  if (expandBtn) {
+    availableWidth -= expandBtn.offsetWidth + 16; // 16px for gap
+  }
+  
+  var totalWidth = 0;
+  var visibleButtons = [];
+  var overflowButtons = [];
+  
+  // Calculate which buttons fit
+  for (var i = 0; i < buttons.length; i++) {
+    var btnWidth = buttons[i].offsetWidth + 8; // 8px for gap
+    if (totalWidth + btnWidth <= availableWidth) {
+      totalWidth += btnWidth;
+      visibleButtons.push(buttons[i]);
+    } else {
+      overflowButtons.push(buttons[i]);
+    }
+  }
+  
+  // Move overflow buttons to bottom section
+  overflowButtons.forEach(function(btn) {
+    bottomRow.appendChild(btn);
+  });
+  
+  // Show/hide expand button based on whether there are overflow items
+  if (expandBtn) {
+    expandBtn.style.display = overflowButtons.length > 0 ? 'inline-block' : 'none';
+  }
+  
+  // Update chevron for bottom container
+  updateChevron(menuId + '-bottom');
+}
+
+function toggleMenuBottom(menuId) {
+  var bottomContainer = $(menuId + '-bottom');
+  if (!bottomContainer) return;
+  toggleCollapse(menuId + '-bottom');
+}
+
 function updateChevron(id) {
   var chev = $("chev-" + id);
   var el = $(id);
   if (!chev || !el) return;
+  
+  // Check if content area has any visible items
+  var contentArea = el.querySelector('.section-content, .menu-buttons-bottom-content');
+  var hasContent = false;
+  
+  if (contentArea) {
+    var children = Array.from(contentArea.children);
+    hasContent = children.some(function(child) {
+      return child.offsetWidth > 0 || child.offsetHeight > 0;
+    });
+  }
+  
   var isCollapsed = el.classList.contains("collapsed");
   var isVisible = el.style.display !== "none";
-  chev.textContent = isVisible ? (isCollapsed ? "►" : "▼") : "";
+  
+  // Only show chevron if there's content and the section is visible
+  if (hasContent && isVisible) {
+    chev.textContent = isCollapsed ? "►" : "▼";
+  } else {
+    chev.textContent = "";
+  }
 }
 
 /* ===== Message Overlay ===== */

@@ -160,6 +160,13 @@ const Config = {
   },
   Constants: Constants,
   AppTitle: "Dani-Geo-Coins v5",
+  MenuButtons: {
+    minWidth: 80,
+    minHeight: 30,
+    MainMenu: {
+      maxWidth: 120  // If any button exceeds this width, arrange in multi-column grid
+    }
+  },
   ISSUES_VIEW_LINK: "https://github.com/kamenj/GeoCoins/issues",
   ISSUES_NEW_LINK: "https://github.com/kamenj/GeoCoins/issues/new",
   Errors_GlobalHandlerEnabled: true, // Global error handler (admin setting)
@@ -1251,16 +1258,276 @@ export function toggleCollapse(id) {
   if (!el) return;
   setCollapsed(id, !el.classList.contains(Config.Constants.ClassName.Collapsed));
 }
+
+/* ===== Button Sizing and Overflow Management ===== */
+export function ensureButtonSizes() {
+  var buttons = document.querySelectorAll('.cmd-bar button, .title-cmds button');
+  buttons.forEach(function(btn) {
+    if (Config.MenuButtons.minWidth) {
+      btn.style.minWidth = Config.MenuButtons.minWidth + 'px';
+    }
+    if (Config.MenuButtons.minHeight) {
+      btn.style.minHeight = Config.MenuButtons.minHeight + 'px';
+    }
+  });
+}
+
+export function applyMainMenuLayout() {
+  // Apply multi-column layout ONLY to DEFAULT_MENU_TOP (main menu when logged in)
+  // This is only applied when user is logged in and no specific content is shown
+  if (!State.currentUser) return;
+  
+  var mainMenu = $(Config.Constants.ElementId.MenuTopTopCommands);
+  if (!mainMenu) return;
+  
+  var buttons = Array.from(mainMenu.querySelectorAll('button'));
+  if (buttons.length === 0) return;
+  
+  // Only apply to DEFAULT_MENU_TOP - check if we have show.users, show.points, etc buttons
+  var isDefaultMenu = buttons.some(function(btn) {
+    var cmdName = btn.getAttribute('data-cmd');
+    return cmdName === 'show.users' || cmdName === 'show.points' || cmdName === 'show.settings';
+  });
+  
+  if (!isDefaultMenu) {
+    // Not the default menu, reset to normal layout
+    mainMenu.style.display = '';
+    mainMenu.style.gridTemplateColumns = '';
+    mainMenu.style.gap = '';
+    mainMenu.style.justifyItems = '';
+    buttons.forEach(function(btn) {
+      btn.style.width = '';
+    });
+    return;
+  }
+  
+  var maxWidth = Config.MenuButtons.MainMenu && Config.MenuButtons.MainMenu.maxWidth 
+    ? Config.MenuButtons.MainMenu.maxWidth 
+    : 120;
+  
+  // Check if any button exceeds max width
+  var needsGrid = false;
+  buttons.forEach(function(btn) {
+    if (btn.offsetWidth > maxWidth) {
+      needsGrid = true;
+    }
+  });
+  
+  if (needsGrid) {
+    // Determine number of columns based on button count
+    var columns = buttons.length >= 6 ? 3 : 2;
+    
+    mainMenu.style.display = 'grid';
+    mainMenu.style.gridTemplateColumns = 'repeat(' + columns + ', 1fr)';
+    mainMenu.style.gap = '8px';
+    mainMenu.style.justifyItems = 'stretch';
+    
+    // Make all buttons take full width of their grid cell
+    buttons.forEach(function(btn) {
+      btn.style.width = '100%';
+    });
+  } else {
+    // Reset to flex layout
+    mainMenu.style.display = 'flex';
+    mainMenu.style.gridTemplateColumns = '';
+    mainMenu.style.gap = '';
+    mainMenu.style.justifyItems = '';
+    
+    buttons.forEach(function(btn) {
+      btn.style.width = '';
+    });
+  }
+}
+
+export function handleMenuOverflow(menuId) {
+  var menu = $(menuId);
+  if (!menu) return;
+  
+  // Get the title commands container
+  var titleCommands = menu.querySelector('.title-cmds');
+  if (!titleCommands) return;
+  
+  // Get the bottom commands container (expandable area)
+  var bottomCommands = menu.querySelector('[id$="-bottom-commands"]');
+  if (!bottomCommands) return;
+  
+  // First, remove any existing expand button to start fresh
+  var existingExpandBtn = titleCommands.querySelector('.menu-expand-btn');
+  if (existingExpandBtn && existingExpandBtn.parentNode) {
+    existingExpandBtn.parentNode.removeChild(existingExpandBtn);
+  }
+  
+  // Move all buttons back from bottom commands to title commands (reset state)
+  var buttonsInBottom = Array.from(bottomCommands.querySelectorAll('button'));
+  buttonsInBottom.forEach(function(btn) {
+    titleCommands.insertBefore(btn, titleCommands.lastChild);
+  });
+  
+  // Get all buttons in title area (excluding expand button)
+  var buttons = Array.from(titleCommands.querySelectorAll('button:not(.menu-expand-btn)'));
+  
+  // If no buttons in title, hide bottom commands and return (don't create expand button)
+  if (buttons.length === 0) {
+    bottomCommands.style.display = 'none';
+    return;
+  }
+  
+  // Calculate available width
+  // Don't use titleCommands width (it's already constrained by buttons)
+  // Use header width minus title-left width
+  var header = menu.querySelector('.section-header');
+  var titleLeft = menu.querySelector('.title-left');
+  
+  if (!header || !titleLeft) return;
+  
+  var headerWidth = header.getBoundingClientRect().width;
+  var titleLeftWidth = titleLeft.getBoundingClientRect().width;
+  var headerPadding = 20; // Estimated padding/gaps
+  var availableWidth = headerWidth - titleLeftWidth - headerPadding;
+  
+  // First pass: calculate total width needed for all buttons
+  var totalWidth = 0;
+  for (var i = 0; i < buttons.length; i++) {
+    totalWidth += buttons[i].offsetWidth + 8; // 8px for gap
+  }
+  
+  // If all buttons fit, no overflow needed
+  if (totalWidth <= availableWidth) {
+    bottomCommands.style.display = 'none';
+    return;
+  }
+  
+  // Some buttons don't fit - need to calculate overflow
+  // Reserve space for expand button (50px)
+  var expandBtnSpace = 50;
+  availableWidth -= expandBtnSpace;
+  
+  totalWidth = 0;
+  var overflowButtons = [];
+  
+  // Determine which buttons fit (with space for expand button)
+  for (var i = 0; i < buttons.length; i++) {
+    var btnWidth = buttons[i].offsetWidth + 8; // 8px for gap
+    if (totalWidth + btnWidth <= availableWidth) {
+      totalWidth += btnWidth;
+    } else {
+      overflowButtons.push(buttons[i]);
+    }
+  }
+  
+  // Only create and show expand button if there are overflow buttons
+  if (overflowButtons.length > 0) {
+    // Create expand button
+    var expandBtn = document.createElement('button');
+    expandBtn.className = 'menu-expand-btn';
+    expandBtn.textContent = '▼';
+    expandBtn.title = 'Show more commands';
+    expandBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      toggleMenuBottomCommands(menuId);
+    });
+    titleCommands.appendChild(expandBtn);
+    
+    // Move overflow buttons to bottom section
+    overflowButtons.forEach(function(btn) {
+      bottomCommands.appendChild(btn);
+    });
+    bottomCommands.style.display = 'none'; // Start collapsed
+  } else {
+    // No overflow - just hide bottom commands
+    bottomCommands.style.display = 'none';
+  }
+  
+  // Update chevron for bottom commands section
+  updateBottomCommandsChevron(menuId);
+}
+
+function toggleMenuBottomCommands(menuId) {
+  var bottomCommands = $(menuId).querySelector('[id$="-bottom-commands"]');
+  if (!bottomCommands) return;
+  
+  var isHidden = bottomCommands.style.display === 'none';
+  bottomCommands.style.display = isHidden ? 'block' : 'none';
+  
+  // Update expand button chevron
+  var expandBtn = $(menuId).querySelector('.menu-expand-btn');
+  if (expandBtn) {
+    expandBtn.textContent = isHidden ? '▲' : '▼';
+    expandBtn.title = isHidden ? 'Hide commands' : 'Show more commands';
+  }
+  
+  updateBottomCommandsChevron(menuId);
+}
+
+function updateBottomCommandsChevron(menuId) {
+  var menu = $(menuId);
+  if (!menu) return;
+  
+  var bottomCommands = menu.querySelector('[id$="-bottom-commands"]');
+  if (!bottomCommands) return;
+  
+  var hasButtons = bottomCommands.querySelectorAll('button').length > 0;
+  var expandBtn = menu.querySelector('.menu-expand-btn');
+  
+  if (expandBtn) {
+    expandBtn.style.display = hasButtons ? 'inline-block' : 'none';
+  }
+  
+  // Also hide the bottom commands container if no buttons
+  if (!hasButtons) {
+    bottomCommands.style.display = 'none';
+  }
+}
+
 export function updateChevron(id) {
   var chev = $("chev-" + id),
     el = $(id);
   if (!chev || !el) return;
-  chev.textContent =
-    el.style.display !== "none"
-      ? el.classList.contains(Config.Constants.ClassName.Collapsed)
-        ? "►"
-        : "▼"
-      : "";
+  
+  var isCollapsed = el.classList.contains(Config.Constants.ClassName.Collapsed);
+  
+  // Special handling for menuTop and menuBottom - only show chevron if they have collapsible content
+  if (id === 'menuTop' || id === 'menuBottom') {
+    var prefix = id === 'menuTop' ? 'menuTop' : 'menuBottom';
+    var topCommands = $(prefix + '-top-commands');
+    var bottomCommands = $(prefix + '-bottom-commands');
+    var hasCollapsibleContent = 
+      (topCommands && topCommands.children.length > 0) ||
+      (bottomCommands && bottomCommands.children.length > 0);
+    
+    if (hasCollapsibleContent) {
+      chev.textContent = isCollapsed ? "►" : "▼";
+    } else {
+      chev.textContent = "";
+    }
+    return;
+  }
+  
+  // For bottom menu overflow sections, check if there's content
+  var isBottomOverflow = id.indexOf('-bottom') !== -1;
+  
+  if (isBottomOverflow) {
+    // Check if content area has any visible items
+    var contentArea = el.querySelector('[id$="-bottom-commands"]');
+    var hasContent = false;
+    
+    if (contentArea) {
+      var children = Array.from(contentArea.children);
+      hasContent = children.some(function(child) {
+        return child.offsetWidth > 0 || child.offsetHeight > 0;
+      });
+    }
+    
+    // Only show chevron if there's overflow content
+    if (hasContent) {
+      chev.textContent = isCollapsed ? "►" : "▼";
+    } else {
+      chev.textContent = "";
+    }
+  } else {
+    // Regular section - always show chevron
+    chev.textContent = isCollapsed ? "►" : "▼";
+  }
 }
 
 /* ===== Generic Viewport Fitting ===== */
@@ -4336,6 +4603,7 @@ function on_before_command_added(target_menu, cmd) {
   var btn = document.createElement(Config.Constants.HtmlElement.Button);
   btn.className = Config.Constants.ClassName.CmdBtn;
   btn.textContent = cmd.caption || cmd.name || "(cmd)";
+  btn.setAttribute('data-cmd', cmd.name); // Store command name for identification
   if (!enabled) btn.disabled = true;
   btn.addEventListener("click", function () {
     if (!enabled) return;
@@ -4358,6 +4626,14 @@ function clearMenuBars() {
     var el = $(ids[i]);
     if (el) el.innerHTML = "";
   }
+  
+  // Also remove any expand buttons that might exist
+  var expandButtons = document.querySelectorAll('.menu-expand-btn');
+  expandButtons.forEach(function(btn) {
+    if (btn && btn.parentNode) {
+      btn.parentNode.removeChild(btn);
+    }
+  });
 }
 function hasAnyChild(id) {
   var el = $(id);
@@ -4540,6 +4816,19 @@ function renderMenusFor(contentId) {
     }
   }
   setMenusVisibility();
+  
+  // Apply button sizes and handle overflow after rendering
+  setTimeout(function() {
+    ensureButtonSizes();
+    applyMainMenuLayout();
+    handleMenuOverflow(Config.Constants.ElementId.MenuTop);
+    handleMenuOverflow(Config.Constants.ElementId.MenuBottom);
+    handleMenuOverflow('mapPoints');
+    
+    // Update chevrons after overflow handling
+    updateChevron(Config.Constants.ElementId.MenuTop);
+    updateChevron(Config.Constants.ElementId.MenuBottom);
+  }, 0);
 }
 
 /* ===== list.row HTML + execution ===== */
@@ -4973,6 +5262,9 @@ async function loadAll() {
   // Delegates for list row actions
   bindListDelegates();
 
+  // Initialize chevrons for always-visible sections
+  updateChevron(Config.Constants.ContentSection.Help);
+
   // First render of tables
   refreshUsersTable();
   refreshMapPointsTable();
@@ -5044,6 +5336,13 @@ async function loadAll() {
         }
       }
     }
+    
+    // Recalculate menu button overflow on resize
+    setTimeout(function() {
+      handleMenuOverflow(Config.Constants.ElementId.MenuTop);
+      handleMenuOverflow(Config.Constants.ElementId.MenuBottom);
+      handleMenuOverflow('mapPoints');
+    }, 100);
   });
   
   // Handle fullscreen changes (e.g., user presses ESC key to exit fullscreen)
