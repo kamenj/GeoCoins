@@ -906,7 +906,11 @@ const Config = {
       action: function () {
         showContent("usersList");
       },
-      visible: true,
+      visible: function() {
+        // Only show for admins
+        if (!State.currentUser) return false;
+        return hasRole(State.currentUser, 'admin');
+      },
       enabled: true,
     },
     {
@@ -962,7 +966,11 @@ const Config = {
       action: function () {
         showContent("developerTools");
       },
-      visible: true,
+      visible: function() {
+        // Only show for developers or admins
+        if (!State.currentUser) return false;
+        return hasRole(State.currentUser, 'developer') || hasRole(State.currentUser, 'admin');
+      },
       enabled: true,
     },
     {
@@ -989,9 +997,7 @@ const Config = {
       visible: function() {
         // Only show for users with tester or developer role
         if (!State.currentUser) return false;
-        var user = findUserFromCache(State.currentUser);
-        if (!user) return false;
-        return hasRole(user, 'tester') || hasRole(user, 'developer');
+        return hasRole(State.currentUser, 'tester') || hasRole(State.currentUser, 'developer');
       },
       enabled: true,
     },
@@ -1005,9 +1011,7 @@ const Config = {
       visible: function() {
         // Only show for users with tester or developer role
         if (!State.currentUser) return false;
-        var user = findUserFromCache(State.currentUser);
-        if (!user) return false;
-        return hasRole(user, 'tester') || hasRole(user, 'developer');
+        return hasRole(State.currentUser, 'tester') || hasRole(State.currentUser, 'developer');
       },
       enabled: true,
     },
@@ -1172,8 +1176,9 @@ export async function getCoinsPendingInGame() {
 export async function setStatusBarTitle(title) {
   // Add coin counts to title if user is logged in
   if (State.currentUser) {
-    var foundByUser = await getCoinsFoundByUser(State.currentUser);
-    var hiddenByUser = await getCoinsHiddenByUser(State.currentUser);
+    var username = getCurrentUsername();
+    var foundByUser = await getCoinsFoundByUser(username);
+    var hiddenByUser = await getCoinsHiddenByUser(username);
     var totalFound = await getCoinsFoundInGame();
     var totalHidden = await getCoinsHiddenInGame();
     // Exclude pending coins from total count (only count found + hidden)
@@ -1185,17 +1190,15 @@ export async function setStatusBarTitle(title) {
     setText(Config.Constants.ElementId.StatusBarTitle, title);
   }
 }
-export async function setStatusBarUser(username) {
+export async function setStatusBarUser(userObj) {
+  var username = userObj ? userObj.username : null;
   var userText = username ? "User: " + username : "Not logged in";
   
   // Add roles if user is logged in
-  if (username) {
-    var user = await findUser(username);
-    if (user) {
-      var rolesDisplay = getRolesDisplay(user);
-      if (rolesDisplay) {
-        userText += " [" + rolesDisplay + "]";
-      }
+  if (userObj) {
+    var rolesDisplay = getRolesDisplay(userObj);
+    if (rolesDisplay) {
+      userText += " [" + rolesDisplay + "]";
     }
   }
   
@@ -1765,17 +1768,13 @@ export function removeRole(user, roleName) {
 export function canCurrentUserSeekPoints() {
   // Check if current user has seeker or admin role
   if (!State.currentUser) return false;
-  var user = findUserFromCache(State.currentUser);
-  if (!user) return false;
-  return hasRole(user, 'seeker') || hasRole(user, 'admin');
+  return hasRole(State.currentUser, 'seeker') || hasRole(State.currentUser, 'admin');
 }
 export function canCurrentUserAddPoints() {
   // Check if current user can add points (not seeker-only)
   // Users who are ONLY seekers cannot add points
   if (!State.currentUser) return false;
-  var user = findUserFromCache(State.currentUser);
-  if (!user) return false;
-  var roles = getRolesArray(user);
+  var roles = getRolesArray(State.currentUser);
   
   // If user has no roles, they can't add points
   if (roles.length === 0) return false;
@@ -1790,14 +1789,12 @@ export function canCurrentUserEditPoint(point) {
   // Check if current user can edit/delete a point
   // Only the owner or an admin can edit/delete a point
   if (!State.currentUser || !point) return false;
-  var user = findUserFromCache(State.currentUser);
-  if (!user) return false;
   
   // Admins can edit any point
-  if (hasRole(user, 'admin')) return true;
+  if (hasRole(State.currentUser, 'admin')) return true;
   
   // Owners can edit their own points
-  if (point.username === State.currentUser) return true;
+  if (point.username === getCurrentUsername()) return true;
   
   return false;
 }
@@ -1965,6 +1962,16 @@ export async function findPointById(id) {
 export function findUserFromCache(username) {
   // Only returns from cache, doesn't fetch
   return State._userCache[username] || null;
+}
+
+// Helper to get current user ID
+export function getCurrentUserId() {
+  return State.currentUser ? State.currentUser.id : null;
+}
+
+// Helper to get current username
+export function getCurrentUsername() {
+  return State.currentUser ? State.currentUser.username : null;
 }
 
 // Invalidate point cache
@@ -2343,7 +2350,7 @@ function getPointsTableColumns(viewMode) {
         var statusBadge = point.status ? ' <span class="role-badge">' + point.status + '</span>' : '';
         
         // Show code only if current user is the point owner
-        var isOwner = State.currentUser && point.username === State.currentUser;
+        var isOwner = State.currentUser && point.username === getCurrentUsername();
         var codeBadge = isOwner && point.code ? ' <span class="role-badge">Code: ' + point.code + '</span>' : '';
         
         // Show foundBy if available
@@ -2368,10 +2375,9 @@ function getPointsTableColumns(viewMode) {
       
       // Add Enter Code and Edit/Delete buttons only if user is logged in
       if (State.currentUser) {
-        var currentUser = findUserFromCache(State.currentUser);
-        var isOwner = point.username === State.currentUser;
-        var isAdmin = currentUser && hasRole(currentUser, 'admin');
-        var isSeeker = currentUser && hasRole(currentUser, 'seeker');
+        var isOwner = point.username === getCurrentUsername();
+        var isAdmin = hasRole(State.currentUser, 'admin');
+        var isSeeker = hasRole(State.currentUser, 'seeker');
         
         // Add Enter Code button for seekers/admins on unfound, non-pending points they don't own
         var canEnterCode = (isSeeker || isAdmin) && !isOwner && point.status !== 'found' && point.status !== 'pending';
@@ -2404,10 +2410,9 @@ function getPointsTableColumns(viewMode) {
       
       // Add Enter Code and Edit/Delete buttons only if user is logged in
       if (State.currentUser) {
-        var currentUser = findUserFromCache(State.currentUser);
-        var isOwner = point.username === State.currentUser;
-        var isAdmin = currentUser && hasRole(currentUser, 'admin');
-        var isSeeker = currentUser && hasRole(currentUser, 'seeker');
+        var isOwner = point.username === getCurrentUsername();
+        var isAdmin = hasRole(State.currentUser, 'admin');
+        var isSeeker = hasRole(State.currentUser, 'seeker');
         
         // Add Enter Code button for seekers/admins on unfound, non-pending points they don't own
         var canEnterCode = (isSeeker || isAdmin) && !isOwner && point.status !== 'found' && point.status !== 'pending';
@@ -2685,8 +2690,10 @@ export async function saveUserDetails() {
       delete State._userCache[newU];
       
       // Update current user if needed
-      if (State.currentUser === oldU) {
-        State.currentUser = newU;
+      if (State.currentUser && State.currentUser.username === oldU) {
+        State.currentUser.username = newU;
+        State.currentUser.name = newName;
+        State.currentUser.roles = newRoles;
         await DB.setCurrentUser(newU);
         await updateStatusBar(); // Update status bar if current user changed
       }
@@ -2710,11 +2717,11 @@ export async function saveUserDetails() {
       refreshUsersTable();
       
       if (mode === "register") {
-        // Auto-login after registration
-        State.currentUser = newU;
-        await DB.setCurrentUser(State.currentUser);
+        // Auto-login after registration - store the full user object
+        State.currentUser = result.data; // result.data contains the full user with ID
+        await DB.setCurrentUser(result.data.username);
         // Cache the user data for menu rendering
-        State._userCache[newU] = newUser;
+        State._userCache[result.data.username] = result.data;
         await updateStatusBar();
         showContent(null); // Just show main content, no success message
       } else {
@@ -2733,7 +2740,7 @@ export async function deleteUser() {
   
   var result = await removeUserByUsername(username);
   if (result.success) {
-    if (State.currentUser === username) {
+    if (State.currentUser && State.currentUser.username === username) {
       State.currentUser = null;
       await DB.clearCurrentUser();
     }
@@ -2762,8 +2769,9 @@ export async function handleLogin() {
   
   var result = await DB.authenticateUser(user, pass);
   if (result.success && result.data) {
-    State.currentUser = result.data.username;
-    await DB.setCurrentUser(State.currentUser);
+    // Store the entire user object (with id, username, roles, etc.)
+    State.currentUser = result.data;
+    await DB.setCurrentUser(result.data.username);
     // Cache the user data immediately for menu rendering
     State._userCache[result.data.username] = result.data;
     await updateStatusBar();
@@ -3080,8 +3088,8 @@ export function openMapPointDetailsForAdd() {
   setText("mpd-mode-indicator", "(Add New)");
   setVal("mpd-id", "");
   
-  // State.currentUser is the username string, not an object
-  var currentUsername = State.currentUser || "";
+  // State.currentUser is now the user object
+  var currentUsername = getCurrentUsername() || "";
   setVal("mpd-username", currentUsername);
   
   setVal("mpd-title", "");
@@ -3136,7 +3144,7 @@ export async function openMapPointDetailsForEdit(id) {
   // Show/hide code field based on whether current user is the point owner
   var codeLabel = $("mpd-code-label");
   if (codeLabel) {
-    var isOwner = State.currentUser && p.username === State.currentUser;
+    var isOwner = State.currentUser && p.username === getCurrentUsername();
     codeLabel.style.display = isOwner ? "block" : "none";
   }
   
@@ -3145,7 +3153,7 @@ export async function openMapPointDetailsForEdit(id) {
 
 export async function saveMapPointFromDetails() {
   var idStr = getVal("mpd-id");
-  var username = getVal("mpd-username") || State.currentUser || "";
+  var username = getVal("mpd-username") || getCurrentUsername() || "";
   var title = getVal("mpd-title").trim();
   var lat = Number(getVal("mpd-lat"));
   var lng = Number(getVal("mpd-lng"));
@@ -3190,9 +3198,9 @@ export async function saveMapPointFromDetails() {
   }
   
   if (Config.MapPointDetails.mode === "add") {
-    // Add new point
+    // Add new point - send user_id instead of username
     var newPointData = {
-      username: username,
+      user_id: getCurrentUserId(),  // Send user_id directly to server
       title: title,
       lat: lat,
       lng: lng,
@@ -3213,10 +3221,10 @@ export async function saveMapPointFromDetails() {
       showMessage("Failed to add point: " + result.error, "mapPointDetails");
     }
   } else if (Config.MapPointDetails.mode === "edit") {
-    // Update existing point
+    // Update existing point - send user_id instead of username
     var id = Number(idStr);
     var pointData = {
-      username: username,
+      user_id: getCurrentUserId(),  // Send user_id directly to server
       title: title,
       lat: lat,
       lng: lng,
@@ -4000,7 +4008,7 @@ export function refreshMapMarkers() {
         var statusBadge = getStatusBadgeHTML(status);
         
         // Check if current user can enter code (seeker/admin, not owner, not found yet, not pending)
-        var isOwner = State.currentUser && point.username === State.currentUser;
+        var isOwner = State.currentUser && point.username === getCurrentUsername();
         var canEnterCode = canCurrentUserSeekPoints() && !isOwner && point.status !== 'found' && point.status !== 'pending';
         var canEdit = canCurrentUserEditPoint(point);
         
@@ -4074,8 +4082,7 @@ export async function applySettings() {
   // Save error handler setting (admin only)
   var errorHandlerCheckbox = $('set-errorHandler');
   if (errorHandlerCheckbox) {
-    var currentUser = findUserFromCache(State.currentUser);
-    var isAdmin = currentUser && hasRole(currentUser, 'admin');
+    var isAdmin = State.currentUser && hasRole(State.currentUser, 'admin');
     if (isAdmin) {
       Config.Errors_GlobalHandlerEnabled = errorHandlerCheckbox.checked;
       // Reinitialize error handlers
@@ -4278,22 +4285,6 @@ function on_before_command_added(target_menu, cmd) {
         cmd.name === Config.Constants.CommandName.ShowRegister) {
       return null; // Skip Login and Register buttons when logged in
     }
-    
-    // Only show Users List button if user is admin
-    if (cmd.name === Config.Constants.CommandName.ShowUsers) {
-      var currentUser = findUserFromCache(State.currentUser);
-      if (!currentUser || !hasRole(currentUser, "admin")) {
-        return null; // Skip Users List button if not admin
-      }
-    }
-    
-    // Only show Developer Tools button if user is admin
-    if (cmd.name === Config.Constants.CommandName.ShowDeveloperTools) {
-      var currentUser = findUserFromCache(State.currentUser);
-      if (!currentUser || !hasRole(currentUser, "admin")) {
-        return null; // Skip Developer Tools button if not admin
-      }
-    }
   } else {
     // When not logged in, show Login button in map points view for easy access
     // Hide Register button from top menu when viewing map points (can still access via login page)
@@ -4402,9 +4393,8 @@ function setMenusVisibility() {
 function renderMenusFor(contentId) {
   clearMenuBars();
   
-  // Don't show top menu when displaying a message
-  if (contentId !== Config.Constants.ContentSection.Message && State.currentUser) {
-    // Always show top menu when user is logged in (except when showing message)
+  // Always show top menu when user is logged in
+  if (State.currentUser) {
     for (var j = 0; j < Config.Commands.DEFAULT_MENU_TOP.length; j++) {
       var cmd = Config.Commands.DEFAULT_MENU_TOP[j];
       var host = $(Config.Constants.ElementId.MenuTopTopCommands);
@@ -4532,7 +4522,8 @@ function renderMenusFor(contentId) {
       }
     }
   } else if (!State.currentUser) {
-    // No content visible and no user logged in -> default top menu commands
+    // No content visible and no user logged in -> render default top menu commands
+    // (Visibility of individual commands controlled by their visible functions)
     for (var j = 0; j < Config.Commands.DEFAULT_MENU_TOP.length; j++) {
       var cmd = Config.Commands.DEFAULT_MENU_TOP[j];
       var host = $(Config.Constants.ElementId.MenuTopTopCommands);
