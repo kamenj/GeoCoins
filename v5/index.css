@@ -90,6 +90,10 @@ body {
   margin: var(--section-margin);
   position: relative;
   z-index: 1;
+  display: none; /* Hide all sections by default - app.js will show them as needed */
+}
+.section.visible {
+  display: block; /* Show sections when explicitly made visible */
 }
 .section-header {
   position: relative;
@@ -995,6 +999,37 @@ tr.selected { background: var(--highlight); }
     min-width: 90%;
     margin: 0 20px;
   }
+}
+
+/* ===== Connection Loss Dialog ===== */
+.connection-status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  margin-top: 10px;
+}
+
+.reconnect-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid var(--border);
+  border-top: 4px solid var(--accent);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 15px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+#connectionLossMessage {
+  font-size: 0.95em;
+  color: var(--fg);
+  margin: 0;
+  text-align: center;
 }
 
 /* ===== Fullscreen Mode ===== */

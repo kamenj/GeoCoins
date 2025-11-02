@@ -6,6 +6,9 @@
 // Configuration
 export { initRemoteDB, getRemoteConfig, setAuthToken } from "./config.js";
 
+// Connection Manager
+export { initConnectionManager, handleConnectionLoss, isHandlingConnectionLoss } from "./connectionManager.js";
+
 // API Classes
 export { UsersAPI } from "./users.js";
 export { PointsAPI } from "./points.js";
@@ -16,6 +19,7 @@ export { RolesAPI } from "./roles.js";
 
 // Import for default export
 import { initRemoteDB, getRemoteConfig, setAuthToken } from "./config.js";
+import { initConnectionManager, handleConnectionLoss, isHandlingConnectionLoss } from "./connectionManager.js";
 import { UsersAPI } from "./users.js";
 import { PointsAPI } from "./points.js";
 import { AuthAPI } from "./auth.js";
@@ -31,6 +35,11 @@ export default {
   initRemoteDB,
   getRemoteConfig,
   setAuthToken,
+  
+  // Connection Manager
+  initConnectionManager,
+  handleConnectionLoss,
+  isHandlingConnectionLoss,
   
   // API Classes
   Users: UsersAPI,

@@ -1072,9 +1072,10 @@ const State = {
   markers: {}, // pointId -> Leaflet marker object
 };
 
-// Expose Config and State to window for errorHandler.js
+// Expose Config, State, and showContent to window for errorHandler.js and connectionManager.js
 window.Config = Config;
 window.State = State;
+window.showContent = showContent;
 
 
 export function $(id) {
@@ -1240,7 +1241,12 @@ window.updateErrorIndicator = updateErrorIndicator;
 export function setSectionVisible(id, visible) {
   var el = $(id);
   if (!el) return;
-  el.style.display = visible ? "block" : "none";
+  // Use CSS class instead of inline style for better initial page load
+  if (visible) {
+    el.classList.add('visible');
+  } else {
+    el.classList.remove('visible');
+  }
   updateChevron(id);
 }
 export function setCollapsed(id, collapsed) {
@@ -1710,11 +1716,17 @@ export function showContent(id) {
   }
   renderMenusFor(State.currentContentId);
   
-  // Ensure Help section always remains visible
-  setSectionVisible(Config.Constants.ContentSection.Help, true);
-  
-  // Sync help section with current content (iframe scrolls internally, won't affect main page)
-  syncHelpSection(State.currentContentId);
+  // Ensure Help section always remains visible when any content is shown
+  if (State.currentContentId) {
+    setSectionVisible(Config.Constants.ContentSection.Help, true);
+    setCollapsed(Config.Constants.ContentSection.Help, true);
+    
+    // Sync help section with current content (iframe scrolls internally, won't affect main page)
+    syncHelpSection(State.currentContentId);
+  } else {
+    // No content shown, hide Help section too
+    setSectionVisible(Config.Constants.ContentSection.Help, false);
+  }
   
   // Apply generic viewport fitting after menus are rendered and a short delay to ensure rendering is complete
   // Skip for MapPoints since updateMapPointsLayout() already handles it
@@ -5098,17 +5110,62 @@ async function loadAll() {
   DB.initDB(Config.Database);
   // Database initialized in mode: DB.getDBMode()
   
+  // Initialize connection manager for remote mode
+  if (Config.Database.mode === "REMOTE") {
+    const { initConnectionManager } = await import("./db_remote/index.js");
+    initConnectionManager();
+  }
+  
+  // Check if we have a connection issue during initialization
+  var hasConnectionIssue = false;
+  
   // Server mode: Don't load users/points into State.users/State.mapPoints
   // They will be fetched on-demand through DB APIs
   // Just verify DB is accessible
   var usersResult = await DB.getAllUsers();
   if (!usersResult.success) {
     console.error("Failed to access users:", usersResult.error);
+    if (usersResult.error && (usersResult.error.includes("fetch") || usersResult.error.includes("Network"))) {
+      hasConnectionIssue = true;
+    }
   }
 
   var pointsResult = await DB.getAllPoints();
   if (!pointsResult.success) {
     console.error("Failed to access points:", pointsResult.error);
+    if (pointsResult.error && (pointsResult.error.includes("fetch") || pointsResult.error.includes("Network"))) {
+      hasConnectionIssue = true;
+    }
+  }
+
+  // If we detected a connection issue during initialization, show the connection dialog
+  if (hasConnectionIssue && Config.Database.mode === "REMOTE") {
+    console.warn("🔌 Connection issue detected during initialization");
+    
+    // Show a user-friendly message that the app will wait for connection
+    const messageEl = document.getElementById('connectionLossMessage');
+    if (messageEl) {
+      messageEl.textContent = 'Waiting for server connection to initialize app...';
+    }
+    
+    // Import and use the connection handler
+    const { handleConnectionLoss } = await import("./db_remote/index.js");
+    
+    try {
+      // Wait for connection to be restored by attempting a simple operation
+      await handleConnectionLoss(async () => {
+        return await DB.getAllUsers();
+      });
+      
+      // Connection restored, reload the data
+      console.log("✅ Connection restored, loading data...");
+      usersResult = await DB.getAllUsers();
+      pointsResult = await DB.getAllPoints();
+    } catch (error) {
+      // User cancelled or connection failed
+      console.error("❌ Failed to establish initial connection:", error.message);
+      // Continue anyway with empty data
+    }
   }
 
   // Load current user from DB
@@ -5150,15 +5207,10 @@ async function loadAll() {
   // Initialize status bar
   await updateStatusBar();
 
-  // Initially, no content -> default menu commands (but keep Help visible)
+  // Initially, hide all content sections (including Help) - showContent will make them visible
   for (var i = 0; i < Config.CONTENT_SECTIONS.length; i++) {
-    if (Config.CONTENT_SECTIONS[i] !== Config.Constants.ContentSection.Help) {
-      setSectionVisible(Config.CONTENT_SECTIONS[i], false);
-    }
+    setSectionVisible(Config.CONTENT_SECTIONS[i], false);
   }
-  // Ensure Help section is visible but collapsed initially
-  setSectionVisible(Config.Constants.ContentSection.Help, true);
-  setCollapsed(Config.Constants.ContentSection.Help, true);
   
   renderMenusFor(null);
 

@@ -263,7 +263,7 @@
     </div>
 
     <!-- 1.10) HELP -->
-    <div id="help" class="section" style="display: block;">
+    <div id="help" class="section">
       <div id="help-header" class="section-header">
         <div class="title-left">
           <span class="chev" id="chev-help">▼</span>
@@ -303,6 +303,25 @@
         </div>
         <div class="modal-footer">
           <button id="customAlertOk" class="modal-btn primary">OK</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Connection Loss Modal -->
+    <div id="connectionLossModal" class="modal-overlay hidden">
+      <div class="modal-dialog">
+        <div class="modal-header">
+          <h3>⚠️ Connection Lost</h3>
+        </div>
+        <div class="modal-body">
+          <p>Unable to connect to the server.</p>
+          <div id="connectionLossStatus" class="connection-status">
+            <div class="reconnect-spinner"></div>
+            <p id="connectionLossMessage">Attempting to reconnect...</p>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button id="connectionLossCancel" class="modal-btn">Cancel</button>
         </div>
       </div>
     </div>
