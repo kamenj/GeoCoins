@@ -73,6 +73,7 @@ export async function fetchWithTimeout(endpoint, options = {}) {
       
       const response = await fetch(url, {
         headers: { ...remoteConfig.headers, ...fetchOptions.headers },
+        credentials: 'include', // Always send cookies (JWT tokens)
         signal: controller.signal,
         ...fetchOptions,
       });

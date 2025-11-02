@@ -1,18 +1,22 @@
 /**
  * config.js - Remote database configuration
+ * Last updated: 2025-11-02 07:45 - Changed to 127.0.0.1 for JWT cookies
  */
 
 /**
  * Remote database configuration
  */
 export const remoteConfig = {
-  baseUrl: "http://localhost:3000/api",
+  baseUrl: "http://127.0.0.1:3000/api",
   endpoints: {
     users: "/users",
     points: "/map_points",
-    auth: "/auth",
+    auth: "/auth", // Legacy endpoint (deprecated)
+    authLogin: "/auth/login", // New JWT login endpoint
+    authLogout: "/auth/logout", // New JWT logout endpoint
+    authCurrent: "/auth/current", // New JWT current user endpoint
     settings: "/settings",
-    currentUser: "/current-user",
+    currentUser: "/current-user", // Legacy endpoint (deprecated)
     reset: "/reset",
   },
   headers: {

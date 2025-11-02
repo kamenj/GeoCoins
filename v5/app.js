@@ -170,7 +170,7 @@ const Config = {
   ISSUES_VIEW_LINK: "https://github.com/kamenj/GeoCoins/issues",
   ISSUES_NEW_LINK: "https://github.com/kamenj/GeoCoins/issues/new",
   Errors_GlobalHandlerEnabled: true, // Global error handler (admin setting)
-  SaveGuiState: false, // Save GUI state to cookies (admin setting)
+  SaveGuiState: true, // Save GUI state to cookies (admin setting) - default TRUE
   Debug: {
     UseDefaultCredentials: true,
     //  DefaultUser: "bob", //hider
@@ -5501,7 +5501,7 @@ async function loadAll() {
       theme: Config.Constants.Theme.Light, 
       font: Config.Constants.FontSize.Medium,
       autoHideTopMenu: true,
-      saveGuiState: false,
+      saveGuiState: true,
       errorsGlobalHandlerEnabled: true
     };
     console.log('📥 Loaded settings:', State.settings);
@@ -5511,7 +5511,7 @@ async function loadAll() {
       State.settings.autoHideTopMenu = true;
     }
     if (State.settings.saveGuiState === undefined) {
-      State.settings.saveGuiState = false;
+      State.settings.saveGuiState = true;
     }
     if (State.settings.errorsGlobalHandlerEnabled === undefined) {
       State.settings.errorsGlobalHandlerEnabled = true;
@@ -5522,7 +5522,7 @@ async function loadAll() {
       theme: Config.Constants.Theme.Light, 
       font: Config.Constants.FontSize.Medium,
       autoHideTopMenu: true,
-      saveGuiState: false,
+      saveGuiState: true,
       errorsGlobalHandlerEnabled: true
     };
   }

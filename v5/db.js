@@ -290,6 +290,8 @@ export async function deleteUser(username) {
  * @returns {Promise<object>} Result object with user data if successful
  */
 export async function authenticateUser(username, password) {
+  console.log('🔐 DB.authenticateUser called, mode:', dbConfig.mode, 'username:', username);
+  
   if (dbConfig.mode === DB_MODE.LOCAL) {
     const users = loadFromLocalStorage(
       dbConfig.local.storageKeys.users,
@@ -304,7 +306,10 @@ export async function authenticateUser(username, password) {
       error: user ? null : "Invalid credentials",
     };
   } else {
-    return await AuthAPI.authenticate(username, password);
+    console.log('🔐 REMOTE mode - calling AuthAPI.authenticate');
+    const result = await AuthAPI.authenticate(username, password);
+    console.log('🔐 AuthAPI.authenticate result:', result);
+    return result;
   }
 }
 
@@ -477,21 +482,34 @@ export async function saveSettings(settings) {
  * @returns {Promise<object>} Result object with current user
  */
 export async function getCurrentUser() {
-  console.log('👤 DB.getCurrentUser called');
-  // Always use localStorage for current user (client-side session state)
-  // regardless of database mode
-  const key = dbConfig.local.storageKeys.currentUser;
-  console.log('👤 Reading from localStorage key:', key);
+  console.log('👤 DB.getCurrentUser called, mode:', dbConfig.mode);
   
-  // Direct check of what's in localStorage
-  const directCheck = localStorage.getItem(key);
-  console.log('👤 DIRECT localStorage.getItem result:', directCheck);
-  
-  const currentUser = loadFromLocalStorage(key, null);
-  console.log('👤 DB.getCurrentUser loaded:', currentUser);
-  console.log('👤 Type of loaded data:', typeof currentUser);
-  
-  return { success: true, data: currentUser };
+  if (dbConfig.mode === DB_MODE.LOCAL) {
+    // LOCAL mode: Use localStorage for current user (client-side session)
+    const key = dbConfig.local.storageKeys.currentUser;
+    console.log('👤 LOCAL mode - Reading from localStorage key:', key);
+    
+    const directCheck = localStorage.getItem(key);
+    console.log('👤 DIRECT localStorage.getItem result:', directCheck);
+    
+    const currentUser = loadFromLocalStorage(key, null);
+    console.log('👤 DB.getCurrentUser loaded:', currentUser);
+    console.log('👤 Type of loaded data:', typeof currentUser);
+    
+    return { success: true, data: currentUser };
+  } else {
+    // REMOTE mode: Validate JWT token on server
+    console.log('👤 REMOTE mode - Validating JWT token with server');
+    const result = await AuthAPI.getCurrentUser();
+    
+    if (result.success && result.data) {
+      console.log('👤 JWT validation successful, user:', result.data.username);
+    } else {
+      console.log('👤 JWT validation failed or no user logged in');
+    }
+    
+    return result;
+  }
 }
 
 /**
@@ -500,21 +518,27 @@ export async function getCurrentUser() {
  * @returns {Promise<object>} Result object
  */
 export async function setCurrentUser(username) {
-  console.log('💾 DB.setCurrentUser called with username:', username);
-  // Always use localStorage for current user (client-side session state)
-  // regardless of database mode
-  console.log('💾 Saving to localStorage key:', dbConfig.local.storageKeys.currentUser);
-  const result = saveToLocalStorage(
-    dbConfig.local.storageKeys.currentUser,
-    username
-  );
-  console.log('💾 DB.setCurrentUser result:', result);
+  console.log('💾 DB.setCurrentUser called with username:', username, 'mode:', dbConfig.mode);
   
-  // Verify what was actually saved
-  const verification = localStorage.getItem(dbConfig.local.storageKeys.currentUser);
-  console.log('💾 Verification - localStorage now contains:', verification);
-  
-  return result.success ? { success: true, data: username } : result;
+  if (dbConfig.mode === DB_MODE.LOCAL) {
+    // LOCAL mode: Save to localStorage (client-side session)
+    console.log('💾 LOCAL mode - Saving to localStorage key:', dbConfig.local.storageKeys.currentUser);
+    const result = saveToLocalStorage(
+      dbConfig.local.storageKeys.currentUser,
+      username
+    );
+    console.log('💾 DB.setCurrentUser result:', result);
+    
+    // Verify what was actually saved
+    const verification = localStorage.getItem(dbConfig.local.storageKeys.currentUser);
+    console.log('💾 Verification - localStorage now contains:', verification);
+    
+    return result.success ? { success: true, data: username } : result;
+  } else {
+    // REMOTE mode: Session is managed by JWT cookie, no need to store username
+    console.log('💾 REMOTE mode - JWT handles session, no action needed');
+    return { success: true, data: username, message: "JWT mode - session managed by server" };
+  }
 }
 
 /**
@@ -522,17 +546,31 @@ export async function setCurrentUser(username) {
  * @returns {Promise<object>} Result object
  */
 export async function clearCurrentUser() {
-  console.log('🗑️ DB.clearCurrentUser called');
-  // Always use localStorage for current user (client-side session state)
-  // regardless of database mode
-  try {
-    console.log('🗑️ Removing currentUser from localStorage, key:', dbConfig.local.storageKeys.currentUser);
-    localStorage.removeItem(dbConfig.local.storageKeys.currentUser);
-    console.log('🗑️ localStorage.removeItem SUCCESS');
-    return { success: true, data: null };
-  } catch (error) {
-    console.error('❌ Error removing currentUser from localStorage:', error);
-    return { success: false, error: error.message };
+  console.log('🗑️ DB.clearCurrentUser called, mode:', dbConfig.mode);
+  
+  if (dbConfig.mode === DB_MODE.LOCAL) {
+    // LOCAL mode: Remove from localStorage
+    try {
+      console.log('🗑️ LOCAL mode - Removing currentUser from localStorage, key:', dbConfig.local.storageKeys.currentUser);
+      localStorage.removeItem(dbConfig.local.storageKeys.currentUser);
+      console.log('🗑️ localStorage.removeItem SUCCESS');
+      return { success: true, data: null };
+    } catch (error) {
+      console.error('❌ Error removing currentUser from localStorage:', error);
+      return { success: false, error: error.message };
+    }
+  } else {
+    // REMOTE mode: Call server logout endpoint to clear JWT cookie
+    console.log('🗑️ REMOTE mode - Calling server logout endpoint to clear JWT cookie');
+    const result = await AuthAPI.logout();
+    
+    if (result.success) {
+      console.log('🗑️ Server logout successful, JWT cookie cleared');
+    } else {
+      console.error('❌ Server logout failed:', result.error);
+    }
+    
+    return result;
   }
 }
 

@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>JWT Authentication Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; max-width: 800px; margin: 0 auto; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+        .success { color: green; }
+        .error { color: red; }
+        pre { background: #f0f0f0; padding: 10px; border-radius: 4px; overflow-x: auto; }
+        .test-section { border: 1px solid #ccc; padding: 15px; margin: 10px 0; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <h1>JWT Authentication Test</h1>
+    <p>This page tests the JWT authentication implementation.</p>
+    
+    <div class="test-section">
+        <h2>1. Login Test</h2>
+        <button onclick="testLogin()">Test Login (alice/password1)</button>
+        <div id="loginResult"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>2. Get Current User Test</h2>
+        <button onclick="testGetCurrentUser()">Test Get Current User</button>
+        <div id="currentUserResult"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>3. Cookie Inspection</h2>
+        <button onclick="inspectCookies()">Inspect Cookies</button>
+        <div id="cookieResult"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>4. Logout Test</h2>
+        <button onclick="testLogout()">Test Logout</button>
+        <div id="logoutResult"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>5. Security Test</h2>
+        <button onclick="testSecurity()">Test JavaScript Cookie Access</button>
+        <div id="securityResult"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:3000/api';
+        
+        function displayResult(elementId, title, data, isError = false) {
+            const el = document.getElementById(elementId);
+            const className = isError ? 'error' : 'success';
+            el.innerHTML = `
+                <h3 class="${className}">${title}</h3>
+                <pre>${JSON.stringify(data, null, 2)}</pre>
+            `;
+        }
+        
+        async function testLogin() {
+            try {
+                const response = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include', // Important: send/receive cookies
+                    body: JSON.stringify({
+                        username: 'alice',
+                        password: 'password1'
+                    })
+                });
+                
+                const data = await response.json();
+                displayResult('loginResult', 
+                    response.ok ? '✅ Login Successful' : '❌ Login Failed',
+                    data,
+                    !response.ok
+                );
+            } catch (error) {
+                displayResult('loginResult', '❌ Error', { error: error.message }, true);
+            }
+        }
+        
+        async function testGetCurrentUser() {
+            try {
+                const response = await fetch(`${API_BASE}/auth/current`, {
+                    method: 'GET',
+                    credentials: 'include' // Important: send cookies
+                });
+                
+                const data = await response.json();
+                displayResult('currentUserResult',
+                    response.ok ? '✅ User Authenticated' : '❌ Not Authenticated',
+                    data,
+                    !response.ok
+                );
+            } catch (error) {
+                displayResult('currentUserResult', '❌ Error', { error: error.message }, true);
+            }
+        }
+        
+        function inspectCookies() {
+            const allCookies = document.cookie;
+            const cookieArray = allCookies ? allCookies.split(';').map(c => c.trim()) : [];
+            
+            const result = {
+                message: 'Cookies visible to JavaScript',
+                allCookies: allCookies || '(none)',
+                cookieList: cookieArray,
+                note: 'If httpOnly is working, authToken should NOT appear here!'
+            };
+            
+            const hasAuthToken = cookieArray.some(c => c.startsWith('authToken='));
+            
+            displayResult('cookieResult',
+                hasAuthToken ? '❌ Security Issue: authToken is accessible!' : '✅ Security OK: authToken is httpOnly',
+                result,
+                hasAuthToken
+            );
+        }
+        
+        async function testLogout() {
+            try {
+                const response = await fetch(`${API_BASE}/auth/logout`, {
+                    method: 'POST',
+                    credentials: 'include' // Important: send cookies to clear
+                });
+                
+                const data = await response.json();
+                displayResult('logoutResult',
+                    response.ok ? '✅ Logout Successful' : '❌ Logout Failed',
+                    data,
+                    !response.ok
+                );
+            } catch (error) {
+                displayResult('logoutResult', '❌ Error', { error: error.message }, true);
+            }
+        }
+        
+        function testSecurity() {
+            const result = {
+                test1: {
+                    name: 'Can JavaScript read authToken cookie?',
+                    result: document.cookie.includes('authToken') ? 'FAIL - Cookie is accessible!' : 'PASS - Cookie is httpOnly',
+                    status: document.cookie.includes('authToken') ? '❌' : '✅'
+                },
+                test2: {
+                    name: 'Try to set authToken manually',
+                    action: 'document.cookie = "authToken=fake-token"',
+                    result: 'Executed (check DevTools to see if it worked)',
+                    note: 'httpOnly cookies cannot be set via JavaScript'
+                }
+            };
+            
+            // Try to set cookie (will fail if httpOnly is working)
+            document.cookie = 'authToken=fake-token-should-fail';
+            
+            displayResult('securityResult',
+                '🔒 Security Tests',
+                result,
+                false
+            );
+        }
+    </script>
+</body>
+</html>
