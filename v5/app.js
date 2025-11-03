@@ -521,7 +521,7 @@ const Config = {
       },
       {
         name: "points.add",
-        caption: "Add map point",
+        caption: "Add Point",
         menu: { location: "menu.bottom.title" },
         action: function () {
           openMapPointDetailsForAdd();
