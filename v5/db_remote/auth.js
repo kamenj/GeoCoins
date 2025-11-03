@@ -1,4 +1,4 @@
-/**
+﻿/**
  * auth.js - Authentication operations API
  */
 
@@ -16,7 +16,6 @@ export class AuthAPI {
    * @returns {Promise<object>} Result object with user data (JWT stored in cookie)
    */
   static async authenticate(username, password) {
-    console.log(`🔐 [AuthAPI] Authenticating user: ${username}`);
     const result = await fetchWithTimeout(remoteConfig.endpoints.authLogin, {
       method: "POST",
       body: JSON.stringify({ username, password }),
@@ -24,8 +23,6 @@ export class AuthAPI {
     });
     
     if (result.success) {
-      console.log(`✅ [AuthAPI] Login successful, JWT cookie should be set`);
-      console.log(`🍪 [AuthAPI] Check browser cookies for 'authToken'`);
     } else {
       console.error(`❌ [AuthAPI] Login failed:`, result.error);
     }
@@ -38,8 +35,6 @@ export class AuthAPI {
    * @returns {Promise<object>} Result object with current user or null if not authenticated
    */
   static async getCurrentUser() {
-    console.log(`📖 [AuthAPI] Getting current authenticated user`);
-    console.log(`🍪 [AuthAPI] Browser will automatically send authToken cookie if it exists`);
     
     const result = await fetchWithTimeout(remoteConfig.endpoints.authCurrent, {
       method: "GET",
@@ -48,7 +43,6 @@ export class AuthAPI {
     });
     
     if (result.success) {
-      console.log(`✅ [AuthAPI] JWT validated, user:`, result.data?.username);
     } else {
       console.warn(`⚠️ [AuthAPI] JWT validation failed (${result.status}):`, result.error);
     }
@@ -61,7 +55,6 @@ export class AuthAPI {
    * @returns {Promise<object>} Result object
    */
   static async logout() {
-    console.log(`🚪 [AuthAPI] Logging out user`);
     return await fetchWithTimeout(remoteConfig.endpoints.authLogout, {
       method: "POST",
       credentials: 'include', // Send cookies to clear
@@ -74,7 +67,6 @@ export class AuthAPI {
    * @returns {Promise<object>} Result object
    */
   static async clearCurrentUser() {
-    console.warn(`⚠️ [AuthAPI] clearCurrentUser() is deprecated, use logout() instead`);
     return await this.logout();
   }
 
@@ -85,7 +77,6 @@ export class AuthAPI {
    * @returns {Promise<object>} Result object
    */
   static async setCurrentUser(username) {
-    console.warn(`⚠️ [AuthAPI] setCurrentUser() is deprecated - JWT handles user session`);
     // In JWT mode, this is a no-op - authentication is handled via cookie
     return { success: true, message: "JWT mode - no action needed" };
   }

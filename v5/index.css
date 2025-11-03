@@ -66,6 +66,30 @@ body {
 .status-bar-user {
   font-size: 0.9em;
 }
+.reconnect-btn {
+  background-color: #ff9800;
+  color: white;
+  border: none;
+  padding: 5px 12px;
+  margin-left: 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 0.85em;
+  transition: background-color 0.2s;
+  animation: pulse 2s infinite;
+}
+.reconnect-btn:hover {
+  background-color: #f57c00;
+}
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
 .error-indicator-btn {
   background-color: #dc3545;
   color: white;

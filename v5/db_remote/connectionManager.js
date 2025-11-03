@@ -1,4 +1,4 @@
-/**
+﻿/**
  * connectionManager.js - Handles connection loss detection and automatic reconnection
  * 
  * This module provides a dialog that:
@@ -12,6 +12,7 @@ import { remoteConfig } from "./config.js";
 
 // Connection state
 let isConnectionLost = false;
+let userCancelledReconnection = false; // Track if user explicitly cancelled
 let reconnectionInterval = null;
 let pendingOperation = null;
 let reconnectAttempts = 0;
@@ -99,7 +100,9 @@ async function startReconnection() {
       // Connection restored!
       stopReconnection();
       hideConnectionLossDialog();
+      hideReconnectButton(); // Hide reconnect button if it was showing
       isConnectionLost = false;
+      userCancelledReconnection = false; // Reset cancel flag
       
       // Retry the pending operation if any
       if (pendingOperation) {
@@ -117,6 +120,7 @@ async function startReconnection() {
       if (message) {
         message.textContent = `Unable to reconnect after ${MAX_RECONNECT_ATTEMPTS} attempts. Please check your connection.`;
       }
+      console.error(`❌ Failed to reconnect after ${MAX_RECONNECT_ATTEMPTS} attempts`);
     }
   }, RECONNECT_INTERVAL);
 }
@@ -138,9 +142,15 @@ function stopReconnection() {
  */
 export async function handleConnectionLoss(operation) {
   return new Promise((resolve, reject) => {
-    // If already handling a connection loss, queue this operation
-    if (isConnectionLost && pendingOperation) {
-      reject(new Error('Connection lost - another operation is already pending'));
+    // If user has already cancelled reconnection, don't show dialog again
+    if (userCancelledReconnection) {
+      reject(new Error('Connection lost - user cancelled reconnection'));
+      return;
+    }
+    
+    // If already handling a connection loss, don't show dialog again
+    if (isConnectionLost) {
+      reject(new Error('Connection lost - reconnection in progress'));
       return;
     }
     
@@ -153,23 +163,23 @@ export async function handleConnectionLoss(operation) {
     // Start reconnection attempts
     startReconnection();
     
-    // Set up cancel button
+    // Set up cancel button - use once:true to ensure it only fires once
     const cancelBtn = document.getElementById('connectionLossCancel');
-    
-    const handleCancel = () => {
-      stopReconnection();
-      hideConnectionLossDialog();
-      isConnectionLost = false;
-      pendingOperation = null;
-      
-      // Reload the page
-      window.location.reload();
-      
-      cancelBtn.removeEventListener('click', handleCancel);
-      reject(new Error('Connection attempt cancelled by user'));
-    };
-    
-    cancelBtn.addEventListener('click', handleCancel);
+    if (cancelBtn) {
+      cancelBtn.addEventListener('click', () => {
+        stopReconnection();
+        hideConnectionLossDialog();
+        
+        // Mark that user cancelled - prevents dialog from showing again
+        userCancelledReconnection = true;
+        pendingOperation = null;
+        
+        // Show reconnect button in status bar
+        showReconnectButton();
+        
+        reject(new Error('Connection attempt cancelled by user'));
+      }, { once: true }); // Ensure this only runs once
+    }
   });
 }
 
@@ -182,9 +192,68 @@ export function isHandlingConnectionLoss() {
 }
 
 /**
+ * Show the reconnect button in the status bar
+ */
+function showReconnectButton() {
+  const reconnectBtn = document.getElementById('statusBar-reconnect');
+  if (reconnectBtn) {
+    reconnectBtn.style.display = 'inline-block';
+    
+    // Add click handler if not already added
+    if (!reconnectBtn.hasAttribute('data-handler-attached')) {
+      reconnectBtn.addEventListener('click', handleReconnectClick);
+      reconnectBtn.setAttribute('data-handler-attached', 'true');
+    }
+  }
+  
+  // Hide all content sections - only show status bar
+  if (window.showContent) {
+    window.showContent(null); // This hides all content
+  }
+  
+  // Explicitly hide menuTop and menuBottom using inline styles
+  const menuTop = document.getElementById('menuTop');
+  if (menuTop) {
+    menuTop.classList.remove('visible');
+    menuTop.style.display = 'none';
+  }
+  
+  const menuBottom = document.getElementById('menuBottom');
+  if (menuBottom) {
+    menuBottom.classList.remove('visible');
+    menuBottom.style.display = 'none';
+  }
+}
+
+/**
+ * Hide the reconnect button in the status bar
+ */
+function hideReconnectButton() {
+  const reconnectBtn = document.getElementById('statusBar-reconnect');
+  if (reconnectBtn) {
+    reconnectBtn.style.display = 'none';
+  }
+}
+
+/**
+ * Handle reconnect button click
+ */
+function handleReconnectClick() {
+  // Reset all connection state before reload
+  isConnectionLost = false;
+  userCancelledReconnection = false;
+  pendingOperation = null;
+  stopReconnection();
+  
+  hideReconnectButton();
+  window.location.reload();
+}
+
+/**
  * Initialize the connection manager
  * This should be called on app startup
  */
 export function initConnectionManager() {
-  console.log('🔌 Connection manager initialized');
+  // Ensure reconnect button is hidden initially
+  hideReconnectButton();
 }

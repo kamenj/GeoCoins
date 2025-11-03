@@ -138,13 +138,6 @@ export async function fetchWithTimeout(endpoint, options = {}) {
   if (!result.success && !skipConnectionHandler && isConnectionError(result)) {
     // Don't show dialog if already handling a connection loss
     if (!isHandlingConnectionLoss()) {
-      console.warn('🔌 Connection lost detected:', {
-        endpoint,
-        error: result.error,
-        status: result.status
-      });
-      console.warn('🔌 Attempting to reconnect...');
-      
       try {
         // Show connection loss dialog and attempt reconnection
         return await handleConnectionLoss(performFetch);
@@ -153,9 +146,6 @@ export async function fetchWithTimeout(endpoint, options = {}) {
         console.error('❌ Connection handler failed:', handlerError.message);
         return result; // Return original error
       }
-    } else {
-      // Already handling connection loss, just return error
-      console.warn('⏳ Connection handler already active, skipping duplicate');
     }
   }
   

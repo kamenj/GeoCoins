@@ -1,4 +1,4 @@
-import { SAMPLE_USERS, SAMPLE_POINTS } from "./data.js";
+﻿import { SAMPLE_USERS, SAMPLE_POINTS } from "./data.js";
 import { syncArrayWithTemplate } from "./dataUtils.js";
 import DB from "./db.js";
 
@@ -1141,10 +1141,7 @@ export function deleteCookie(name) {
  * Captures the current GUI state including visible content, input values, and collapsed states
  */
 export function captureGuiState() {
-  console.log('📸 captureGuiState() called, SaveGuiState=' + Config.SaveGuiState);
-  
   if (!Config.SaveGuiState) {
-    console.log('⏭️ SaveGuiState is disabled, skipping capture');
     return;
   }
   
@@ -1160,8 +1157,6 @@ export function captureGuiState() {
     pointsTableView: Config.PointsTable.view,
     timestamp: new Date().toISOString()
   };
-  
-  console.log('📸 Capturing GUI state for content:', State.currentContentId);
   
   // Capture all input field values (except passwords for security)
   var inputs = document.querySelectorAll('input:not([type="password"]), textarea, select');
@@ -1201,7 +1196,6 @@ export function captureGuiState() {
   try {
     var guiStateJson = JSON.stringify(guiState);
     setCookie('guiState', guiStateJson, 30);
-    console.log('✅ GUI state saved to cookie:', guiState);
   } catch (e) {
     console.error('❌ Failed to save GUI state to cookie:', e);
   }
@@ -1211,30 +1205,22 @@ export function captureGuiState() {
  * Restores the GUI state from cookie if SaveGuiState is enabled
  */
 export function restoreGuiState() {
-  console.log('🔄 restoreGuiState() called, SaveGuiState=' + Config.SaveGuiState);
-  console.log('🔄 Current user:', State.currentUser);
-  
   if (!Config.SaveGuiState) {
-    console.log('⏭️ SaveGuiState is disabled, skipping restore');
     return;
   }
   
   // If no user is logged in, don't restore GUI state (they might have logged out)
   if (!State.currentUser) {
-    console.log('⏭️ No user logged in, skipping GUI state restore');
     return;
   }
   
   try {
     var guiStateCookie = getCookie('guiState');
     if (!guiStateCookie) {
-      console.log('⚠️ No GUI state cookie found');
       return;
     }
     
-    console.log('📦 Found GUI state cookie, parsing...');
     var guiState = JSON.parse(guiStateCookie);
-    console.log('✅ Parsed GUI state:', guiState);
     
     // Restore input field values
     if (guiState.inputs) {
@@ -1268,20 +1254,16 @@ export function restoreGuiState() {
     if (guiState.currentContentId) {
       // Don't restore login screen if user is already logged in
       if (guiState.currentContentId === Config.Constants.ContentSection.Login && State.currentUser) {
-        console.log('⏭️ Skipping login screen restore (user already logged in)');
       } else {
-        console.log('🔄 Restoring content view:', guiState.currentContentId);
         showContent(guiState.currentContentId);
       }
     }
     
     // Restore collapsed states AFTER showing content
     if (guiState.collapsed) {
-      console.log('🔄 Restoring collapsed states...');
       Object.keys(guiState.collapsed).forEach(function(sectionId) {
         var section = $(sectionId);
         if (section) {
-          console.log('� Restoring collapsed state for', sectionId, ':', guiState.collapsed[sectionId]);
           setCollapsed(sectionId, guiState.collapsed[sectionId]);
         }
       });
@@ -1289,16 +1271,13 @@ export function restoreGuiState() {
     
     // Ensure Help section is visible after restoration if content is shown or user is logged in
     if (State.currentContentId || State.currentUser) {
-      console.log('📚 Ensuring Help section is visible after GUI state restore');
       setSectionVisible(Config.Constants.ContentSection.Help, true);
       // Restore Help collapsed state if it was saved
       if (guiState.collapsed && guiState.collapsed[Config.Constants.ContentSection.Help] !== undefined) {
-        console.log('� Restoring Help collapsed state:', guiState.collapsed[Config.Constants.ContentSection.Help]);
         setCollapsed(Config.Constants.ContentSection.Help, guiState.collapsed[Config.Constants.ContentSection.Help]);
       }
     }
     
-    console.log('✅ GUI state restored from cookie (saved at ' + guiState.timestamp + ')');
   } catch (e) {
     console.error('❌ Failed to restore GUI state from cookie:', e);
   }
@@ -1468,17 +1447,18 @@ window.updateErrorIndicator = updateErrorIndicator;
 export function setSectionVisible(id, visible) {
   var el = $(id);
   if (!el) {
-    console.warn('⚠️ setSectionVisible: element not found:', id);
     return;
   }
-  
-  console.log('👁️ setSectionVisible:', id, '→', visible ? 'VISIBLE' : 'HIDDEN');
   
   // Use CSS class instead of inline style for better initial page load
   if (visible) {
     el.classList.add('visible');
   } else {
     el.classList.remove('visible');
+    // Also set display:none for menus to ensure they're hidden
+    if (id === 'menuTop' || id === 'menuBottom') {
+      el.style.display = 'none';
+    }
   }
   updateChevron(id);
 }
@@ -1659,7 +1639,7 @@ export function handleMenuOverflow(menuId) {
     // Create expand button
     var expandBtn = document.createElement('button');
     expandBtn.className = 'menu-expand-btn';
-    expandBtn.textContent = '▼';
+    expandBtn.textContent = 'в–ј';
     expandBtn.title = 'Show more commands';
     expandBtn.addEventListener('click', function(e) {
       e.stopPropagation();
@@ -1691,7 +1671,7 @@ function toggleMenuBottomCommands(menuId) {
   // Update expand button chevron
   var expandBtn = $(menuId).querySelector('.menu-expand-btn');
   if (expandBtn) {
-    expandBtn.textContent = isHidden ? '▲' : '▼';
+    expandBtn.textContent = isHidden ? 'в–І' : 'в–ј';
     expandBtn.title = isHidden ? 'Hide commands' : 'Show more commands';
   }
   
@@ -1735,7 +1715,7 @@ export function updateChevron(id) {
       (bottomCommands && bottomCommands.children.length > 0);
     
     if (hasCollapsibleContent) {
-      chev.textContent = isCollapsed ? "►" : "▼";
+      chev.textContent = isCollapsed ? "▶" : "▼";
     } else {
       chev.textContent = "";
     }
@@ -1759,13 +1739,13 @@ export function updateChevron(id) {
     
     // Only show chevron if there's overflow content
     if (hasContent) {
-      chev.textContent = isCollapsed ? "►" : "▼";
+      chev.textContent = isCollapsed ? "▶" : "▼";
     } else {
       chev.textContent = "";
     }
   } else {
     // Regular section - always show chevron
-    chev.textContent = isCollapsed ? "►" : "▼";
+    chev.textContent = isCollapsed ? "▶" : "▼";
   }
 }
 
@@ -1838,8 +1818,20 @@ function hideAllContent() {
       setSectionVisible(Config.CONTENT_SECTIONS[i], false);
     }
   }
+  
+  // Also hide menuTop and menuBottom when hiding all content
+  setSectionVisible('menuTop', false);
+  setSectionVisible('menuBottom', false);
 }
 export function showContent(id) {
+  // Check if reconnect button is visible - if so, don't show any content
+  var reconnectBtn = document.getElementById('statusBar-reconnect');
+  var isReconnectMode = reconnectBtn && reconnectBtn.style.display !== 'none';
+  
+  if (isReconnectMode) {
+    return; // Don't show any content while in reconnect mode
+  }
+  
   // Save filter state when leaving Users List
   if (State.currentContentId === Constants.ContentSection.UsersList && State.usersTable) {
     State.usersTableFilters = State.usersTable.getHeaderFilters();
@@ -1945,20 +1937,33 @@ export function showContent(id) {
       }, 100);
     }
   } else {
-    // No content shown, ensure top menu is visible
-    var topHas =
-      hasAnyChild(Config.Constants.ElementId.MenuTopTitleCommands) ||
-      hasAnyChild(Config.Constants.ElementId.MenuTopTopCommands) ||
-      hasAnyChild(Config.Constants.ElementId.MenuTopBottomCommands);
-    if (topHas) {
-      setSectionVisible(Config.Constants.ElementId.MenuTop, true);
+    // No content shown - check if reconnect button is visible
+    var reconnectBtn = document.getElementById('statusBar-reconnect');
+    var isReconnectMode = reconnectBtn && reconnectBtn.style.display !== 'none';
+    
+    if (!isReconnectMode) {
+      // Only show top menu if NOT in reconnect mode
+      var topHas =
+        hasAnyChild(Config.Constants.ElementId.MenuTopTitleCommands) ||
+        hasAnyChild(Config.Constants.ElementId.MenuTopTopCommands) ||
+        hasAnyChild(Config.Constants.ElementId.MenuTopBottomCommands);
+      if (topHas) {
+        setSectionVisible(Config.Constants.ElementId.MenuTop, true);
+      }
     }
   }
-  renderMenusFor(State.currentContentId);
+  
+  // Don't render menus or show help if in reconnect mode
+  var reconnectBtn = document.getElementById('statusBar-reconnect');
+  var isReconnectMode = reconnectBtn && reconnectBtn.style.display !== 'none';
+  
+  if (!isReconnectMode) {
+    renderMenusFor(State.currentContentId);
+  }
   
   // Ensure Help section always remains visible when user is logged in OR content is shown
-  if (State.currentContentId || State.currentUser) {
-    console.log('📚 Making Help section visible (content:', State.currentContentId, ', user:', State.currentUser ? State.currentUser.username : 'none', ')');
+  // BUT not in reconnect mode
+  if (!isReconnectMode && (State.currentContentId || State.currentUser)) {
     
     // Get Help section to check its current collapsed state
     var helpSection = $(Config.Constants.ContentSection.Help);
@@ -1979,7 +1984,6 @@ export function showContent(id) {
       syncHelpSection(State.currentContentId);
     }
   } else {
-    console.log('📚 No content and no user, hiding Help section');
     // No content shown and not logged in, hide Help section
     setSectionVisible(Config.Constants.ContentSection.Help, false);
   }
@@ -2121,7 +2125,7 @@ function closeMessage() {
   // Hide the message
   setSectionVisible(Config.Constants.ElementId.Message, false);
 
-  // If a target was specified → navigate there.
+  // If a target was specified в†’ navigate there.
   // Otherwise restore the previously visible sections.
   // var prev = load(Config.LS.messagePrev, ["menu", "login"]);
   if (State.afterMessageShowId) {
@@ -2790,7 +2794,7 @@ function getPointsTableColumns(viewMode) {
     //   var point = cell.getRow().getData();
     //   // Only show code if current user is the point owner
     //   var isOwner = State.currentUser && point.username === State.currentUser;
-    //   return isOwner ? (point.code || "") : "•••••";
+    //   return isOwner ? (point.code || "") : "вЂўвЂўвЂўвЂўвЂў";
     // }},
     { title: "Found By", field: "foundBy", headerFilter: "input", sorter: "string", formatter: function(cell) {
       return cell.getValue() || "";
@@ -3299,7 +3303,7 @@ export function cancelUserDetails() {
   }
 }
 
-/* ===== Auth ===== §kamen_20251010_180801 */
+/* ===== Auth ===== В§kamen_20251010_180801 */
 export async function handleLogin() {
   var user = getVal("login-username"),
     pass = $("login-password").value;
@@ -3319,10 +3323,8 @@ export async function handleLogin() {
   }
 }
 export async function logout() {
-  console.log('🚪 Logout called');
   State.currentUser = null;
   var clearResult = await DB.clearCurrentUser();
-  console.log('🚪 clearCurrentUser result:', clearResult);
   // Clear user cache on logout
   State._userCache = {};
   // Show map points in view-only mode after logout
@@ -3829,7 +3831,7 @@ function createTempMarkerPopupContent(lat, lng, title, accuracy) {
   
   // Add accuracy information if provided
   if (accuracy !== undefined && accuracy !== null) {
-    content += '<br><small>Accuracy: ±' + Math.round(accuracy) + 'm</small>';
+    content += '<br><small>Accuracy: В±' + Math.round(accuracy) + 'm</small>';
   }
   
   content += '<br>Drag to adjust<br>' +
@@ -4070,7 +4072,6 @@ export function enterMapPointsFullScreen() {
   var elem = document.documentElement;
   if (elem.requestFullscreen) {
     elem.requestFullscreen().catch(function(err) {
-      console.log("Error attempting to enable fullscreen:", err);
     });
   } else if (elem.webkitRequestFullscreen) { /* Safari */
     elem.webkitRequestFullscreen();
@@ -4402,7 +4403,7 @@ export function initializeLeafletMap() {
       
       // Add tile layer
       L.tileLayer('https://api.maptiler.com/maps/streets/{z}/{x}/{y}.png?key=9Ul437Kx3uMsy4w6lOQN', {
-        attribution: '<a href="https://www.maptiler.com/license/maps/" target="_blank">© MapTiler</a> <a href="https://www.openstreetmap.org/copyright" target="_blank">© OpenStreetMap contributors</a>',
+        attribution: '<a href="https://www.maptiler.com/license/maps/" target="_blank">В© MapTiler</a> <a href="https://www.openstreetmap.org/copyright" target="_blank">В© OpenStreetMap contributors</a>',
       }).addTo(State.leafletMap);
       
       // Install long-press handler
@@ -4633,9 +4634,6 @@ export async function applySettings() {
   var currentUser = State.currentUser;
   var isAdmin = currentUser && hasRole(currentUser, 'admin');
   
-  console.log('🔧 applySettings called, currentUser:', currentUser ? currentUser.username : 'none');
-  console.log('🔧 applySettings called, isAdmin:', isAdmin);
-  console.log('🔧 Current State.settings before update:', JSON.parse(JSON.stringify(State.settings)));
   
   // Build basic settings object (non-admin settings)
   State.settings = {
@@ -4648,12 +4646,10 @@ export async function applySettings() {
       : true // Will be overwritten by admin check below
   };
   
-  console.log('🔧 State.settings after initial build:', JSON.parse(JSON.stringify(State.settings)));
   
   // Save error handler setting (admin only)
   var errorHandlerCheckbox = $('set-errorHandler');
   if (errorHandlerCheckbox && isAdmin) {
-    console.log('🔧 Error handler checkbox found, checked:', errorHandlerCheckbox.checked);
     State.settings.errorsGlobalHandlerEnabled = errorHandlerCheckbox.checked;
     Config.Errors_GlobalHandlerEnabled = errorHandlerCheckbox.checked;
     // Reinitialize error handlers
@@ -4663,9 +4659,7 @@ export async function applySettings() {
   
   // Save GUI state setting (admin only)
   var saveGuiStateCheckbox = $('set-saveGuiState');
-  console.log('🔧 SaveGuiState checkbox:', saveGuiStateCheckbox ? 'found' : 'NOT FOUND');
   if (saveGuiStateCheckbox) {
-    console.log('🔧 SaveGuiState checkbox.checked:', saveGuiStateCheckbox.checked);
   }
   
   if (saveGuiStateCheckbox && isAdmin) {
@@ -4673,31 +4667,24 @@ export async function applySettings() {
     State.settings.saveGuiState = saveGuiStateCheckbox.checked;
     Config.SaveGuiState = saveGuiStateCheckbox.checked;
     
-    console.log('⚙️ Admin changed SaveGuiState from', previousValue, 'to', Config.SaveGuiState);
-    console.log('⚙️ State.settings.saveGuiState NOW:', State.settings.saveGuiState);
     
     // If SaveGuiState was just enabled, capture current state
     if (Config.SaveGuiState && !previousValue) {
-      console.log('✅ SaveGuiState enabled - capturing current state');
       captureGuiState();
     }
     
     // If SaveGuiState was just disabled, clear the cookie
     if (!Config.SaveGuiState && previousValue) {
-      console.log('🗑️ SaveGuiState disabled - clearing cookie');
       deleteCookie('guiState');
     }
   } else if (!isAdmin) {
-    console.log('⚠️ User is not admin, skipping SaveGuiState update');
   }
   
-  console.log('💾 Final State.settings before saving to DB:', JSON.parse(JSON.stringify(State.settings)));
   var result = await DB.saveSettings(State.settings);
   if (result.success) {
-    console.log('✅ Settings saved successfully');
     applyThemeFont();
     // Show brief message in status bar instead of full message section
-    await showStatusBarMessage('✓ Settings applied', 3000);
+    await showStatusBarMessage('вњ“ Settings applied', 3000);
   } else {
     console.error('❌ Failed to save settings:', result.error);
     // For errors, show full message
@@ -5352,7 +5339,6 @@ export function setupMapPointsDivider() {
         // Also ensure tableholder gets the right height
         var tableholder = State.pointsTable.element.querySelector('.tabulator-tableholder');
         if (tableholder) {
-          console.log('During drag - tableholder height:', tableholder.offsetHeight, 'style:', tableholder.style.height);
         }
         
         // Force redraw to update visible rows
@@ -5463,8 +5449,6 @@ async function loadAll() {
 
   // If we detected a connection issue during initialization, show the connection dialog
   if (hasConnectionIssue && Config.Database.mode === "REMOTE") {
-    console.warn("🔌 Connection issue detected during initialization");
-    
     // Show a user-friendly message that the app will wait for connection
     const messageEl = document.getElementById('connectionLossMessage');
     if (messageEl) {
@@ -5481,7 +5465,6 @@ async function loadAll() {
       });
       
       // Connection restored, reload the data
-      console.log("✅ Connection restored, loading data...");
       usersResult = await DB.getAllUsers();
       pointsResult = await DB.getAllPoints();
     } catch (error) {
@@ -5492,9 +5475,7 @@ async function loadAll() {
   }
 
   // Load settings from DB first (needed to check SaveGuiState)
-  console.log('📥 Loading settings from DB...');
   var settingsResult = await DB.getSettings();
-  console.log('📥 Settings result:', settingsResult);
   
   if (settingsResult.success) {
     State.settings = settingsResult.data || { 
@@ -5504,7 +5485,6 @@ async function loadAll() {
       saveGuiState: true,
       errorsGlobalHandlerEnabled: true
     };
-    console.log('📥 Loaded settings:', State.settings);
     
     // Ensure default values if undefined
     if (State.settings.autoHideTopMenu === undefined) {
@@ -5517,7 +5497,6 @@ async function loadAll() {
       State.settings.errorsGlobalHandlerEnabled = true;
     }
   } else {
-    console.log('⚠️ Failed to load settings, using defaults');
     State.settings = { 
       theme: Config.Constants.Theme.Light, 
       font: Config.Constants.FontSize.Medium,
@@ -5533,16 +5512,10 @@ async function loadAll() {
     ? State.settings.errorsGlobalHandlerEnabled 
     : true;
   
-  console.log('⚙️ Settings loaded - SaveGuiState:', Config.SaveGuiState, 'ErrorHandler:', Config.Errors_GlobalHandlerEnabled);
-  console.log('⚙️ State.settings.saveGuiState:', State.settings.saveGuiState);
 
   // Load current user from DB
   // Load user if either AutoLoadCachedUser is enabled OR SaveGuiState is enabled
-  console.log('👤 Loading current user from DB...');
-  console.log('👤 Config.AutoLoadCachedUser:', Config.AutoLoadCachedUser);
-  console.log('👤 Config.SaveGuiState:', Config.SaveGuiState);
   var currentUserResult = await DB.getCurrentUser();
-  console.log('👤 getCurrentUser result:', currentUserResult);
   
   if (currentUserResult.success && currentUserResult.data && (Config.AutoLoadCachedUser || Config.SaveGuiState)) {
     var cachedData = currentUserResult.data;
@@ -5550,24 +5523,17 @@ async function loadAll() {
     // Check if we got a full user object or just a username string
     if (typeof cachedData === 'string') {
       // It's a username string, fetch the full user object
-      console.log('👤 Found cached username:', cachedData);
       var fullUserResult = await DB.getUserByUsername(cachedData);
-      console.log('👤 getUserByUsername result:', fullUserResult);
       
       if (fullUserResult.success && fullUserResult.data) {
         State.currentUser = fullUserResult.data;
-        console.log('👤 State.currentUser set to:', State.currentUser);
         // Pre-cache the current user for menu rendering
         State._userCache[cachedData] = State.currentUser;
-        console.log('👤 User cached:', cachedData);
       } else {
         State.currentUser = null;
-        console.log('⚠️ Failed to load user details for:', cachedData);
       }
     } else if (typeof cachedData === 'object' && cachedData.username) {
       // It's a full user object (legacy format) - migrate to new format
-      console.log('👤 Found cached user object (LEGACY):', cachedData.username);
-      console.log('🔄 Migrating to new format - saving username only');
       
       // Save just the username to migrate to new format
       await DB.setCurrentUser(cachedData.username);
@@ -5577,20 +5543,16 @@ async function loadAll() {
       if (fullUserResult.success && fullUserResult.data) {
         State.currentUser = fullUserResult.data;
         State._userCache[cachedData.username] = State.currentUser;
-        console.log('👤 User migrated, loaded and cached:', cachedData.username);
       } else {
         // If we can't find the user in the database, use the cached object
         State.currentUser = cachedData;
         State._userCache[cachedData.username] = State.currentUser;
-        console.log('👤 User loaded from legacy cache:', cachedData.username);
       }
     } else {
       State.currentUser = null;
-      console.log('⚠️ Invalid cached data format:', cachedData);
     }
   } else {
     State.currentUser = null;
-    console.log('👤 No user loaded - AutoLoadCachedUser:', Config.AutoLoadCachedUser, 'SaveGuiState:', Config.SaveGuiState, 'Success:', currentUserResult.success, 'Data:', currentUserResult.data);
   }
 
   // Apply theme and font from loaded settings
@@ -5608,13 +5570,10 @@ async function loadAll() {
   }
   
   // Render menus for current user (or null if not logged in)
-  console.log('🎨 Rendering menus for user:', State.currentUser);
   renderMenusFor(State.currentUser);
 
   // Update status bar to reflect current user (if logged in from cache)
-  console.log('📊 Updating status bar...');
   await updateStatusBar();
-  console.log('📊 Status bar updated');
 
   // Handle initial content display
   if (State.currentUser) {
@@ -5852,7 +5811,6 @@ async function loadAll() {
   
   // Restore GUI state if SaveGuiState is enabled (after settings are loaded)
   // This is called at the end of loadAll(), after Config.SaveGuiState has been properly set
-  console.log('⏰ Calling restoreGuiState() after settings loaded...');
   restoreGuiState();
 }
 
