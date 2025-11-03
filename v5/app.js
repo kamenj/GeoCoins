@@ -1453,6 +1453,10 @@ export function setSectionVisible(id, visible) {
   // Use CSS class instead of inline style for better initial page load
   if (visible) {
     el.classList.add('visible');
+    // Clear display:none for menus when showing them
+    if (id === 'menuTop' || id === 'menuBottom') {
+      el.style.display = '';
+    }
   } else {
     el.classList.remove('visible');
     // Also set display:none for menus to ensure they're hidden
@@ -1828,7 +1832,10 @@ export function showContent(id) {
   var reconnectBtn = document.getElementById('statusBar-reconnect');
   var isReconnectMode = reconnectBtn && reconnectBtn.style.display !== 'none';
   
+  console.log('🔍 showContent called, id:', id, 'reconnectBtn exists:', !!reconnectBtn, 'display:', reconnectBtn?.style.display, 'isReconnectMode:', isReconnectMode);
+  
   if (isReconnectMode) {
+    console.log('🔍 Blocked - in reconnect mode');
     return; // Don't show any content while in reconnect mode
   }
   
@@ -1959,6 +1966,8 @@ export function showContent(id) {
   
   if (!isReconnectMode) {
     renderMenusFor(State.currentContentId);
+    // Note: setMenusVisibility() is called at the end of renderMenusFor()
+    // so we don't need to manually show menuTop here
   }
   
   // Ensure Help section always remains visible when user is logged in OR content is shown
@@ -5569,24 +5578,37 @@ async function loadAll() {
     setSectionVisible(Config.CONTENT_SECTIONS[i], false);
   }
   
+  // Check if we're in reconnect mode
+  var reconnectBtn = document.getElementById('statusBar-reconnect');
+  var isReconnectMode = reconnectBtn && reconnectBtn.style.display !== 'none';
+  console.log('🔍 loadAll: isReconnectMode:', isReconnectMode);
+  
   // Render menus for current user (or null if not logged in)
-  renderMenusFor(State.currentUser);
+  // Skip this if in reconnect mode
+  if (!isReconnectMode) {
+    renderMenusFor(State.currentUser);
+  } else {
+    console.log('🔍 Skipping renderMenusFor in loadAll - reconnect mode active');
+  }
 
   // Update status bar to reflect current user (if logged in from cache)
   await updateStatusBar();
-
-  // Handle initial content display
-  if (State.currentUser) {
-    // User logged in from cache
-    if (!Config.SaveGuiState) {
-      // SaveGuiState disabled - show default content
-      showContent(null);
+  
+  if (!isReconnectMode) {
+    if (State.currentUser) {
+      // User logged in from cache
+      if (!Config.SaveGuiState) {
+        // SaveGuiState disabled - show default content
+        showContent(null);
+      }
+      // If SaveGuiState enabled, restoreGuiState() will handle it later
+    } else {
+      // No user logged in - always show map points in view-only mode
+      // (even if SaveGuiState is enabled, since there's no GUI state to restore)
+      showContent("mapPoints");
     }
-    // If SaveGuiState enabled, restoreGuiState() will handle it later
   } else {
-    // No user logged in - always show map points in view-only mode
-    // (even if SaveGuiState is enabled, since there's no GUI state to restore)
-    showContent("mapPoints");
+    console.log('🔍 Skipping showContent in loadAll - reconnect mode active');
   }
   
   // Scroll to top to ensure we start at the top of the page
