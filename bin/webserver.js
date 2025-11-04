@@ -4,6 +4,8 @@ const path = require('path');
 
 const PORT = process.argv[2] || 8081;
 const ROOT_DIR = path.join(__dirname, '..', 'v5');
+const BACKEND_HOST = 'localhost';
+const BACKEND_PORT = 3000;
 
 const MIME_TYPES = {
   '.html': 'text/html',
@@ -27,6 +29,37 @@ const MIME_TYPES = {
 };
 
 const server = http.createServer((req, res) => {
+  // Proxy API requests to backend server
+  if (req.url.startsWith('/api') || req.url.startsWith('/health')) {
+    console.log(`🔄 Proxying ${req.method} ${req.url} to backend:${BACKEND_PORT}`);
+    
+    const proxyReq = http.request({
+      hostname: BACKEND_HOST,
+      port: BACKEND_PORT,
+      path: req.url,
+      method: req.method,
+      headers: req.headers
+    }, (proxyRes) => {
+      // Forward status code and headers
+      res.writeHead(proxyRes.statusCode, proxyRes.headers);
+      
+      // Pipe the response
+      proxyRes.pipe(res);
+      
+      console.log(`✅ ${proxyRes.statusCode} - ${req.method} ${req.url}`);
+    });
+    
+    proxyReq.on('error', (err) => {
+      console.error(`❌ Proxy error for ${req.url}:`, err.message);
+      res.writeHead(502, { 'Content-Type': 'text/plain' });
+      res.end('502 Bad Gateway - Backend server unavailable');
+    });
+    
+    // Pipe request body to backend
+    req.pipe(proxyReq);
+    return;
+  }
+  
   // Remove query string and decode URI
   let filePath = decodeURIComponent(req.url.split('?')[0]);
   

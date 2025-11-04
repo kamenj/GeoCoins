@@ -5,6 +5,9 @@ REM Serves the GeoCoins v5 folder
 REM Start the kzzNodeServer backend in a separate terminal
 start "kzzNodeServer" cmd /c "cd /d "c:\my.desktop\projects\.mind.maps\main\software\kzz\kzzNodeServer\bin" && start-server.bat"
 
+REM Start the tunnel in a separate terminal
+start "Cloudflare Tunnel" cmd /c "cd /d "c:\my.desktop\projects\.mind.maps\main\software\dani\maps\tests\html\FindCoins\GeoCoins\bin\kkk.kaminooo.com" && run_tunnel.bat"
+
 REM Check if Node.js is installed
 where node >nul 2>nul
 if %ERRORLEVEL% NEQ 0 (
@@ -21,4 +24,5 @@ start "GeoCoins WebServer (Port 8081)" cmd /c "node "%~dp0webserver.js" 8081"
 
 REM Wait 2 seconds for server to start, then open Chrome
 timeout /t 2 /nobreak >nul
-start chrome http://localhost:8081
+rem start chrome http://localhost:8081
+start chrome kkk.kaminooo.com

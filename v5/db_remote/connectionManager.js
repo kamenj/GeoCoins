@@ -195,12 +195,9 @@ export function isHandlingConnectionLoss() {
  * Show the reconnect button in the status bar
  */
 function showReconnectButton() {
-  console.log('🔌 showReconnectButton called');
-  
   const reconnectBtn = document.getElementById('statusBar-reconnect');
   if (reconnectBtn) {
     reconnectBtn.style.display = 'inline-block';
-    console.log('🔌 Reconnect button display set to inline-block');
     
     // Add click handler if not already added
     if (!reconnectBtn.hasAttribute('data-handler-attached')) {
@@ -213,9 +210,7 @@ function showReconnectButton() {
   
   // Hide all content sections - only show status bar
   if (window.showContent) {
-    console.log('🔌 Calling window.showContent(null)');
     window.showContent(null); // This hides all content
-    console.log('🔌 After showContent(null)');
   } else {
     console.error('❌ window.showContent not available');
   }
@@ -223,36 +218,19 @@ function showReconnectButton() {
   // Explicitly hide menuTop and menuBottom using inline styles
   const menuTop = document.getElementById('menuTop');
   if (menuTop) {
-    console.log('🔌 menuTop before: display=', menuTop.style.display, 'visible=', menuTop.classList.contains('visible'));
     menuTop.classList.remove('visible');
     menuTop.style.display = 'none';
-    console.log('🔌 menuTop after: display=', menuTop.style.display, 'visible=', menuTop.classList.contains('visible'));
   } else {
     console.error('❌ menuTop not found');
   }
   
   const menuBottom = document.getElementById('menuBottom');
   if (menuBottom) {
-    console.log('🔌 menuBottom before: display=', menuBottom.style.display, 'visible=', menuBottom.classList.contains('visible'));
     menuBottom.classList.remove('visible');
     menuBottom.style.display = 'none';
-    console.log('🔌 menuBottom after: display=', menuBottom.style.display, 'visible=', menuBottom.classList.contains('visible'));
   } else {
     console.error('❌ menuBottom not found');
   }
-  
-  // Check all sections
-  setTimeout(() => {
-    console.log('🔌 Checking visible sections after 100ms...');
-    const allSections = document.querySelectorAll('.section');
-    allSections.forEach(section => {
-      const isVisible = section.classList.contains('visible') || 
-                       (section.style.display && section.style.display !== 'none');
-      if (isVisible) {
-        console.warn('⚠️ Section still visible:', section.id, 'display:', section.style.display, 'has .visible:', section.classList.contains('visible'));
-      }
-    });
-  }, 100);
 }
 
 /**

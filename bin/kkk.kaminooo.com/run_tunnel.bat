@@ -1,0 +1,15 @@
+@echo off
+REM Start Cloudflare Tunnel using only tunnel ID and config file
+
+set TUNNEL_ID=b75605a4-4c9f-442e-ade7-d582a9b3f5e1
+set CONFIG_PATH=.\kkk.yml
+
+echo Starting tunnel ID: %TUNNEL_ID%
+rem cloudflared tunnel --config "%CONFIG_PATH%" run %TUNNEL_ID%
+rem cloudflared tunnel  --no-autoupdate --origincert ".\cert.pem" --credentials-file ".\224dceaa-3ae7-4e56-b331-ba59c8a75c25.json"
+cloudflared tunnel ^
+  --no-autoupdate ^
+  --origincert ".\cert.pem" ^
+  --credentials-file ".\%TUNNEL_ID%.json" ^
+  --config "%CONFIG_PATH%"  ^
+  run %TUNNEL_ID%

@@ -272,7 +272,7 @@ const Config = {
   Database: {
     mode: "REMOTE", // "LOCAL" or "REMOTE"
     remote: {
-      baseUrl: "http://localhost:3000/api",
+      baseUrl: "/api",
       endpoints: {
         users: "/users",
         points: "/map_points",
@@ -1047,7 +1047,7 @@ const State = {
     theme: Config.Constants.Theme.Light, 
     font: Config.Constants.FontSize.Medium,
     autoHideTopMenu: true,
-    saveGuiState: false, // Persisted setting for SaveGuiState
+    saveGuiState: true, // Persisted setting for SaveGuiState
     errorsGlobalHandlerEnabled: true // Persisted setting for global error handler
   },
   afterMessageShowId: null, // target section to show after closing the message
@@ -1205,29 +1205,35 @@ export function captureGuiState() {
  * Restores the GUI state from cookie if SaveGuiState is enabled
  */
 export function restoreGuiState() {
+  console.log('[DEBUG] restoreGuiState - Config.SaveGuiState:', Config.SaveGuiState);
   if (!Config.SaveGuiState) {
     return;
   }
   
   // If no user is logged in, don't restore GUI state (they might have logged out)
+  console.log('[DEBUG] restoreGuiState - State.currentUser:', State.currentUser);
   if (!State.currentUser) {
     return;
   }
   
   try {
     var guiStateCookie = getCookie('guiState');
+    console.log('[DEBUG] restoreGuiState - guiStateCookie:', guiStateCookie);
     if (!guiStateCookie) {
       return;
     }
     
     var guiState = JSON.parse(guiStateCookie);
+    console.log('[DEBUG] restoreGuiState - guiState:', guiState);
     
     // Restore input field values
     if (guiState.inputs) {
+      console.log('[DEBUG] restoreGuiState - Restoring inputs:', guiState.inputs);
       Object.keys(guiState.inputs).forEach(function(inputId) {
         var input = $(inputId);
         if (input) {
           if (input.type === 'checkbox') {
+            console.log('[DEBUG] restoreGuiState - Setting checkbox', inputId, 'to', guiState.inputs[inputId]);
             input.checked = guiState.inputs[inputId];
           } else {
             input.value = guiState.inputs[inputId];
@@ -1832,10 +1838,7 @@ export function showContent(id) {
   var reconnectBtn = document.getElementById('statusBar-reconnect');
   var isReconnectMode = reconnectBtn && reconnectBtn.style.display !== 'none';
   
-  console.log('🔍 showContent called, id:', id, 'reconnectBtn exists:', !!reconnectBtn, 'display:', reconnectBtn?.style.display, 'isReconnectMode:', isReconnectMode);
-  
   if (isReconnectMode) {
-    console.log('🔍 Blocked - in reconnect mode');
     return; // Don't show any content while in reconnect mode
   }
   
@@ -4607,15 +4610,26 @@ export function applyThemeFont() {
   document.body.setAttribute(Config.Constants.Attribute.DataFont, State.settings.font || Config.Constants.FontSize.Medium);
 }
 export function openSettings() {
+  console.log('[DEBUG] ========== openSettings() CALLED ==========');
   showContent(Config.Constants.ContentSection.Settings);
   setVal("set-theme", State.settings.theme || Config.Constants.Theme.Light);
   setVal("set-font", State.settings.font || Config.Constants.FontSize.Medium);
+  
+  console.log('[DEBUG] openSettings - State.settings:', State.settings);
+  console.log('[DEBUG] openSettings - State.settings.autoHideTopMenu:', State.settings.autoHideTopMenu);
+  console.log('[DEBUG] openSettings - State.settings.saveGuiState:', State.settings.saveGuiState);
+  console.log('[DEBUG] openSettings - State.settings.errorsGlobalHandlerEnabled:', State.settings.errorsGlobalHandlerEnabled);
+  
   $("set-autoHideTopMenu").checked = State.settings.autoHideTopMenu !== false; // Default to true
+  console.log('[DEBUG] openSettings - set-autoHideTopMenu.checked set to:', $("set-autoHideTopMenu").checked);
   
   // Get current user and check if admin
   // State.currentUser is already the full user object
   var currentUser = State.currentUser;
   var isAdmin = currentUser && hasRole(currentUser, 'admin');
+  
+  console.log('[DEBUG] openSettings - currentUser:', currentUser);
+  console.log('[DEBUG] openSettings - isAdmin:', isAdmin);
   
   // Error handler checkbox (admin only)
   var errorHandlerCheckbox = $('set-errorHandler');
@@ -4625,6 +4639,8 @@ export function openSettings() {
       errorHandlerLabel.style.display = isAdmin ? 'flex' : 'none';
     }
     errorHandlerCheckbox.checked = Config.Errors_GlobalHandlerEnabled;
+    console.log('[DEBUG] openSettings - Config.Errors_GlobalHandlerEnabled:', Config.Errors_GlobalHandlerEnabled);
+    console.log('[DEBUG] openSettings - errorHandlerCheckbox.checked:', errorHandlerCheckbox.checked);
   }
   
   // SaveGuiState checkbox (admin only)
@@ -4635,6 +4651,8 @@ export function openSettings() {
       saveGuiStateLabel.style.display = isAdmin ? 'flex' : 'none';
     }
     saveGuiStateCheckbox.checked = Config.SaveGuiState;
+    console.log('[DEBUG] openSettings - Config.SaveGuiState:', Config.SaveGuiState);
+    console.log('[DEBUG] openSettings - saveGuiStateCheckbox.checked:', saveGuiStateCheckbox.checked);
   }
 }
 export async function applySettings() {
@@ -4649,7 +4667,7 @@ export async function applySettings() {
     theme: getVal("set-theme"),
     font: getVal("set-font") || Config.Constants.FontSize.Medium,
     autoHideTopMenu: $("set-autoHideTopMenu").checked, // Use actual checkbox value (boolean)
-    saveGuiState: State.settings.saveGuiState || false, // Will be overwritten by admin check below
+    saveGuiState: State.settings.saveGuiState !== undefined ? State.settings.saveGuiState : true, // Will be overwritten by admin check below
     errorsGlobalHandlerEnabled: State.settings.errorsGlobalHandlerEnabled !== undefined 
       ? State.settings.errorsGlobalHandlerEnabled 
       : true // Will be overwritten by admin check below
@@ -4693,7 +4711,7 @@ export async function applySettings() {
   if (result.success) {
     applyThemeFont();
     // Show brief message in status bar instead of full message section
-    await showStatusBarMessage('вњ“ Settings applied', 3000);
+    await showStatusBarMessage('✓ Settings applied', 3000);
   } else {
     console.error('❌ Failed to save settings:', result.error);
     // For errors, show full message
@@ -5516,10 +5534,16 @@ async function loadAll() {
   }
   
   // Apply persisted settings to Config (before loading user)
-  Config.SaveGuiState = State.settings.saveGuiState || false;
+  console.log('[DEBUG] loadAll - State.settings after loading:', State.settings);
+  console.log('[DEBUG] loadAll - State.settings.saveGuiState:', State.settings.saveGuiState);
+  console.log('[DEBUG] loadAll - State.settings.errorsGlobalHandlerEnabled:', State.settings.errorsGlobalHandlerEnabled);
+  console.log('[DEBUG] loadAll - State.settings.autoHideTopMenu:', State.settings.autoHideTopMenu);
+  Config.SaveGuiState = State.settings.saveGuiState !== undefined ? State.settings.saveGuiState : true;
   Config.Errors_GlobalHandlerEnabled = State.settings.errorsGlobalHandlerEnabled !== undefined 
     ? State.settings.errorsGlobalHandlerEnabled 
     : true;
+  console.log('[DEBUG] loadAll - Config.SaveGuiState set to:', Config.SaveGuiState);
+  console.log('[DEBUG] loadAll - Config.Errors_GlobalHandlerEnabled set to:', Config.Errors_GlobalHandlerEnabled);
   
 
   // Load current user from DB
@@ -5581,14 +5605,11 @@ async function loadAll() {
   // Check if we're in reconnect mode
   var reconnectBtn = document.getElementById('statusBar-reconnect');
   var isReconnectMode = reconnectBtn && reconnectBtn.style.display !== 'none';
-  console.log('🔍 loadAll: isReconnectMode:', isReconnectMode);
   
   // Render menus for current user (or null if not logged in)
   // Skip this if in reconnect mode
   if (!isReconnectMode) {
     renderMenusFor(State.currentUser);
-  } else {
-    console.log('🔍 Skipping renderMenusFor in loadAll - reconnect mode active');
   }
 
   // Update status bar to reflect current user (if logged in from cache)
@@ -5607,8 +5628,6 @@ async function loadAll() {
       // (even if SaveGuiState is enabled, since there's no GUI state to restore)
       showContent("mapPoints");
     }
-  } else {
-    console.log('🔍 Skipping showContent in loadAll - reconnect mode active');
   }
   
   // Scroll to top to ensure we start at the top of the page
@@ -5670,8 +5689,10 @@ async function loadAll() {
   $(Config.Constants.ElementId.MapPointDetailsHeader).addEventListener("click", function () {
     toggleCollapse(Config.Constants.ContentSection.MapPointDetails);
   });
-  $(Config.Constants.ElementId.SettingsHeader).addEventListener("click", function () {
-    toggleCollapse(Config.Constants.ContentSection.Settings);
+  $(Config.Constants.ElementId.SettingsHeader).addEventListener("click", function (e) {
+    console.log('[DEBUG] Settings header CLICKED!', e);
+    // When Settings header is clicked, call openSettings() to initialize form values
+    openSettings();
   });
   $(Config.Constants.ElementId.AboutHeader).addEventListener("click", function () {
     toggleCollapse(Config.Constants.ContentSection.About);
@@ -5834,6 +5855,36 @@ async function loadAll() {
   // Restore GUI state if SaveGuiState is enabled (after settings are loaded)
   // This is called at the end of loadAll(), after Config.SaveGuiState has been properly set
   restoreGuiState();
+  
+  // Initialize Settings checkboxes with default values AFTER restoreGuiState
+  // This ensures they have correct values even if Settings section is visible on load
+  // and overrides any potentially stale values from restored GUI state
+  initializeSettingsCheckboxes();
+}
+
+/* ===== Initialize Settings Checkboxes ===== */
+function initializeSettingsCheckboxes() {
+  console.log('[DEBUG] initializeSettingsCheckboxes - Initializing checkboxes');
+  
+  // Initialize autoHideTopMenu checkbox
+  var autoHideCheckbox = $("set-autoHideTopMenu");
+  if (autoHideCheckbox) {
+    autoHideCheckbox.checked = State.settings.autoHideTopMenu !== false;
+    console.log('[DEBUG] initializeSettingsCheckboxes - autoHideTopMenu set to:', autoHideCheckbox.checked);
+  }
+  
+  // Initialize admin-only checkboxes (they may be hidden, but set values anyway)
+  var errorHandlerCheckbox = $('set-errorHandler');
+  if (errorHandlerCheckbox) {
+    errorHandlerCheckbox.checked = Config.Errors_GlobalHandlerEnabled;
+    console.log('[DEBUG] initializeSettingsCheckboxes - errorHandler set to:', errorHandlerCheckbox.checked);
+  }
+  
+  var saveGuiStateCheckbox = $('set-saveGuiState');
+  if (saveGuiStateCheckbox) {
+    saveGuiStateCheckbox.checked = Config.SaveGuiState;
+    console.log('[DEBUG] initializeSettingsCheckboxes - saveGuiState set to:', saveGuiStateCheckbox.checked);
+  }
 }
 
 /* ===== Global functions for popup buttons ===== */

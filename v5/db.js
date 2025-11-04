@@ -440,7 +440,13 @@ export async function getSettings() {
   // This is because settings are client-specific and don't need server storage
   const settings = loadFromLocalStorage(
     dbConfig.local.storageKeys.settings,
-    { theme: "light", font: "medium", autoHideTopMenu: true }
+    { 
+      theme: "light", 
+      font: "medium", 
+      autoHideTopMenu: true,
+      saveGuiState: true,
+      errorsGlobalHandlerEnabled: true
+    }
   );
   return { success: true, data: settings };
 }
