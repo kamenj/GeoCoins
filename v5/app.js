@@ -1148,8 +1148,6 @@ export function captureGuiState() {
     return;
   }
   
-  rlog.debug('[GUI-STATE] captureGuiState() called');
-  
   var guiState = {
     currentContentId: State.currentContentId,
     inputs: {},
@@ -1891,14 +1889,6 @@ export function showContent(id) {
   // Save the previous content ID to detect if we're leaving Settings
   var previousContentId = State.currentContentId;
   
-  // Debug: log who's calling showContent
-  try {
-    throw new Error();
-  } catch (e) {
-    var stack = e.stack.split('\n').slice(2, 4).join(' | ');
-    rlog.debug('[GUI-STATE] showContent(' + id + ') called from: ' + stack);
-  }
-  
   State.currentContentId = id || null;
   hideAllContent();
   
@@ -1908,11 +1898,8 @@ export function showContent(id) {
   var isClosingSettings = previousContentId === Constants.ContentSection.Settings;
   
   if (Config.SaveGuiState && !isOpeningSettings && !isClosingSettings) {
-    rlog.debug('[GUI-STATE] showContent() scheduling capture for: ' + State.currentContentId);
     clearTimeout(window._guiStateSaveTimer);
     window._guiStateSaveTimer = setTimeout(captureGuiState, 500);
-  } else if (isOpeningSettings || isClosingSettings) {
-    rlog.debug('[GUI-STATE] Skipping capture (Settings open/close), previousContent=' + previousContentId + ', currentContent=' + State.currentContentId);
   }
   
   if (State.currentContentId) {
@@ -4734,12 +4721,8 @@ export function openSettings() {
       remoteLoggingLabel.style.display = isAdmin ? 'flex' : 'none';
     }
     
-    rlog.debug('[SETTINGS] openSettings: remoteLogging checkbox before=' + remoteLoggingCheckbox.checked + ', Config.RemoteLogging=' + Config.RemoteLogging);
-    
     // Always reset to Config value when opening Settings (not saved until Apply is clicked)
     remoteLoggingCheckbox.checked = Config.RemoteLogging;
-    
-    rlog.debug('[SETTINGS] openSettings: remoteLogging checkbox after=' + remoteLoggingCheckbox.checked);
   }
   
   // Initialize controls once (event listeners, test button, etc.)
@@ -6180,15 +6163,11 @@ async function loadAll() {
     // Also check if inside settings section
     var settingsSection = e.target.closest('#settings');
     
-    rlog.debug('[GUI-STATE] input event: target=' + e.target.id + ', isSettingsInput=' + isSettingsInput + ', settingsSection=' + (!!settingsSection));
-    
     if (isSettingsInput || settingsSection) {
-      rlog.debug('[GUI-STATE] Skipping capture for settings input');
       return;
     }
     
     if (Config.SaveGuiState && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT')) {
-      rlog.debug('[GUI-STATE] Scheduling capture (input) for: ' + e.target.id);
       clearTimeout(window._guiStateSaveTimer);
       window._guiStateSaveTimer = setTimeout(captureGuiState, 1000);
     }
@@ -6201,15 +6180,11 @@ async function loadAll() {
     // Also check if inside settings section
     var settingsSection = e.target.closest('#settings');
     
-    rlog.debug('[GUI-STATE] change event: target=' + e.target.id + ', isSettingsInput=' + isSettingsInput + ', settingsSection=' + (!!settingsSection));
-    
     if (isSettingsInput || settingsSection) {
-      rlog.debug('[GUI-STATE] Skipping capture for settings input');
       return;
     }
     
     if (Config.SaveGuiState && (e.target.type === 'checkbox' || e.target.type === 'radio')) {
-      rlog.debug('[GUI-STATE] Scheduling capture (change) for: ' + e.target.id);
       clearTimeout(window._guiStateSaveTimer);
       window._guiStateSaveTimer = setTimeout(captureGuiState, 500);
     }
