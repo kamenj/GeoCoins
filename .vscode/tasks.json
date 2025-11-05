@@ -1,15 +1,17 @@
 {
+    // Tasks that can be executed or referenced by launch configurations
     "version": "2.0.0",
     "tasks": [
         {
+            // Task label referenced by launch.json "preLaunchTask": "Start Webserver"
             "label": "Start Webserver",
             "type": "shell",
             "command": "node",
             "args": [
                 "bin/webserver.js",
-                "8080"
+                "8081"  // Must match the port in launch.json URL: http://localhost:8081/
             ],
-            "isBackground": true,
+            "isBackground": true,  // Allows launch config to proceed once pattern is matched
             "problemMatcher": {
                 "pattern": {
                     "regexp": "^$",
@@ -19,8 +21,10 @@
                 },
                 "background": {
                     "activeOnStart": true,
-                    "beginsPattern": ".",
-                    "endsPattern": "Port: 8080"
+                    "beginsPattern": "Web Server Started",
+                    // This pattern must match the webserver.js output to signal readiness
+                    // Matches the line: "Press Ctrl+C to stop the server"
+                    "endsPattern": "Press Ctrl\\+C to stop the server"
                 }
             },
             "presentation": {

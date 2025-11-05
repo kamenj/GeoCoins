@@ -14,24 +14,20 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "Start Webserver (port 8080)",
+            "name": "Start Webserver (port 8081)",
             "program": "${workspaceFolder}/bin/webserver.js",
-            "args": ["8080"],
+            "args": ["8081"],
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}"
         },
         {
             "type": "chrome",
             "request": "launch",
-            "name": "Start Webserver + Chrome",
-            "url": "http://localhost:8080/",
+            "name": "Start Node.js Webserver (port 8081) + Chrome",
+            "url": "http://localhost:8081/",  // Must match port in tasks.json "Start Webserver" task
             "webRoot": "${workspaceFolder}/v5",
-            "preLaunchTask": "Start Webserver",
-            "serverReadyAction": {
-                "pattern": "Port: ([0-9]+)",
-                "uriFormat": "http://localhost:%s/",
-                "action": "openExternally"
-            }
+            // References task label from tasks.json - will wait until "endsPattern" is matched
+            "preLaunchTask": "Start Webserver"
         }
     ]
 }
