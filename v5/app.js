@@ -762,8 +762,19 @@ const Config = {
         name: "settings.close",
         caption: "Close",
         menu: { location: "menu.bottom.title" },
-        action: function () {
-          showContent(null);
+        action: async function () {
+          // Check if settings have changed
+          if (hasUnsavedSettingsChanges()) {
+            var confirmed = await customConfirm(
+              'Unsaved Changes',
+              'You have unsaved changes. Close without saving?'
+            );
+            if (confirmed) {
+              showContent(null);
+            }
+          } else {
+            showContent(null);
+          }
         },
         visible: true,
         enabled: true,
@@ -1264,6 +1275,38 @@ export function restoreGuiState() {
       if (guiState.currentContentId === Config.Constants.ContentSection.Login && State.currentUser) {
       } else {
         showContent(guiState.currentContentId);
+        
+        // If restoring Settings, initialize the form values after showing it
+        if (guiState.currentContentId === Config.Constants.ContentSection.Settings) {
+          // Defer to ensure DOM is ready
+          setTimeout(function() {
+            setVal("set-theme", State.settings.theme || Config.Constants.Theme.Light);
+            setVal("set-font", State.settings.font || Config.Constants.FontSize.Medium);
+            
+            var autoHideCheckbox = $("set-autoHideTopMenu");
+            if (autoHideCheckbox) {
+              autoHideCheckbox.checked = State.settings.autoHideTopMenu !== false;
+            }
+            
+            var currentUser = State.currentUser;
+            var isAdmin = currentUser && hasRole(currentUser, 'admin');
+            
+            var errorHandlerCheckbox = $('set-errorHandler');
+            if (errorHandlerCheckbox && isAdmin) {
+              errorHandlerCheckbox.checked = Config.Errors_GlobalHandlerEnabled;
+            }
+            
+            var saveGuiStateCheckbox = $('set-saveGuiState');
+            if (saveGuiStateCheckbox && isAdmin) {
+              saveGuiStateCheckbox.checked = Config.SaveGuiState;
+            }
+            
+            var remoteLoggingCheckbox = $('set-remoteLogging');
+            if (remoteLoggingCheckbox && isAdmin) {
+              remoteLoggingCheckbox.checked = Config.RemoteLogging;
+            }
+          }, 100);
+        }
       }
     }
     
@@ -1893,11 +1936,11 @@ export function showContent(id) {
   hideAllContent();
   
   // Capture GUI state when content changes (debounced)
-  // But NOT when opening Settings OR when closing Settings (wait for Apply button)
-  var isOpeningSettings = State.currentContentId === Constants.ContentSection.Settings;
+  // We DO capture when Settings is opened (so refresh works), but settings inputs are excluded from capture
+  // We DON'T capture when closing Settings (to avoid capturing half-changed values)
   var isClosingSettings = previousContentId === Constants.ContentSection.Settings;
   
-  if (Config.SaveGuiState && !isOpeningSettings && !isClosingSettings) {
+  if (Config.SaveGuiState && !isClosingSettings) {
     clearTimeout(window._guiStateSaveTimer);
     window._guiStateSaveTimer = setTimeout(captureGuiState, 500);
   }
@@ -2324,6 +2367,78 @@ function customAlert(title, message) {
     
     // Attach event listeners
     okBtn.addEventListener('click', handleOk);
+    document.addEventListener('keydown', handleKeyDown);
+  });
+}
+
+/**
+ * Custom confirm dialog with Yes/No buttons
+ * @param {string} title - The title of the modal
+ * @param {string} message - The message to display
+ * @returns {Promise<boolean>} - Returns true if Yes clicked, false if No clicked
+ */
+function customConfirm(title, message) {
+  return new Promise((resolve) => {
+    const modal = document.getElementById('customPromptModal');
+    const titleEl = document.getElementById('customPromptTitle');
+    const labelEl = document.getElementById('customPromptLabel');
+    const inputEl = document.getElementById('customPromptInput');
+    const okBtn = document.getElementById('customPromptOk');
+    const cancelBtn = document.getElementById('customPromptCancel');
+    
+    // Set content
+    titleEl.textContent = title;
+    labelEl.textContent = message;
+    
+    // Hide input field and change button labels
+    inputEl.style.display = 'none';
+    okBtn.textContent = 'Yes';
+    cancelBtn.textContent = 'No';
+    
+    // Show modal
+    modal.classList.remove('hidden');
+    cancelBtn.focus();
+    
+    // Handle Yes
+    const handleYes = () => {
+      cleanup();
+      resolve(true);
+    };
+    
+    // Handle No
+    const handleNo = () => {
+      cleanup();
+      resolve(false);
+    };
+    
+    // Handle key press
+    const handleKeyDown = (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        handleYes();
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        handleNo();
+      }
+    };
+    
+    // Cleanup function
+    const cleanup = () => {
+      modal.classList.add('hidden');
+      // Restore button labels
+      okBtn.textContent = 'OK';
+      cancelBtn.textContent = 'Cancel';
+      // Show input field
+      inputEl.style.display = 'block';
+      // Remove event listeners
+      okBtn.removeEventListener('click', handleYes);
+      cancelBtn.removeEventListener('click', handleNo);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+    
+    // Attach event listeners
+    okBtn.addEventListener('click', handleYes);
+    cancelBtn.addEventListener('click', handleNo);
     document.addEventListener('keydown', handleKeyDown);
   });
 }
@@ -4681,6 +4796,41 @@ export function applyThemeFont() {
   document.body.setAttribute(Config.Constants.Attribute.DataTheme, State.settings.theme || Config.Constants.Theme.Light);
   document.body.setAttribute(Config.Constants.Attribute.DataFont, State.settings.font || Config.Constants.FontSize.Medium);
 }
+
+function hasUnsavedSettingsChanges() {
+  // Compare current form values with saved Config values
+  var themeChanged = getVal("set-theme") !== (State.settings.theme || Config.Constants.Theme.Light);
+  var fontChanged = getVal("set-font") !== (State.settings.font || Config.Constants.FontSize.Medium);
+  var autoHideChanged = $("set-autoHideTopMenu") && $("set-autoHideTopMenu").checked !== (State.settings.autoHideTopMenu !== false);
+  
+  // Check admin-only settings
+  var currentUser = State.currentUser;
+  var isAdmin = currentUser && hasRole(currentUser, 'admin');
+  
+  var errorHandlerChanged = false;
+  var saveGuiStateChanged = false;
+  var remoteLoggingChanged = false;
+  
+  if (isAdmin) {
+    var errorHandlerCheckbox = $('set-errorHandler');
+    if (errorHandlerCheckbox) {
+      errorHandlerChanged = errorHandlerCheckbox.checked !== Config.Errors_GlobalHandlerEnabled;
+    }
+    
+    var saveGuiStateCheckbox = $('set-saveGuiState');
+    if (saveGuiStateCheckbox) {
+      saveGuiStateChanged = saveGuiStateCheckbox.checked !== Config.SaveGuiState;
+    }
+    
+    var remoteLoggingCheckbox = $('set-remoteLogging');
+    if (remoteLoggingCheckbox) {
+      remoteLoggingChanged = remoteLoggingCheckbox.checked !== Config.RemoteLogging;
+    }
+  }
+  
+  return themeChanged || fontChanged || autoHideChanged || errorHandlerChanged || saveGuiStateChanged || remoteLoggingChanged;
+}
+
 export function openSettings() {
   showContent(Config.Constants.ContentSection.Settings);
   setVal("set-theme", State.settings.theme || Config.Constants.Theme.Light);
