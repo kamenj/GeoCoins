@@ -1,13 +1,13 @@
 /**
  * config.js - Remote database configuration
- * Last updated: 2025-11-02 07:45 - Changed to 127.0.0.1 for JWT cookies
+ * Last updated: 2025-11-05 - Changed to relative URL to use webserver proxy
  */
 
 /**
  * Remote database configuration
  */
 export const remoteConfig = {
-  baseUrl: "http://localhost:3000/api",
+  baseUrl: "/api", // Relative URL - goes through webserver proxy which forwards to backend
   endpoints: {
     users: "/users",
     points: "/map_points",

@@ -274,7 +274,7 @@ const Config = {
   Database: {
     mode: "REMOTE", // "LOCAL" or "REMOTE"
     remote: {
-      baseUrl: "http://localhost:3000/api",
+      baseUrl: "/api", // Relative URL - uses webserver proxy which forwards to backend
       endpoints: {
         users: "/users",
         points: "/map_points",
