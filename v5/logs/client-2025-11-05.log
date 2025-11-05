@@ -1,0 +1,4 @@
+[2025-11-05T13:49:55.332Z] [INFO] Remote logging test: INFO level message
+[2025-11-05T13:49:55.440Z] [DEBUG] Remote logging test: DEBUG level message
+[2025-11-05T13:49:55.549Z] [WARN] Remote logging test: WARN level message
+[2025-11-05T13:49:55.653Z] [ERROR] Remote logging test: ERROR level message

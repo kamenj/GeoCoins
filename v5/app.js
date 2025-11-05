@@ -1653,11 +1653,6 @@ export function handleMenuOverflow(menuId) {
     }
   }
   
-  var msg7 = '[DBG-CHEVRON-001] handleMenuOverflow - buttons in title: ' + (buttons.length - overflowButtons.length) + 
-             ', overflow buttons: ' + overflowButtons.length;
-  console.log(msg7);
-  rlog.debug(msg7);
-  
   // Only create and show expand button if there are overflow buttons
   if (overflowButtons.length > 0) {
     // Create expand button
@@ -1670,9 +1665,6 @@ export function handleMenuOverflow(menuId) {
     var expandHandler = function(e) {
       e.stopPropagation();
       e.preventDefault();
-      var msg = '[DBG-CHEVRON-001] Expand button clicked/touched for: ' + menuId + ' - event type: ' + e.type;
-      console.log(msg);
-      rlog.debug(msg);
       toggleMenuBottomCommands(menuId);
     };
     expandBtn.addEventListener('click', expandHandler);
@@ -1685,11 +1677,6 @@ export function handleMenuOverflow(menuId) {
       bottomCommands.appendChild(btn);
     });
     
-    var msg8 = '[DBG-CHEVRON-001] handleMenuOverflow - moved ' + overflowButtons.length + 
-               ' buttons to bottomCommands, setting display to none';
-    console.log(msg8);
-    rlog.debug(msg8);
-    
     bottomCommands.style.display = 'none'; // Start collapsed
   } else {
     // No overflow - just hide bottom commands
@@ -1701,42 +1688,18 @@ export function handleMenuOverflow(menuId) {
 }
 
 function toggleMenuBottomCommands(menuId) {
-  var msg1 = '[DBG-CHEVRON-001] toggleMenuBottomCommands called for: ' + menuId;
-  console.log(msg1);
-  rlog.debug(msg1);
   var bottomCommands = $(menuId).querySelector('[id$="-bottom-commands"]');
   if (!bottomCommands) {
-    var msg2 = '[DBG-CHEVRON-001] toggleMenuBottomCommands - bottomCommands not found';
-    console.log(msg2);
-    rlog.debug(msg2);
     return;
   }
   
-  var msg2a = '[DBG-CHEVRON-001] toggleMenuBottomCommands - BEFORE toggle, display: ' + bottomCommands.style.display + 
-              ', button count: ' + bottomCommands.querySelectorAll('button').length;
-  console.log(msg2a);
-  rlog.debug(msg2a);
-  
   var isHidden = bottomCommands.style.display === 'none' || bottomCommands.style.display === '';
   bottomCommands.style.display = isHidden ? 'grid' : 'none';
-  
-  var msg3 = '[DBG-CHEVRON-001] toggleMenuBottomCommands - AFTER toggle, display: ' + bottomCommands.style.display + 
-              ', isHidden was: ' + isHidden +
-              ', button count: ' + bottomCommands.querySelectorAll('button').length;
-  console.log(msg3);
-  rlog.debug(msg3);
   
   // Update the left chevron (chev-menuBottom)
   var chev = $("chev-" + menuId);
   if (chev) {
     chev.textContent = isHidden ? '▲' : '▼';
-    var msg4 = '[DBG-CHEVRON-001] toggleMenuBottomCommands - Updated chevron to: ' + chev.textContent;
-    console.log(msg4);
-    rlog.debug(msg4);
-  } else {
-    var msg5 = '[DBG-CHEVRON-001] toggleMenuBottomCommands - Chevron not found for: ' + menuId;
-    console.log(msg5);
-    rlog.debug(msg5);
   }
   
   // Update expand button chevron (keeping this for consistency, though it's hidden)
@@ -1750,31 +1713,18 @@ function toggleMenuBottomCommands(menuId) {
 }
 
 function updateBottomCommandsChevron(menuId) {
-  var msg1 = '[DBG-CHEVRON-001] updateBottomCommandsChevron called for: ' + menuId;
-  console.log(msg1);
-  rlog.debug(msg1);
   var menu = $(menuId);
   if (!menu) {
-    var msg2 = '[DBG-CHEVRON-001] updateBottomCommandsChevron - menu not found';
-    console.log(msg2);
-    rlog.debug(msg2);
     return;
   }
   
   var bottomCommands = menu.querySelector('[id$="-bottom-commands"]');
   if (!bottomCommands) {
-    var msg3 = '[DBG-CHEVRON-001] updateBottomCommandsChevron - bottomCommands not found';
-    console.log(msg3);
-    rlog.debug(msg3);
     return;
   }
   
   var hasButtons = bottomCommands.querySelectorAll('button').length > 0;
   var expandBtn = menu.querySelector('.menu-expand-btn');
-  
-  var msg4 = '[DBG-CHEVRON-001] updateBottomCommandsChevron - hasButtons: ' + hasButtons + ' - expandBtn exists: ' + !!expandBtn;
-  console.log(msg4);
-  rlog.debug(msg4);
   
   if (expandBtn) {
     expandBtn.style.display = hasButtons ? 'inline-block' : 'none';
@@ -4814,7 +4764,6 @@ function initializeSettingsControls() {
         
         try {
           await rlog.info('Remote logging test: INFO level message');
-          await rlog.debug('Remote logging test: DEBUG level message');
           await rlog.warn('Remote logging test: WARN level message');
           await rlog.error('Remote logging test: ERROR level message');
           

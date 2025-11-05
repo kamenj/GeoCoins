@@ -52,9 +52,9 @@ async function processLogQueue() {
     const logEntry = LOG_QUEUE.shift();
     
     try {
-      // Get log endpoint from backend API base URL
-      const baseUrl = Config?.Database?.remote?.baseUrl || 'http://localhost:3000/api';
-      const logEndpoint = baseUrl.replace('/api', '/log');
+      // Send logs to the webserver's /log endpoint (not the backend Express server)
+      // The webserver proxies the frontend and handles logging to v5/logs/
+      const logEndpoint = '/log';  // Relative URL - goes to the webserver
       
       const response = await fetch(logEndpoint, {
         method: 'POST',
