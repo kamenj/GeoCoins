@@ -163,3 +163,88 @@ button.primary:hover {
   background: var(--accent-hover);
   border-color: var(--accent-hover);
 }
+
+/* ===== Mobile Responsive Styles ===== */
+@media (max-width: 768px) {
+  /* Increase base font size on mobile */
+  body[data-font="small"] { font-size: 16px; }
+  body[data-font="medium"] { font-size: 18px; }
+  body[data-font="large"] { font-size: 20px; }
+  
+  /* Increase padding for better touch targets */
+  button {
+    padding: 10px 14px;
+    font-size: 16px;
+    min-height: 44px;
+  }
+  
+  /* Better spacing for inputs */
+  input, select, textarea {
+    padding: 10px;
+    font-size: 16px;
+    min-height: 44px;
+  }
+  
+  /* Larger table text */
+  th, td {
+    padding: 10px;
+    font-size: 15px;
+  }
+  
+  /* Section headers more prominent */
+  .section-header {
+    padding: 14px;
+    font-size: 18px;
+  }
+  
+  .section-content {
+    padding: 14px;
+  }
+  
+  /* Labels more readable */
+  label {
+    font-size: 16px;
+    margin-top: 10px;
+  }
+  
+  /* Menu buttons better spacing */
+  .menu-buttons-top {
+    gap: 10px;
+  }
+  
+  .menu-buttons-bottom-content {
+    gap: 10px;
+  }
+  
+  /* Better spacing in rows */
+  .row {
+    gap: 10px;
+  }
+}
+
+/* Extra small devices (phones in portrait) */
+@media (max-width: 480px) {
+  body {
+    padding: 0 6px 20px;
+  }
+  
+  /* Stack buttons vertically on very small screens */
+  .row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .row button {
+    width: 100%;
+  }
+  
+  /* Keep welcome message and logout inline */
+  #menu .section-content .row {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  
+  #welcome {
+    font-size: 14px;
+  }
+}

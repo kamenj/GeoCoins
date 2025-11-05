@@ -29,6 +29,59 @@ const MIME_TYPES = {
 };
 
 const server = http.createServer((req, res) => {
+  // Debug log all requests
+  console.log(`📥 Request: ${req.method} ${req.url}`);
+  
+  // Add CORS headers for all requests
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  
+  // Handle preflight OPTIONS request
+  if (req.method === 'OPTIONS') {
+    res.writeHead(200);
+    res.end();
+    return;
+  }
+  
+  // Handle client logging endpoint
+  if (req.url === '/log' && req.method === 'POST') {
+    console.log('✅ Matched /log endpoint');
+    let body = '';
+    req.on('data', chunk => {
+      body += chunk.toString();
+    });
+    req.on('end', () => {
+      try {
+        const logData = JSON.parse(body);
+        const timestamp = new Date().toISOString();
+        const logMessage = `[${timestamp}] [${logData.level || 'INFO'}] ${logData.message}\n`;
+        
+        // Ensure log directory exists
+        const logDir = path.join(ROOT_DIR, 'logs');
+        if (!fs.existsSync(logDir)) {
+          fs.mkdirSync(logDir, { recursive: true });
+        }
+        
+        // Append to log file (one file per day)
+        const today = new Date().toISOString().split('T')[0];
+        const logFile = path.join(logDir, `client-${today}.log`);
+        fs.appendFileSync(logFile, logMessage);
+        
+        // Also log to console
+        console.log(`📝 Client Log: ${logMessage.trim()}`);
+        
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true }));
+      } catch (err) {
+        console.error('Error processing log:', err);
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: err.message }));
+      }
+    });
+    return;
+  }
+  
   // Proxy API requests to backend server
   if (req.url.startsWith('/api') || req.url.startsWith('/health')) {
     console.log(`🔄 Proxying ${req.method} ${req.url} to backend:${BACKEND_PORT}`);
@@ -108,7 +161,11 @@ const server = http.createServer((req, res) => {
         'Expires': '0'
       });
       res.end(data);
-      console.log(`200 - ${req.method} ${req.url} (${mimeType})`);
+      
+      const fileSize = (data.length / 1024).toFixed(2);
+      const timestamp = new Date().toLocaleTimeString();
+      console.log(`[${timestamp}] 200 - ${req.method} ${req.url} (${mimeType}) - ${fileSize} KB`);
+      console.log(`         📂 Served: ${fullPath}`);
     });
   });
 });

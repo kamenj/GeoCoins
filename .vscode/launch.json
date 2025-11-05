@@ -10,6 +10,28 @@
             "name": "Launch Chrome against localhost",
             "url": "http://localhost:8080/v5/index.html",
             "webRoot": "${workspaceFolder}"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Start Webserver (port 8080)",
+            "program": "${workspaceFolder}/bin/webserver.js",
+            "args": ["8080"],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "chrome",
+            "request": "launch",
+            "name": "Start Webserver + Chrome",
+            "url": "http://localhost:8080/",
+            "webRoot": "${workspaceFolder}/v5",
+            "preLaunchTask": "Start Webserver",
+            "serverReadyAction": {
+                "pattern": "Port: ([0-9]+)",
+                "uriFormat": "http://localhost:%s/",
+                "action": "openExternally"
+            }
         }
     ]
 }

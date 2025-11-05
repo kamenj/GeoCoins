@@ -1,6 +1,7 @@
 ﻿import { SAMPLE_USERS, SAMPLE_POINTS } from "./data.js";
 import { syncArrayWithTemplate } from "./dataUtils.js";
 import DB from "./db.js";
+import { rlog, setRemoteLoggerConfig } from "./remoteLogger.js";
 
 const Constants = {
   HtmlElement: {
@@ -171,6 +172,7 @@ const Config = {
   ISSUES_NEW_LINK: "https://github.com/kamenj/GeoCoins/issues/new",
   Errors_GlobalHandlerEnabled: true, // Global error handler (admin setting)
   SaveGuiState: true, // Save GUI state to cookies (admin setting) - default TRUE
+  RemoteLogging: false, // Enable remote logging to backend /log endpoint (admin setting) - default FALSE
   Debug: {
     UseDefaultCredentials: true,
     //  DefaultUser: "bob", //hider
@@ -272,7 +274,7 @@ const Config = {
   Database: {
     mode: "REMOTE", // "LOCAL" or "REMOTE"
     remote: {
-      baseUrl: "/api",
+      baseUrl: "http://localhost:3000/api",
       endpoints: {
         users: "/users",
         points: "/map_points",
@@ -936,7 +938,7 @@ const Config = {
       caption: "Settings",
       menu: { location: "menu.top.top" },
       action: function () {
-        showContent("settings");
+        openSettings(); // Call openSettings() instead of showContent() to properly initialize
       },
       visible: true,
       enabled: true,
@@ -1048,7 +1050,8 @@ const State = {
     font: Config.Constants.FontSize.Medium,
     autoHideTopMenu: true,
     saveGuiState: true, // Persisted setting for SaveGuiState
-    errorsGlobalHandlerEnabled: true // Persisted setting for global error handler
+    errorsGlobalHandlerEnabled: true, // Persisted setting for global error handler
+    remoteLogging: false // Persisted setting for remote logging
   },
   afterMessageShowId: null, // target section to show after closing the message
   mapPointsView: {
@@ -1205,35 +1208,29 @@ export function captureGuiState() {
  * Restores the GUI state from cookie if SaveGuiState is enabled
  */
 export function restoreGuiState() {
-  console.log('[DEBUG] restoreGuiState - Config.SaveGuiState:', Config.SaveGuiState);
   if (!Config.SaveGuiState) {
     return;
   }
   
   // If no user is logged in, don't restore GUI state (they might have logged out)
-  console.log('[DEBUG] restoreGuiState - State.currentUser:', State.currentUser);
   if (!State.currentUser) {
     return;
   }
   
   try {
     var guiStateCookie = getCookie('guiState');
-    console.log('[DEBUG] restoreGuiState - guiStateCookie:', guiStateCookie);
     if (!guiStateCookie) {
       return;
     }
     
     var guiState = JSON.parse(guiStateCookie);
-    console.log('[DEBUG] restoreGuiState - guiState:', guiState);
     
     // Restore input field values
     if (guiState.inputs) {
-      console.log('[DEBUG] restoreGuiState - Restoring inputs:', guiState.inputs);
       Object.keys(guiState.inputs).forEach(function(inputId) {
         var input = $(inputId);
         if (input) {
           if (input.type === 'checkbox') {
-            console.log('[DEBUG] restoreGuiState - Setting checkbox', inputId, 'to', guiState.inputs[inputId]);
             input.checked = guiState.inputs[inputId];
           } else {
             input.value = guiState.inputs[inputId];
@@ -1475,16 +1472,25 @@ export function setSectionVisible(id, visible) {
 export function setCollapsed(id, collapsed) {
   var el = $(id);
   if (!el) return;
+  
   if (collapsed) {
     el.classList.add(Config.Constants.ClassName.Collapsed);
   } else {
     el.classList.remove(Config.Constants.ClassName.Collapsed);
   }
+  
   updateChevron(id);
 }
 export function toggleCollapse(id) {
   var el = $(id);
   if (!el) return;
+  
+  // Special handling for menuBottom - only toggle overflow commands, not the whole section
+  if (id === Config.Constants.ElementId.MenuBottom) {
+    toggleMenuBottomCommands(id);
+    return;
+  }
+  
   setCollapsed(id, !el.classList.contains(Config.Constants.ClassName.Collapsed));
 }
 
@@ -1616,8 +1622,11 @@ export function handleMenuOverflow(menuId) {
   
   // First pass: calculate total width needed for all buttons
   var totalWidth = 0;
+  var buttonWidths = [];
   for (var i = 0; i < buttons.length; i++) {
-    totalWidth += buttons[i].offsetWidth + 8; // 8px for gap
+    var width = buttons[i].offsetWidth;
+    buttonWidths.push(width);
+    totalWidth += width + 8; // 8px for gap
   }
   
   // If all buttons fit, no overflow needed
@@ -1644,23 +1653,43 @@ export function handleMenuOverflow(menuId) {
     }
   }
   
+  var msg7 = '[DBG-CHEVRON-001] handleMenuOverflow - buttons in title: ' + (buttons.length - overflowButtons.length) + 
+             ', overflow buttons: ' + overflowButtons.length;
+  console.log(msg7);
+  rlog.debug(msg7);
+  
   // Only create and show expand button if there are overflow buttons
   if (overflowButtons.length > 0) {
     // Create expand button
     var expandBtn = document.createElement('button');
     expandBtn.className = 'menu-expand-btn';
-    expandBtn.textContent = 'в–ј';
+    expandBtn.textContent = '▼';
     expandBtn.title = 'Show more commands';
-    expandBtn.addEventListener('click', function(e) {
+    
+    // Add both click and touch events for mobile support
+    var expandHandler = function(e) {
       e.stopPropagation();
+      e.preventDefault();
+      var msg = '[DBG-CHEVRON-001] Expand button clicked/touched for: ' + menuId + ' - event type: ' + e.type;
+      console.log(msg);
+      rlog.debug(msg);
       toggleMenuBottomCommands(menuId);
-    });
+    };
+    expandBtn.addEventListener('click', expandHandler);
+    expandBtn.addEventListener('touchstart', expandHandler);
+    
     titleCommands.appendChild(expandBtn);
     
     // Move overflow buttons to bottom section
     overflowButtons.forEach(function(btn) {
       bottomCommands.appendChild(btn);
     });
+    
+    var msg8 = '[DBG-CHEVRON-001] handleMenuOverflow - moved ' + overflowButtons.length + 
+               ' buttons to bottomCommands, setting display to none';
+    console.log(msg8);
+    rlog.debug(msg8);
+    
     bottomCommands.style.display = 'none'; // Start collapsed
   } else {
     // No overflow - just hide bottom commands
@@ -1672,16 +1701,48 @@ export function handleMenuOverflow(menuId) {
 }
 
 function toggleMenuBottomCommands(menuId) {
+  var msg1 = '[DBG-CHEVRON-001] toggleMenuBottomCommands called for: ' + menuId;
+  console.log(msg1);
+  rlog.debug(msg1);
   var bottomCommands = $(menuId).querySelector('[id$="-bottom-commands"]');
-  if (!bottomCommands) return;
+  if (!bottomCommands) {
+    var msg2 = '[DBG-CHEVRON-001] toggleMenuBottomCommands - bottomCommands not found';
+    console.log(msg2);
+    rlog.debug(msg2);
+    return;
+  }
   
-  var isHidden = bottomCommands.style.display === 'none';
-  bottomCommands.style.display = isHidden ? 'block' : 'none';
+  var msg2a = '[DBG-CHEVRON-001] toggleMenuBottomCommands - BEFORE toggle, display: ' + bottomCommands.style.display + 
+              ', button count: ' + bottomCommands.querySelectorAll('button').length;
+  console.log(msg2a);
+  rlog.debug(msg2a);
   
-  // Update expand button chevron
+  var isHidden = bottomCommands.style.display === 'none' || bottomCommands.style.display === '';
+  bottomCommands.style.display = isHidden ? 'grid' : 'none';
+  
+  var msg3 = '[DBG-CHEVRON-001] toggleMenuBottomCommands - AFTER toggle, display: ' + bottomCommands.style.display + 
+              ', isHidden was: ' + isHidden +
+              ', button count: ' + bottomCommands.querySelectorAll('button').length;
+  console.log(msg3);
+  rlog.debug(msg3);
+  
+  // Update the left chevron (chev-menuBottom)
+  var chev = $("chev-" + menuId);
+  if (chev) {
+    chev.textContent = isHidden ? '▲' : '▼';
+    var msg4 = '[DBG-CHEVRON-001] toggleMenuBottomCommands - Updated chevron to: ' + chev.textContent;
+    console.log(msg4);
+    rlog.debug(msg4);
+  } else {
+    var msg5 = '[DBG-CHEVRON-001] toggleMenuBottomCommands - Chevron not found for: ' + menuId;
+    console.log(msg5);
+    rlog.debug(msg5);
+  }
+  
+  // Update expand button chevron (keeping this for consistency, though it's hidden)
   var expandBtn = $(menuId).querySelector('.menu-expand-btn');
   if (expandBtn) {
-    expandBtn.textContent = isHidden ? 'в–І' : 'в–ј';
+    expandBtn.textContent = isHidden ? '▲' : '▼';
     expandBtn.title = isHidden ? 'Hide commands' : 'Show more commands';
   }
   
@@ -1689,14 +1750,31 @@ function toggleMenuBottomCommands(menuId) {
 }
 
 function updateBottomCommandsChevron(menuId) {
+  var msg1 = '[DBG-CHEVRON-001] updateBottomCommandsChevron called for: ' + menuId;
+  console.log(msg1);
+  rlog.debug(msg1);
   var menu = $(menuId);
-  if (!menu) return;
+  if (!menu) {
+    var msg2 = '[DBG-CHEVRON-001] updateBottomCommandsChevron - menu not found';
+    console.log(msg2);
+    rlog.debug(msg2);
+    return;
+  }
   
   var bottomCommands = menu.querySelector('[id$="-bottom-commands"]');
-  if (!bottomCommands) return;
+  if (!bottomCommands) {
+    var msg3 = '[DBG-CHEVRON-001] updateBottomCommandsChevron - bottomCommands not found';
+    console.log(msg3);
+    rlog.debug(msg3);
+    return;
+  }
   
   var hasButtons = bottomCommands.querySelectorAll('button').length > 0;
   var expandBtn = menu.querySelector('.menu-expand-btn');
+  
+  var msg4 = '[DBG-CHEVRON-001] updateBottomCommandsChevron - hasButtons: ' + hasButtons + ' - expandBtn exists: ' + !!expandBtn;
+  console.log(msg4);
+  rlog.debug(msg4);
   
   if (expandBtn) {
     expandBtn.style.display = hasButtons ? 'inline-block' : 'none';
@@ -1863,7 +1941,8 @@ export function showContent(id) {
   
   if (State.currentContentId) {
     setSectionVisible(State.currentContentId, true);
-    setCollapsed(State.currentContentId, false);
+    // Don't auto-uncollapse - let user control collapse state
+    // setCollapsed(State.currentContentId, false);
     
     // Auto-fill login credentials for debugging
     if (State.currentContentId === Constants.ContentSection.Login && 
@@ -1880,6 +1959,16 @@ export function showContent(id) {
           usernameInput.focus();
         }
       }, 100);
+    }
+    
+    // Initialize Settings controls when Settings section is shown (only if not already initialized)
+    if (State.currentContentId === Constants.ContentSection.Settings) {
+      // Only initialize if this is the first time showing settings (not from openSettings call)
+      if (!State._settingsInitialized) {
+        setTimeout(function() {
+          initializeSettingsControls();
+        }, 0);
+      }
     }
     
     // Initialize map when MapPoints section is shown
@@ -4047,10 +4136,11 @@ export function enterMapPointsFullScreen() {
   // Hide top menu
   setSectionVisible(Constants.ElementId.MenuTop, false);
   
-  // Ensure MapPoints is visible (but don't change its collapsed state)
+  // Ensure MapPoints section is visible (but don't override collapsed state with inline styles)
   var mapPoints = $(Constants.ContentSection.MapPoints);
   if (mapPoints) {
-    mapPoints.style.display = 'flex';
+    // Don't set inline display style - let CSS handle it based on .collapsed class
+    mapPoints.classList.add('visible');
     // Don't force expand - keep the collapsed state as it was
   }
   
@@ -4176,12 +4266,12 @@ export function exitMapPointsFullScreen() {
   document.body.style.height = '';
   document.body.style.width = '';
   
-  // Restore previously visible sections
-  var visibleSections = State.fullScreen.preFullScreenState.visibleSections || [];
-  for (var i = 0; i < Config.CONTENT_SECTIONS.length; i++) {
-    var sectionId = Config.CONTENT_SECTIONS[i];
-    var wasVisible = visibleSections.indexOf(sectionId) !== -1;
-    setSectionVisible(sectionId, wasVisible);
+  // Hide all content sections (except Help which is always visible)
+  hideAllContent();
+  
+  // Show only the current content section (typically mapPoints)
+  if (State.currentContentId) {
+    setSectionVisible(State.currentContentId, true);
   }
   
   // Restore collapsed states for content sections (but not menus yet - they'll be re-rendered)
@@ -4407,33 +4497,46 @@ export function initializeLeafletMap() {
   var mapDiv = $("mapPointsMap");
   if (!mapDiv) return;
   
-  // Initialize map if not already done
-  if (!State.leafletMap) {
-    try {
-      // Default center - can be updated based on points
-      State.leafletMap = L.map('mapPointsMap').setView([51.5, -0.09], 13);
-      
-      // Add tile layer
-      L.tileLayer('https://api.maptiler.com/maps/streets/{z}/{x}/{y}.png?key=9Ul437Kx3uMsy4w6lOQN', {
-        attribution: '<a href="https://www.maptiler.com/license/maps/" target="_blank">В© MapTiler</a> <a href="https://www.openstreetmap.org/copyright" target="_blank">В© OpenStreetMap contributors</a>',
-      }).addTo(State.leafletMap);
-      
-      // Install long-press handler
-      installMapLongPressHandler();
-      
-      // Add markers for existing points
+  // Check if DOM element already has a Leaflet map instance
+  if (mapDiv._leaflet_id !== undefined) {
+    // Map already exists in DOM, just refresh it
+    if (State.leafletMap) {
+      State.leafletMap.invalidateSize();
       if (!State.skipMapRefresh) {
         refreshMapMarkers();
       }
-    } catch (error) {
-      console.error("Failed to initialize Leaflet map:", error);
     }
-  } else {
-    // Map already exists, just refresh its size and markers
+    return;
+  }
+  
+  // If map is already initialized, just refresh it
+  if (State.leafletMap) {
     State.leafletMap.invalidateSize();
     if (!State.skipMapRefresh) {
       refreshMapMarkers();
     }
+    return;
+  }
+  
+  // Initialize map only if not already done
+  try {
+    // Default center - can be updated based on points
+    State.leafletMap = L.map('mapPointsMap').setView([51.5, -0.09], 13);
+    
+    // Add tile layer
+    L.tileLayer('https://api.maptiler.com/maps/streets/{z}/{x}/{y}.png?key=9Ul437Kx3uMsy4w6lOQN', {
+      attribution: '<a href="https://www.maptiler.com/license/maps/" target="_blank">В© MapTiler</a> <a href="https://www.openstreetmap.org/copyright" target="_blank">В© OpenStreetMap contributors</a>',
+    }).addTo(State.leafletMap);
+    
+    // Install long-press handler
+    installMapLongPressHandler();
+    
+    // Add markers for existing points
+    if (!State.skipMapRefresh) {
+      refreshMapMarkers();
+    }
+  } catch (error) {
+    console.error("Failed to initialize Leaflet map:", error);
   }
 }
 
@@ -4610,26 +4713,16 @@ export function applyThemeFont() {
   document.body.setAttribute(Config.Constants.Attribute.DataFont, State.settings.font || Config.Constants.FontSize.Medium);
 }
 export function openSettings() {
-  console.log('[DEBUG] ========== openSettings() CALLED ==========');
   showContent(Config.Constants.ContentSection.Settings);
   setVal("set-theme", State.settings.theme || Config.Constants.Theme.Light);
   setVal("set-font", State.settings.font || Config.Constants.FontSize.Medium);
   
-  console.log('[DEBUG] openSettings - State.settings:', State.settings);
-  console.log('[DEBUG] openSettings - State.settings.autoHideTopMenu:', State.settings.autoHideTopMenu);
-  console.log('[DEBUG] openSettings - State.settings.saveGuiState:', State.settings.saveGuiState);
-  console.log('[DEBUG] openSettings - State.settings.errorsGlobalHandlerEnabled:', State.settings.errorsGlobalHandlerEnabled);
-  
   $("set-autoHideTopMenu").checked = State.settings.autoHideTopMenu !== false; // Default to true
-  console.log('[DEBUG] openSettings - set-autoHideTopMenu.checked set to:', $("set-autoHideTopMenu").checked);
   
   // Get current user and check if admin
   // State.currentUser is already the full user object
   var currentUser = State.currentUser;
   var isAdmin = currentUser && hasRole(currentUser, 'admin');
-  
-  console.log('[DEBUG] openSettings - currentUser:', currentUser);
-  console.log('[DEBUG] openSettings - isAdmin:', isAdmin);
   
   // Error handler checkbox (admin only)
   var errorHandlerCheckbox = $('set-errorHandler');
@@ -4639,8 +4732,6 @@ export function openSettings() {
       errorHandlerLabel.style.display = isAdmin ? 'flex' : 'none';
     }
     errorHandlerCheckbox.checked = Config.Errors_GlobalHandlerEnabled;
-    console.log('[DEBUG] openSettings - Config.Errors_GlobalHandlerEnabled:', Config.Errors_GlobalHandlerEnabled);
-    console.log('[DEBUG] openSettings - errorHandlerCheckbox.checked:', errorHandlerCheckbox.checked);
   }
   
   // SaveGuiState checkbox (admin only)
@@ -4651,10 +4742,112 @@ export function openSettings() {
       saveGuiStateLabel.style.display = isAdmin ? 'flex' : 'none';
     }
     saveGuiStateCheckbox.checked = Config.SaveGuiState;
-    console.log('[DEBUG] openSettings - Config.SaveGuiState:', Config.SaveGuiState);
-    console.log('[DEBUG] openSettings - saveGuiStateCheckbox.checked:', saveGuiStateCheckbox.checked);
   }
+  
+  // RemoteLogging checkbox (admin only)
+  var remoteLoggingCheckbox = $('set-remoteLogging');
+  if (remoteLoggingCheckbox) {
+    var remoteLoggingLabel = remoteLoggingCheckbox.closest('label');
+    if (remoteLoggingLabel) {
+      remoteLoggingLabel.style.display = isAdmin ? 'flex' : 'none';
+    }
+    
+    // Only set checked state if controls not yet initialized
+    if (!State._settingsControlsInitialized) {
+      remoteLoggingCheckbox.checked = Config.RemoteLogging;
+    }
+  }
+  
+  // Initialize controls once (event listeners, test button, etc.)
+  initializeSettingsControls();
+  
+  // Mark settings as initialized
+  State._settingsInitialized = true;
 }
+
+// Initialize settings controls (remote logging test button, event handlers, etc.)
+// This should only be called once to avoid duplicate event listeners
+function initializeSettingsControls() {
+  if (State._settingsControlsInitialized) {
+    return; // Already initialized
+  }
+  
+  var currentUser = State.currentUser;
+  var isAdmin = currentUser && hasRole(currentUser, 'admin');
+  
+  var remoteLoggingCheckbox = $('set-remoteLogging');
+  var testSection = $('remoteLoggingTest');
+  var testButton = $('testRemoteLogging');
+  
+  if (!remoteLoggingCheckbox) return;
+  
+  // Show/hide test section based on admin status
+  if (testSection && isAdmin) {
+    testSection.style.display = 'block';
+  }
+  
+  // Update test button visibility based on checkbox state
+  var updateTestButtonVisibility = function() {
+    if (testButton && isAdmin) {
+      testButton.style.display = remoteLoggingCheckbox.checked ? 'inline-block' : 'none';
+    }
+  };
+  
+  // Set initial visibility
+  updateTestButtonVisibility();
+  
+  // Add change event listener (only once)
+  remoteLoggingCheckbox.addEventListener('change', updateTestButtonVisibility);
+  
+  // Add test button click handler (only once)
+  if (testButton) {
+    testButton.addEventListener('click', async function() {
+      var statusEl = $('remoteLoggingStatus');
+      
+      var checkbox = $('set-remoteLogging');
+      if (checkbox && checkbox.checked) {
+        var previousValue = Config.RemoteLogging;
+        Config.RemoteLogging = true;
+        setRemoteLoggerConfig(Config);
+        
+        if (statusEl) statusEl.textContent = 'Sending test messages...';
+        
+        try {
+          await rlog.info('Remote logging test: INFO level message');
+          await rlog.debug('Remote logging test: DEBUG level message');
+          await rlog.warn('Remote logging test: WARN level message');
+          await rlog.error('Remote logging test: ERROR level message');
+          
+          if (statusEl) {
+            statusEl.textContent = '✓ Test messages sent successfully!';
+            statusEl.style.color = '#28a745';
+          }
+          
+          setTimeout(() => {
+            if (statusEl) statusEl.textContent = '';
+          }, 5000);
+        } catch (error) {
+          if (statusEl) {
+            statusEl.textContent = '✗ Failed to send test messages';
+            statusEl.style.color = '#dc3545';
+          }
+          console.error('Test logging failed:', error);
+        }
+        
+        Config.RemoteLogging = previousValue;
+        setRemoteLoggerConfig(Config);
+      } else {
+        if (statusEl) {
+          statusEl.textContent = '⚠ Enable remote logging first';
+          statusEl.style.color = '#ffc107';
+        }
+      }
+    });
+  }
+  
+  State._settingsControlsInitialized = true;
+}
+
 export async function applySettings() {
   // Get current user and check if admin
   // State.currentUser is already the full user object, no need to look it up
@@ -4670,7 +4863,8 @@ export async function applySettings() {
     saveGuiState: State.settings.saveGuiState !== undefined ? State.settings.saveGuiState : true, // Will be overwritten by admin check below
     errorsGlobalHandlerEnabled: State.settings.errorsGlobalHandlerEnabled !== undefined 
       ? State.settings.errorsGlobalHandlerEnabled 
-      : true // Will be overwritten by admin check below
+      : true, // Will be overwritten by admin check below
+    remoteLogging: State.settings.remoteLogging !== undefined ? State.settings.remoteLogging : false // Will be overwritten by admin check below
   };
   
   
@@ -4705,6 +4899,18 @@ export async function applySettings() {
       deleteCookie('guiState');
     }
   } else if (!isAdmin) {
+  }
+  
+  // Save Remote Logging setting (admin only)
+  var remoteLoggingCheckbox = $('set-remoteLogging');
+  if (remoteLoggingCheckbox && isAdmin) {
+    State.settings.remoteLogging = remoteLoggingCheckbox.checked;
+    Config.RemoteLogging = remoteLoggingCheckbox.checked;
+    // Update remote logger configuration
+    setRemoteLoggerConfig(Config);
+    // Update remoteLogger with new config
+    setRemoteLoggerConfig(Config);
+    console.log(`Remote logging ${Config.RemoteLogging ? 'enabled' : 'disabled'}`);
   }
   
   var result = await DB.saveSettings(State.settings);
@@ -5440,8 +5646,128 @@ export function setupMapPointsDivider() {
   document.addEventListener("touchend", dividerHandlers.touchEnd);
 }
 
+/* ===== Event Listener Tracking (Debug Utility) ===== */
+// Global registry to track event listener assignments
+window._eventListenerRegistry = window._eventListenerRegistry || new Map();
+
+/**
+ * Wrapper for addEventListener that tracks and detects duplicate listener assignments
+ * 
+ * USAGE EXAMPLES:
+ * 
+ * 1. Replace standard addEventListener:
+ *    OLD: element.addEventListener('click', handler);
+ *    NEW: safeAddEventListener(element, 'click', handler, 'myUniqueHandlerId');
+ * 
+ * 2. Use with existing flag pattern (recommended for compatibility):
+ *    if (!element._handlerAttached) {
+ *      element._handlerAttached = true;
+ *      safeAddEventListener(element, 'click', handler, 'myHandler');
+ *    }
+ * 
+ * 3. Check all registered listeners in console:
+ *    getEventListenerReport();
+ * 
+ * 4. Check if specific listener exists:
+ *    if (hasEventListener(element, 'click', 'myHandler')) { ... }
+ * 
+ * Benefits:
+ * - Automatically prevents duplicate listener registration
+ * - Logs warnings when duplicates are detected
+ * - Shows visual warning in debug mode
+ * - Provides stack trace for debugging
+ * - Can generate report of all listeners
+ */
+function safeAddEventListener(element, eventType, handler, handlerId) {
+  if (!element || !eventType || !handler) {
+    console.error('safeAddEventListener: Invalid parameters', { element, eventType, handler, handlerId });
+    return;
+  }
+  
+  // Create a unique key for this listener
+  const elementId = element.id || element.tagName || 'unknown';
+  const key = `${elementId}:${eventType}:${handlerId || 'anonymous'}`;
+  
+  // Check if this listener is already registered
+  if (window._eventListenerRegistry.has(key)) {
+    const existingInfo = window._eventListenerRegistry.get(key);
+    const errorMsg = `⚠️ DUPLICATE EVENT LISTENER DETECTED!\nKey: ${key}\nFirst added: ${existingInfo.timestamp}\nAttempted again: ${new Date().toISOString()}\nStack: ${new Error().stack}`;
+    
+    console.error(errorMsg);
+    
+    // Show visual warning when duplicate detected
+    const warningDiv = document.createElement('div');
+    warningDiv.style.cssText = 'position: fixed; top: 10px; right: 10px; background: #ffc107; color: #000; padding: 15px; border-radius: 5px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); z-index: 99998; max-width: 400px; font-size: 12px; font-family: monospace;';
+    warningDiv.innerHTML = `<strong>⚠️ Duplicate Listener:</strong><br>${key}`;
+    document.body.appendChild(warningDiv);
+    setTimeout(() => warningDiv.remove(), 5000);
+    
+    return; // Don't add duplicate listener
+  }
+  
+  // Register this listener
+  window._eventListenerRegistry.set(key, {
+    element: elementId,
+    eventType: eventType,
+    handlerId: handlerId,
+    timestamp: new Date().toISOString(),
+    stack: new Error().stack
+  });
+  
+  // Add the event listener
+  element.addEventListener(eventType, handler);
+  
+  console.log(`✓ Event listener added: ${key}`);
+}
+
+/**
+ * Check if a specific event listener is already registered
+ */
+function hasEventListener(element, eventType, handlerId) {
+  const elementId = element.id || element.tagName || 'unknown';
+  const key = `${elementId}:${eventType}:${handlerId || 'anonymous'}`;
+  return window._eventListenerRegistry.has(key);
+}
+
+/**
+ * Get all registered event listeners (for debugging)
+ */
+function getEventListenerReport() {
+  const report = [];
+  window._eventListenerRegistry.forEach((value, key) => {
+    report.push({ key, ...value });
+  });
+  console.table(report);
+  return report;
+}
+
 /* ===== Init ===== */
 async function loadAll() {
+  // Prevent duplicate calls to loadAll
+  if (window._loadAllCalled) {
+    const errorMsg = '❌ CRITICAL ERROR: loadAll() called multiple times! This indicates a serious initialization problem.';
+    console.error(errorMsg);
+    
+    // Display error on the page
+    const errorDiv = document.createElement('div');
+    errorDiv.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #dc3545; color: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); z-index: 99999; max-width: 500px; text-align: center; font-size: 16px; font-family: Arial, sans-serif;';
+    errorDiv.innerHTML = `
+      <h2 style="margin: 0 0 15px 0;">⚠️ Initialization Error</h2>
+      <p style="margin: 0 0 15px 0;">${errorMsg}</p>
+      <p style="margin: 0; font-size: 14px; opacity: 0.9;">Please refresh the page. If the problem persists, check the browser console for details.</p>
+    `;
+    document.body.appendChild(errorDiv);
+    
+    // Throw error to stop execution
+    throw new Error('loadAll() called multiple times - aborting to prevent duplicate initialization');
+  }
+  
+  // Mark that loadAll has been called
+  window._loadAllCalled = true;
+  
+  // Initialize remote logger with Config
+  setRemoteLoggerConfig(Config);
+  
   // Initialize the database with configuration
   DB.initDB(Config.Database);
   // Database initialized in mode: DB.getDBMode()
@@ -5534,17 +5860,10 @@ async function loadAll() {
   }
   
   // Apply persisted settings to Config (before loading user)
-  console.log('[DEBUG] loadAll - State.settings after loading:', State.settings);
-  console.log('[DEBUG] loadAll - State.settings.saveGuiState:', State.settings.saveGuiState);
-  console.log('[DEBUG] loadAll - State.settings.errorsGlobalHandlerEnabled:', State.settings.errorsGlobalHandlerEnabled);
-  console.log('[DEBUG] loadAll - State.settings.autoHideTopMenu:', State.settings.autoHideTopMenu);
   Config.SaveGuiState = State.settings.saveGuiState !== undefined ? State.settings.saveGuiState : true;
   Config.Errors_GlobalHandlerEnabled = State.settings.errorsGlobalHandlerEnabled !== undefined 
     ? State.settings.errorsGlobalHandlerEnabled 
     : true;
-  console.log('[DEBUG] loadAll - Config.SaveGuiState set to:', Config.SaveGuiState);
-  console.log('[DEBUG] loadAll - Config.Errors_GlobalHandlerEnabled set to:', Config.Errors_GlobalHandlerEnabled);
-  
 
   // Load current user from DB
   // Load user if either AutoLoadCachedUser is enabled OR SaveGuiState is enabled
@@ -5644,13 +5963,30 @@ async function loadAll() {
     }
   });
 
-  // Collapse toggles
-  $(Config.Constants.ElementId.MenuTopHeader).addEventListener("click", function () {
+  // Collapse toggles - add both click and touch events for mobile
+  var menuTopHeaderEl = $(Config.Constants.ElementId.MenuTopHeader);
+  
+  var menuTopHandler = function(e) {
+    e.preventDefault();
     toggleCollapse(Config.Constants.ElementId.MenuTop);
-  });
-  $(Config.Constants.ElementId.MenuBottomHeader).addEventListener("click", function () {
+  };
+  
+  if (menuTopHeaderEl) {
+    menuTopHeaderEl.addEventListener("click", menuTopHandler);
+    menuTopHeaderEl.addEventListener("touchstart", menuTopHandler);
+  }
+  
+  var menuBottomHeaderEl = $(Config.Constants.ElementId.MenuBottomHeader);
+  
+  var menuBottomHandler = function(e) {
+    e.preventDefault();
     toggleCollapse(Config.Constants.ElementId.MenuBottom);
-  });
+  };
+  
+  if (menuBottomHeaderEl) {
+    menuBottomHeaderEl.addEventListener("click", menuBottomHandler);
+    menuBottomHeaderEl.addEventListener("touchstart", menuBottomHandler);
+  }
   $(Config.Constants.ElementId.LoginHeader).addEventListener("click", function () {
     toggleCollapse(Config.Constants.ContentSection.Login);
   });
@@ -5683,12 +6019,26 @@ async function loadAll() {
   $(Config.Constants.ElementId.MessageHeader).addEventListener("click", function () {
     toggleCollapse(Config.Constants.ContentSection.Message);
   });
-  $(Config.Constants.ElementId.MapPointsHeader).addEventListener("click", function () {
-    toggleCollapse(Config.Constants.ContentSection.MapPoints);
-  });
-  $(Config.Constants.ElementId.MapPointDetailsHeader).addEventListener("click", function () {
+  var mapPointsHeaderEl = $(Config.Constants.ElementId.MapPointsHeader);
+  
+  if (mapPointsHeaderEl && !mapPointsHeaderEl._mapPointsHandlerAttached) {
+    mapPointsHeaderEl._mapPointsHandlerAttached = true;
+    
+    var mapPointsHandler = function(e) {
+      e.preventDefault();
+      toggleCollapse(Config.Constants.ContentSection.MapPoints);
+    };
+    
+    mapPointsHeaderEl.addEventListener("click", mapPointsHandler);
+    mapPointsHeaderEl.addEventListener("touchstart", mapPointsHandler);
+  }
+  
+  var mapPointDetailsHandler = function(e) {
+    e.preventDefault();
     toggleCollapse(Config.Constants.ContentSection.MapPointDetails);
-  });
+  };
+  $(Config.Constants.ElementId.MapPointDetailsHeader).addEventListener("click", mapPointDetailsHandler);
+  $(Config.Constants.ElementId.MapPointDetailsHeader).addEventListener("touchstart", mapPointDetailsHandler);
   $(Config.Constants.ElementId.SettingsHeader).addEventListener("click", function (e) {
     console.log('[DEBUG] Settings header CLICKED!', e);
     // When Settings header is clicked, call openSettings() to initialize form values
@@ -5700,17 +6050,21 @@ async function loadAll() {
   $(Config.Constants.ElementId.DeveloperToolsHeader).addEventListener("click", function () {
     toggleCollapse(Config.Constants.ContentSection.DeveloperTools);
   });
-  $(Config.Constants.ElementId.HelpHeader).addEventListener("click", function () {
-    var helpSection = $(Config.Constants.ContentSection.Help);
-    var wasCollapsed = helpSection ? helpSection.classList.contains(Config.Constants.ClassName.Collapsed) : true;
-    
-    toggleCollapse(Config.Constants.ContentSection.Help);
-    
-    // If help is being expanded (was collapsed before), sync with current content
-    if (wasCollapsed && State.currentContentId) {
-      syncHelpSection(State.currentContentId);
-    }
-  });
+  var helpHeaderEl = $(Config.Constants.ElementId.HelpHeader);
+  if (helpHeaderEl && !helpHeaderEl._helpHandlerAttached) {
+    helpHeaderEl._helpHandlerAttached = true;
+    helpHeaderEl.addEventListener("click", function() {
+      var helpSection = $(Config.Constants.ContentSection.Help);
+      var wasCollapsed = helpSection ? helpSection.classList.contains(Config.Constants.ClassName.Collapsed) : true;
+      
+      toggleCollapse(Config.Constants.ContentSection.Help);
+      
+      // If help is being expanded (was collapsed before), sync with current content
+      if (wasCollapsed && State.currentContentId) {
+        syncHelpSection(State.currentContentId);
+      }
+    });
+  }
   $(Config.Constants.ElementId.ErrorsHeader).addEventListener("click", function () {
     toggleCollapse(Config.Constants.ContentSection.Errors);
   });
@@ -5864,26 +6218,26 @@ async function loadAll() {
 
 /* ===== Initialize Settings Checkboxes ===== */
 function initializeSettingsCheckboxes() {
-  console.log('[DEBUG] initializeSettingsCheckboxes - Initializing checkboxes');
+ // console.log('[DEBUG] initializeSettingsCheckboxes - Initializing checkboxes');
   
   // Initialize autoHideTopMenu checkbox
   var autoHideCheckbox = $("set-autoHideTopMenu");
   if (autoHideCheckbox) {
     autoHideCheckbox.checked = State.settings.autoHideTopMenu !== false;
-    console.log('[DEBUG] initializeSettingsCheckboxes - autoHideTopMenu set to:', autoHideCheckbox.checked);
+  //  console.log('[DEBUG] initializeSettingsCheckboxes - autoHideTopMenu set to:', autoHideCheckbox.checked);
   }
   
   // Initialize admin-only checkboxes (they may be hidden, but set values anyway)
   var errorHandlerCheckbox = $('set-errorHandler');
   if (errorHandlerCheckbox) {
     errorHandlerCheckbox.checked = Config.Errors_GlobalHandlerEnabled;
-    console.log('[DEBUG] initializeSettingsCheckboxes - errorHandler set to:', errorHandlerCheckbox.checked);
+  //  console.log('[DEBUG] initializeSettingsCheckboxes - errorHandler set to:', errorHandlerCheckbox.checked);
   }
   
   var saveGuiStateCheckbox = $('set-saveGuiState');
   if (saveGuiStateCheckbox) {
     saveGuiStateCheckbox.checked = Config.SaveGuiState;
-    console.log('[DEBUG] initializeSettingsCheckboxes - saveGuiState set to:', saveGuiStateCheckbox.checked);
+  //  console.log('[DEBUG] initializeSettingsCheckboxes - saveGuiState set to:', saveGuiStateCheckbox.checked);
   }
 }
 

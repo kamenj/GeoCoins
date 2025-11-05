@@ -139,8 +139,13 @@ body {
   white-space: nowrap; /* Keep title on one line */
 }
 .section-header .chev { color: var(--accent); }
-.section-content { padding: 10px; }
-.collapsed .section-content { display: none; }
+.section-content { 
+  padding: 10px; 
+}
+
+.collapsed .section-content { 
+  display: none;
+}
 
 /* ===== Buttons & inputs ===== */
 button {
@@ -361,7 +366,7 @@ tr.selected { background: var(--highlight); }
   min-width: 40px !important;
   padding: 6px 10px;
   flex-shrink: 0;
-  display: none; /* Hidden by default, shown when there are overflow items */
+  display: none !important; /* Hidden - using left blue chevron instead */
 }
 
 /* Separator for view toggle buttons */
@@ -1185,10 +1190,8 @@ body.fullscreen-mode > #menuBottom .section-content {
   display: block !important;
 }
 
-/* Force visibility even if collapsed class somehow remains */
-body.fullscreen-mode > #menuBottom.collapsed .section-content {
-  display: block !important;
-}
+
+
 
 
 
