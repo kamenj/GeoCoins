@@ -1148,6 +1148,8 @@ export function captureGuiState() {
     return;
   }
   
+  rlog.debug('[GUI-STATE] captureGuiState() called');
+  
   var guiState = {
     currentContentId: State.currentContentId,
     inputs: {},
@@ -1161,10 +1163,14 @@ export function captureGuiState() {
     timestamp: new Date().toISOString()
   };
   
-  // Capture all input field values (except passwords for security)
+  // Capture all input field values (except passwords and settings inputs)
   var inputs = document.querySelectorAll('input:not([type="password"]), textarea, select');
   inputs.forEach(function(input) {
-    if (input.id && input.id !== 'login-password' && input.id !== 'ud-password') {
+    // Skip passwords and settings inputs (settings should only be saved via Apply button)
+    var isSettingsInput = input.id && input.id.startsWith('set-');
+    var isPasswordInput = input.id === 'login-password' || input.id === 'ud-password';
+    
+    if (input.id && !isPasswordInput && !isSettingsInput) {
       if (input.type === 'checkbox') {
         guiState.inputs[input.id] = input.checked;
       } else {
@@ -1177,7 +1183,8 @@ export function captureGuiState() {
   Config.CONTENT_SECTIONS.forEach(function(sectionId) {
     var section = $(sectionId);
     if (section) {
-      guiState.collapsed[sectionId] = section.classList.contains(Config.Constants.ClassName.Collapsed);
+      var isCollapsed = section.classList.contains(Config.Constants.ClassName.Collapsed);
+      guiState.collapsed[sectionId] = isCollapsed;
     }
   });
   
@@ -1267,7 +1274,8 @@ export function restoreGuiState() {
       Object.keys(guiState.collapsed).forEach(function(sectionId) {
         var section = $(sectionId);
         if (section) {
-          setCollapsed(sectionId, guiState.collapsed[sectionId]);
+          var collapsedState = guiState.collapsed[sectionId];
+          setCollapsed(sectionId, collapsedState);
         }
       });
     }
@@ -1880,19 +1888,41 @@ export function showContent(id) {
     State.pointsTableFilters = State.pointsTable.getHeaderFilters();
   }
   
+  // Save the previous content ID to detect if we're leaving Settings
+  var previousContentId = State.currentContentId;
+  
+  // Debug: log who's calling showContent
+  try {
+    throw new Error();
+  } catch (e) {
+    var stack = e.stack.split('\n').slice(2, 4).join(' | ');
+    rlog.debug('[GUI-STATE] showContent(' + id + ') called from: ' + stack);
+  }
+  
   State.currentContentId = id || null;
   hideAllContent();
   
   // Capture GUI state when content changes (debounced)
-  if (Config.SaveGuiState) {
+  // But NOT when opening Settings OR when closing Settings (wait for Apply button)
+  var isOpeningSettings = State.currentContentId === Constants.ContentSection.Settings;
+  var isClosingSettings = previousContentId === Constants.ContentSection.Settings;
+  
+  if (Config.SaveGuiState && !isOpeningSettings && !isClosingSettings) {
+    rlog.debug('[GUI-STATE] showContent() scheduling capture for: ' + State.currentContentId);
     clearTimeout(window._guiStateSaveTimer);
     window._guiStateSaveTimer = setTimeout(captureGuiState, 500);
+  } else if (isOpeningSettings || isClosingSettings) {
+    rlog.debug('[GUI-STATE] Skipping capture (Settings open/close), previousContent=' + previousContentId + ', currentContent=' + State.currentContentId);
   }
   
   if (State.currentContentId) {
     setSectionVisible(State.currentContentId, true);
-    // Don't auto-uncollapse - let user control collapse state
-    // setCollapsed(State.currentContentId, false);
+    
+    // Ensure MapPoints starts expanded by default when first shown (good UX)
+    // This ensures captureGuiState() saves it as expanded on first load
+    if (State.currentContentId === Constants.ContentSection.MapPoints) {
+      setCollapsed(State.currentContentId, false);
+    }
     
     // Auto-fill login credentials for debugging
     if (State.currentContentId === Constants.ContentSection.Login && 
@@ -3378,6 +3408,8 @@ export async function logout() {
   var clearResult = await DB.clearCurrentUser();
   // Clear user cache on logout
   State._userCache = {};
+  // Delete GUI state cookie on logout (fresh start for next login)
+  deleteCookie('guiState');
   // Show map points in view-only mode after logout
   showContent("mapPoints");
   // Show logout message after a short delay to ensure all status bar updates are complete
@@ -4702,10 +4734,12 @@ export function openSettings() {
       remoteLoggingLabel.style.display = isAdmin ? 'flex' : 'none';
     }
     
-    // Only set checked state if controls not yet initialized
-    if (!State._settingsControlsInitialized) {
-      remoteLoggingCheckbox.checked = Config.RemoteLogging;
-    }
+    rlog.debug('[SETTINGS] openSettings: remoteLogging checkbox before=' + remoteLoggingCheckbox.checked + ', Config.RemoteLogging=' + Config.RemoteLogging);
+    
+    // Always reset to Config value when opening Settings (not saved until Apply is clicked)
+    remoteLoggingCheckbox.checked = Config.RemoteLogging;
+    
+    rlog.debug('[SETTINGS] openSettings: remoteLogging checkbox after=' + remoteLoggingCheckbox.checked);
   }
   
   // Initialize controls once (event listeners, test button, etc.)
@@ -6141,7 +6175,20 @@ async function loadAll() {
   
   // Set up input change listeners to capture GUI state (debounced)
   document.addEventListener('input', function(e) {
+    // Don't capture settings inputs until Apply is clicked
+    var isSettingsInput = e.target.id && e.target.id.startsWith('set-');
+    // Also check if inside settings section
+    var settingsSection = e.target.closest('#settings');
+    
+    rlog.debug('[GUI-STATE] input event: target=' + e.target.id + ', isSettingsInput=' + isSettingsInput + ', settingsSection=' + (!!settingsSection));
+    
+    if (isSettingsInput || settingsSection) {
+      rlog.debug('[GUI-STATE] Skipping capture for settings input');
+      return;
+    }
+    
     if (Config.SaveGuiState && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT')) {
+      rlog.debug('[GUI-STATE] Scheduling capture (input) for: ' + e.target.id);
       clearTimeout(window._guiStateSaveTimer);
       window._guiStateSaveTimer = setTimeout(captureGuiState, 1000);
     }
@@ -6149,7 +6196,20 @@ async function loadAll() {
   
   // Also capture state on checkbox/radio changes
   document.addEventListener('change', function(e) {
+    // Don't capture settings inputs until Apply is clicked
+    var isSettingsInput = e.target.id && e.target.id.startsWith('set-');
+    // Also check if inside settings section
+    var settingsSection = e.target.closest('#settings');
+    
+    rlog.debug('[GUI-STATE] change event: target=' + e.target.id + ', isSettingsInput=' + isSettingsInput + ', settingsSection=' + (!!settingsSection));
+    
+    if (isSettingsInput || settingsSection) {
+      rlog.debug('[GUI-STATE] Skipping capture for settings input');
+      return;
+    }
+    
     if (Config.SaveGuiState && (e.target.type === 'checkbox' || e.target.type === 'radio')) {
+      rlog.debug('[GUI-STATE] Scheduling capture (change) for: ' + e.target.id);
       clearTimeout(window._guiStateSaveTimer);
       window._guiStateSaveTimer = setTimeout(captureGuiState, 500);
     }
