@@ -134,9 +134,10 @@ body {
   display: flex; 
   align-items: center; 
   gap: 6px;
-  flex-shrink: 1; /* Allow title to shrink if needed */
-  min-width: 0; /* Allow flex item to shrink below content size */
+  flex-shrink: 0; /* Prevent title from shrinking */
+  flex-grow: 0; /* Don't let it grow beyond its content */
   white-space: nowrap; /* Keep title on one line */
+  width: auto; /* Only take the width needed */
 }
 .section-header .chev { color: var(--accent); }
 .section-content { 
@@ -354,10 +355,12 @@ tr.selected { background: var(--highlight); }
   display: inline-flex;
   gap: 6px;
   align-items: center;
-  flex-wrap: nowrap;
+  flex-wrap: nowrap; /* Keep buttons on same line in title */
   overflow: visible;
-  flex-shrink: 0; /* Don't let it shrink smaller than content needs */
-  min-width: 0; /* Allow it to grow as needed */
+  flex-shrink: 1; /* Allow shrinking to fit more buttons */
+  flex-grow: 1; /* Allow growing to use available space */
+  min-width: 0; /* Allow it to shrink below content size */
+  justify-content: flex-end; /* Align buttons to the right */
 }
 
 /* Menu expand button for overflow */
@@ -397,7 +400,26 @@ tr.selected { background: var(--highlight); }
 
 /* Main menu multi-column grid layout - applied dynamically by JS when buttons exceed maxWidth */
 
-/* Bottom commands section (overflow area) */
+/* Top commands section (overflow area for menu buttons) */
+/* Hidden by default, populated by JS when buttons overflow from title area */
+[id$="-top-commands"] {
+  display: none; /* Hidden by default */
+  padding: 0;
+  margin: 0;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* When overflow buttons are shown (via inline style from JS), display them as grid */
+[id$="-top-commands"][style*="display: grid"] {
+  display: grid !important;
+}
+
+[id$="-top-commands"][style*="display: flex"] {
+  display: flex !important;
+}
+
+/* Bottom commands section (legacy/other uses) */
 [id$="-bottom-commands"] {
   display: none; /* Hidden by default */
   margin-top: 8px;

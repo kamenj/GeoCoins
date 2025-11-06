@@ -1534,12 +1534,6 @@ export function toggleCollapse(id) {
   var el = $(id);
   if (!el) return;
   
-  // Special handling for menuBottom - only toggle overflow commands, not the whole section
-  if (id === Config.Constants.ElementId.MenuBottom) {
-    toggleMenuBottomCommands(id);
-    return;
-  }
-  
   setCollapsed(id, !el.classList.contains(Config.Constants.ClassName.Collapsed));
 }
 
@@ -1631,9 +1625,9 @@ export function handleMenuOverflow(menuId) {
   var titleCommands = menu.querySelector('.title-cmds');
   if (!titleCommands) return;
   
-  // Get the bottom commands container (expandable area)
-  var bottomCommands = menu.querySelector('[id$="-bottom-commands"]');
-  if (!bottomCommands) return;
+  // Get the top commands container (expandable area inside .section-content)
+  var topCommands = menu.querySelector('[id$="-top-commands"]');
+  if (!topCommands) return;
   
   // First, remove any existing expand button to start fresh
   var existingExpandBtn = titleCommands.querySelector('.menu-expand-btn');
@@ -1641,18 +1635,18 @@ export function handleMenuOverflow(menuId) {
     existingExpandBtn.parentNode.removeChild(existingExpandBtn);
   }
   
-  // Move all buttons back from bottom commands to title commands (reset state)
-  var buttonsInBottom = Array.from(bottomCommands.querySelectorAll('button'));
-  buttonsInBottom.forEach(function(btn) {
+  // Move all buttons back from top commands to title commands (reset state)
+  var buttonsInTop = Array.from(topCommands.querySelectorAll('button'));
+  buttonsInTop.forEach(function(btn) {
     titleCommands.insertBefore(btn, titleCommands.lastChild);
   });
   
   // Get all buttons in title area (excluding expand button)
   var buttons = Array.from(titleCommands.querySelectorAll('button:not(.menu-expand-btn)'));
   
-  // If no buttons in title, hide bottom commands and return (don't create expand button)
+  // If no buttons in title, hide top commands and return (don't create expand button)
   if (buttons.length === 0) {
-    bottomCommands.style.display = 'none';
+    topCommands.style.display = 'none';
     return;
   }
   
@@ -1680,7 +1674,10 @@ export function handleMenuOverflow(menuId) {
   
   // If all buttons fit, no overflow needed
   if (totalWidth <= availableWidth) {
-    bottomCommands.style.display = 'none';
+    topCommands.style.display = 'none';
+    // Ensure menu is collapsed when no overflow
+    setCollapsed(menuId, true);
+    updateChevron(menuId);
     return;
   }
   
@@ -1714,76 +1711,33 @@ export function handleMenuOverflow(menuId) {
     var expandHandler = function(e) {
       e.stopPropagation();
       e.preventDefault();
-      toggleMenuBottomCommands(menuId);
+      toggleCollapse(menuId);
     };
     expandBtn.addEventListener('click', expandHandler);
     expandBtn.addEventListener('touchstart', expandHandler);
     
     titleCommands.appendChild(expandBtn);
     
-    // Move overflow buttons to bottom section
+    // Move overflow buttons to top commands section (inside .section-content)
     overflowButtons.forEach(function(btn) {
-      bottomCommands.appendChild(btn);
+      topCommands.appendChild(btn);
     });
     
-    bottomCommands.style.display = 'none'; // Start collapsed
+    // Show top commands section (will be visible when menu is expanded)
+    topCommands.style.display = 'grid';
+    // Ensure menu starts collapsed when there's overflow
+    setCollapsed(menuId, true);
   } else {
-    // No overflow - just hide bottom commands
-    bottomCommands.style.display = 'none';
+    // No overflow - hide top commands and collapse menu
+    topCommands.style.display = 'none';
+    setCollapsed(menuId, true);
   }
   
-  // Update chevron for bottom commands section
-  updateBottomCommandsChevron(menuId);
+  // Update chevron
+  updateChevron(menuId);
 }
 
-function toggleMenuBottomCommands(menuId) {
-  var bottomCommands = $(menuId).querySelector('[id$="-bottom-commands"]');
-  if (!bottomCommands) {
-    return;
-  }
-  
-  var isHidden = bottomCommands.style.display === 'none' || bottomCommands.style.display === '';
-  bottomCommands.style.display = isHidden ? 'grid' : 'none';
-  
-  // Update the left chevron (chev-menuBottom)
-  var chev = $("chev-" + menuId);
-  if (chev) {
-    chev.textContent = isHidden ? '▲' : '▼';
-  }
-  
-  // Update expand button chevron (keeping this for consistency, though it's hidden)
-  var expandBtn = $(menuId).querySelector('.menu-expand-btn');
-  if (expandBtn) {
-    expandBtn.textContent = isHidden ? '▲' : '▼';
-    expandBtn.title = isHidden ? 'Hide commands' : 'Show more commands';
-  }
-  
-  updateBottomCommandsChevron(menuId);
-}
 
-function updateBottomCommandsChevron(menuId) {
-  var menu = $(menuId);
-  if (!menu) {
-    return;
-  }
-  
-  var bottomCommands = menu.querySelector('[id$="-bottom-commands"]');
-  if (!bottomCommands) {
-    return;
-  }
-  
-  var hasButtons = bottomCommands.querySelectorAll('button').length > 0;
-  var expandBtn = menu.querySelector('.menu-expand-btn');
-  
-  if (expandBtn) {
-    expandBtn.style.display = hasButtons ? 'inline-block' : 'none';
-  }
-  
-  // Also hide the bottom commands container if no buttons
-  if (!hasButtons) {
-    bottomCommands.style.display = 'none';
-  }
-}
 
 export function updateChevron(id) {
   var chev = $("chev-" + id),
@@ -1797,9 +1751,25 @@ export function updateChevron(id) {
     var prefix = id === 'menuTop' ? 'menuTop' : 'menuBottom';
     var topCommands = $(prefix + '-top-commands');
     var bottomCommands = $(prefix + '-bottom-commands');
-    var hasCollapsibleContent = 
-      (topCommands && topCommands.children.length > 0) ||
-      (bottomCommands && bottomCommands.children.length > 0);
+    
+    // Check if there's actual visible content in the collapsible area
+    var hasCollapsibleContent = false;
+    
+    // Check top-commands (where overflow buttons go)
+    if (topCommands && topCommands.children.length > 0) {
+      var topStyle = window.getComputedStyle(topCommands);
+      if (topStyle.display !== 'none') {
+        hasCollapsibleContent = true;
+      }
+    }
+    
+    // Check bottom-commands (legacy area)
+    if (!hasCollapsibleContent && bottomCommands && bottomCommands.children.length > 0) {
+      var bottomStyle = window.getComputedStyle(bottomCommands);
+      if (bottomStyle.display !== 'none') {
+        hasCollapsibleContent = true;
+      }
+    }
     
     if (hasCollapsibleContent) {
       chev.textContent = isCollapsed ? "▶" : "▼";
