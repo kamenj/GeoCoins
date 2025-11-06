@@ -3083,7 +3083,12 @@ function getPointsTableColumns(viewMode) {
         // Show foundBy if available
         var foundByBadge = point.foundBy ? ' <span class="role-badge">Found by: ' + point.foundBy + '</span>' : '';
         
-        return '<strong>' + (point.title || '(no title)') + '</strong> - ' + coords + userBadge + statusBadge + codeBadge + foundByBadge;
+        // Make title clickable to navigate to point on map (same as details view)
+        var titleHtml = '<button class="' + Config.Constants.ClassName.LinkBtn + '" ' + 
+                        Config.Constants.Attribute.DataOpenPoint + '="' + point.id + '">' +
+                        '<strong>' + (point.title || '(no title)') + '</strong></button>';
+        
+        return titleHtml + ' - ' + coords + userBadge + statusBadge + codeBadge + foundByBadge;
       }
     }
   ];
@@ -3692,8 +3697,32 @@ export function refreshMapPointsTable() {
         }
       }, 0);
       
-      // Add row click handler to show selection indicator
+      // Add row click handler to show selection indicator and handle button clicks
       State.pointsTable.on("rowClick", function(e, row) {
+        // Check if click was on a button with data-open-point attribute
+        // Need to check target and its parent (in case clicked on <strong> inside button)
+        var target = e.target;
+        var linkBtn = null;
+        
+        // Check if target itself is the link button
+        if (target && target.classList && target.classList.contains(Config.Constants.ClassName.LinkBtn)) {
+          linkBtn = target;
+        }
+        // Check if parent is the link button (clicked on <strong> tag inside button)
+        else if (target && target.parentElement && target.parentElement.classList && 
+                 target.parentElement.classList.contains(Config.Constants.ClassName.LinkBtn)) {
+          linkBtn = target.parentElement;
+        }
+        
+        // If we found a link button, navigate to the point
+        if (linkBtn) {
+          var pointId = linkBtn.getAttribute(Config.Constants.Attribute.DataOpenPoint);
+          if (pointId) {
+            openMapPointDetails(Number(pointId));
+            return;
+          }
+        }
+        
         // Remove selection indicator from all rows
         var allRows = State.pointsTable.getRows();
         for (var i = 0; i < allRows.length; i++) {
