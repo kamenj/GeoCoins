@@ -1575,3 +1575,11 @@
 [2025-11-06T14:39:46.529Z] [DEBUG] refreshMapMarkers: created marker for point 21 at [43.23668510,27.83054470], draggable=null, opacity=1
 [2025-11-06T14:39:47.511Z] [DEBUG] resize event fired: 1600x699
 [2025-11-06T14:39:48.530Z] [DEBUG] handleFullscreenResize called: fullscreen=false, isDragging=false
+[2025-11-06T14:39:49.515Z] [DEBUG] ChangeLocation: entering change mode for pointId=21
+[2025-11-06T14:39:50.563Z] [DEBUG] ChangeLocation: fetched point - id=21, title=NEW_31_10_25, username=alice, status=hidden, lat=43.23668510, lng=27.83054470
+[2025-11-06T14:39:51.517Z] [DEBUG] ChangeLocation: marker made draggable for point 21, skipMapRefresh=true
+[2025-11-06T14:39:52.513Z] [DEBUG] SaveChangeLocation: called for pointId=21
+[2025-11-06T14:39:53.537Z] [DEBUG] SaveChangeLocation: saving new position - lat=43.416851788595466, lng=27.343145457833817
+[2025-11-06T14:39:54.515Z] [DEBUG] SaveChangeLocation: updating point to new coordinates - username=alice
+[2025-11-06T14:39:55.535Z] [DEBUG] SaveChangeLocation: DB.updatePoint result - success=true, error=none
+[2025-11-06T14:39:56.596Z] [DEBUG] refreshMapPointsTable: called - skipMapRefresh=false, caller=at window.appSaveChangeLocation (https://kkk.kaminooo.com/app.js:7203:5)
