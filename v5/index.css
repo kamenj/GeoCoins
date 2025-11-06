@@ -1122,7 +1122,13 @@ body.fullscreen-mode {
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  /* Use fixed positioning for better mobile support */
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  /* Don't set explicit height - let fixed positioning define the size */
   width: 100vw;
 }
 
@@ -1137,7 +1143,7 @@ body.fullscreen-mode > #mapPoints {
   border-radius: 0;
   display: flex !important;
   flex-direction: column;
-  flex: 1;
+  flex: 1 1 0; /* Grow, shrink, start from 0 base */
   min-height: 0;
   overflow: hidden;
 }
@@ -1162,6 +1168,7 @@ body.fullscreen-mode > #mapPoints #mapPoints-container {
   flex: 1;
   height: 100% !important;
   min-height: 0;
+  max-height: 100%; /* Ensure it doesn't overflow */
   margin: 0;
   display: flex !important;
 }
@@ -1188,10 +1195,10 @@ body.fullscreen-mode > #mapPoints .mappoints-container.show-list-only .mappoints
   border-radius: 0 !important;
 }
 
-/* In both mode (list + map), make list fill height but keep width flexible for divider */
-body.fullscreen-mode > #mapPoints .mappoints-list {
+/* In both mode (list + map) - horizontal layout (landscape) */
+body.fullscreen-mode > #mapPoints .mappoints-container.layout-horizontal .mappoints-list {
   height: 100% !important;
-  overflow: auto !important; /* Allow scrolling in fullscreen mode */
+  overflow: auto !important;
   display: flex !important;
   flex-direction: column !important;
   flex-shrink: 1 !important;
@@ -1202,6 +1209,36 @@ body.fullscreen-mode > #mapPoints .mappoints-list {
   border-radius: 0 !important;
 }
 
+body.fullscreen-mode > #mapPoints .mappoints-container.layout-horizontal .mappoints-geoview {
+  height: 100% !important;
+  border: none !important;
+  border-radius: 0 !important;
+  margin: 0 !important;
+}
+
+/* In both mode (list + map) - vertical layout (portrait) */
+body.fullscreen-mode > #mapPoints .mappoints-container.layout-vertical .mappoints-list {
+  height: auto !important; /* Auto height - will be set by CSS variable */
+  max-height: 50% !important; /* Max 50% of container */
+  overflow: auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  flex-shrink: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  min-height: 150px !important; /* Minimum height for list */
+  border: none !important;
+  border-radius: 0 !important;
+}
+
+body.fullscreen-mode > #mapPoints .mappoints-container.layout-vertical .mappoints-geoview {
+  flex: 1 !important; /* Take remaining space */
+  min-height: 150px !important; /* Minimum height for map */
+  border: none !important;
+  border-radius: 0 !important;
+  margin: 0 !important;
+}
+
 body.fullscreen-mode > #mapPoints .mappoints-list .tabulator {
   flex: 1 1 auto !important;
   min-height: 0 !important;
@@ -1210,38 +1247,94 @@ body.fullscreen-mode > #mapPoints .mappoints-list .tabulator {
   border-radius: 0 !important;
 }
 
-body.fullscreen-mode > #mapPoints .mappoints-geoview {
-  height: 100% !important;
-  border: none !important;
-  border-radius: 0 !important;
-  margin: 0 !important;
-}
-
-body.fullscreen-mode > #mapPoints .mappoints-geoview {
-  height: 100% !important;
-}
-
 /* MenuBottom is now a direct child of body in fullscreen */
 body.fullscreen-mode > #menuBottom {
   margin: 0;
   border: none;
   border-top: 2px solid var(--accent);
   border-radius: 0;
-  flex-shrink: 0;
+  flex: 0 0 auto; /* Don't grow or shrink, use content size */
   display: flex !important;
   flex-direction: column;
   background: var(--card);
   height: auto;
   min-height: 60px;
+  max-height: 35vh; /* Limit to 35% of viewport so map has at least 65% */
   order: 2;
+  overflow-y: auto; /* Allow scrolling within the menu if content is too tall */
+  -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+}
+
+/* When collapsed in fullscreen, only show the header */
+body.fullscreen-mode > #menuBottom.collapsed {
+  min-height: auto;
+  max-height: none;
+  height: auto;
 }
 
 body.fullscreen-mode > #menuBottom #menuBottom-header {
   display: flex !important;
+  position: sticky;
+  top: 0;
+  background: var(--card);
+  z-index: 10;
+  flex-shrink: 0;
 }
 
 body.fullscreen-mode > #menuBottom .section-content {
-  display: block !important;
+  display: flex !important;
+  flex-direction: column;
+  overflow-y: scroll; /* Force scrollbar to always show - ensures scrolling works */
+  overflow-x: hidden; /* Prevent horizontal scroll */
+  flex: 1;
+  min-height: 0; /* Allow flexbox to shrink this */
+  -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+  padding: 10px;
+  padding-bottom: 10px;
+}
+
+/* Allow collapsing menu in fullscreen */
+body.fullscreen-mode > #menuBottom.collapsed .section-content {
+  display: none !important;
+}
+
+/* Ensure command bars in fullscreen menu don't collapse */
+body.fullscreen-mode > #menuBottom .section-content .cmd-bar {
+  flex-shrink: 0; /* Don't shrink the command bars */
+  width: 100%;
+}
+
+/* Mobile fullscreen fixes */
+@supports (-webkit-touch-callout: none) {
+  /* iOS Safari specific fixes */
+  body.fullscreen-mode {
+    height: -webkit-fill-available;
+  }
+  
+  body.fullscreen-mode > #mapPoints {
+    height: -webkit-fill-available;
+  }
+}
+
+/* Prevent pull-to-refresh on mobile in fullscreen */
+body.fullscreen-mode {
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Ensure map container fills space properly on mobile */
+body.fullscreen-mode > #mapPoints #mapPoints-container {
+  max-height: none !important;
+}
+
+/* Address bar accommodation for mobile browsers - uses JS-detected mobile-device class */
+body.mobile-device.fullscreen-mode {
+  /* Calculate height accounting for potential browser UI */
+  height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  /* Fallback for browsers without safe-area support */
+  height: 100vh;
+  /* Use dvh if available (dynamic viewport height - adjusts for browser UI) */
+  height: 100dvh;
 }
 
 

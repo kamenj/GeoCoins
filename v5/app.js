@@ -1526,6 +1526,13 @@ export function setCollapsed(id, collapsed) {
     el.classList.add(Config.Constants.ClassName.Collapsed);
   } else {
     el.classList.remove(Config.Constants.ClassName.Collapsed);
+    
+    // Apply bottom menu grid layout when expanding
+    if (id === Config.Constants.ElementId.MenuBottom) {
+      setTimeout(function() {
+        applyBottomMenuLayout();
+      }, 50);
+    }
   }
   
   updateChevron(id);
@@ -1615,6 +1622,28 @@ export function applyMainMenuLayout() {
       btn.style.width = '';
     });
   }
+}
+
+export function applyBottomMenuLayout() {
+  // Apply multi-column grid layout to bottom menu expanded buttons
+  var bottomMenu = $(Config.Constants.ElementId.MenuBottomTopCommands);
+  if (!bottomMenu) return;
+  
+  var buttons = Array.from(bottomMenu.querySelectorAll('button'));
+  if (buttons.length === 0) return;
+  
+  // Always apply grid layout for bottom menu
+  var columns = buttons.length >= 6 ? 3 : 2;
+  
+  bottomMenu.style.display = 'grid';
+  bottomMenu.style.gridTemplateColumns = 'repeat(' + columns + ', 1fr)';
+  bottomMenu.style.gap = '8px';
+  bottomMenu.style.justifyItems = 'stretch';
+  
+  // Make all buttons take full width of their grid cell
+  buttons.forEach(function(btn) {
+    btn.style.width = '100%';
+  });
 }
 
 export function handleMenuOverflow(menuId) {
@@ -4255,17 +4284,95 @@ export function enterMapPointsFullScreen() {
     if (menuBottom && menuBottomWasCollapsed) {
       setCollapsed(Constants.ElementId.MenuBottom, true);
     }
+    
+    // Log MapPoints container dimensions after render
+    setTimeout(function() {
+      // Log body and viewport dimensions
+      rlog.debug('FS: window.innerHeight: ' + window.innerHeight);
+      rlog.debug('FS: document.body.offsetHeight: ' + document.body.offsetHeight);
+      rlog.debug('FS: document.body.style.height: ' + document.body.style.height);
+      
+      // Log mapPoints dimensions
+      var mapPoints = $(Constants.ContentSection.MapPoints);
+      if (mapPoints) {
+        rlog.debug('FS: mapPoints dimensions: ' + mapPoints.offsetWidth + 'x' + mapPoints.offsetHeight);
+      }
+      
+      // Log menuBottom dimensions
+      var menuBottom = $(Constants.ElementId.MenuBottom);
+      if (menuBottom) {
+        var isCollapsed = menuBottom.classList.contains(Constants.ClassName.Collapsed);
+        rlog.debug('FS: menuBottom collapsed: ' + isCollapsed + ', dimensions: ' + menuBottom.offsetWidth + 'x' + menuBottom.offsetHeight);
+        var menuBottomContent = menuBottom.querySelector('.section-content');
+        if (menuBottomContent) {
+          rlog.debug('FS: menuBottom content display: ' + window.getComputedStyle(menuBottomContent).display);
+        }
+      }
+      
+      var mapPointsContainer = document.querySelector('#mapPoints-container');
+      if (mapPointsContainer) {
+        rlog.debug('FS: mapPoints-container dimensions: ' + mapPointsContainer.offsetWidth + 'x' + mapPointsContainer.offsetHeight);
+        
+        var listDiv = document.querySelector('#mapPointsList');
+        var mapDiv = document.querySelector('#mapPointsGeoView');
+        var divider = document.querySelector('#mapPointsDivider');
+        
+        if (listDiv) {
+          var listVisible = !listDiv.classList.contains('hidden');
+          rlog.debug('FS: List visible: ' + listVisible + ', dimensions: ' + listDiv.offsetWidth + 'x' + listDiv.offsetHeight);
+        }
+        
+        if (mapDiv) {
+          var mapVisible = !mapDiv.classList.contains('hidden');
+          rlog.debug('FS: Map visible: ' + mapVisible + ', dimensions: ' + mapDiv.offsetWidth + 'x' + mapDiv.offsetHeight);
+        }
+        
+        if (divider) {
+          var dividerVisible = !divider.classList.contains('hidden');
+          rlog.debug('FS: Divider visible: ' + dividerVisible);
+        }
+        
+        rlog.debug('FS: State.mapPointsView.showList: ' + State.mapPointsView.showList);
+        rlog.debug('FS: State.mapPointsView.showMap: ' + State.mapPointsView.showMap);
+      }
+    }, 100);
   }, 50);
   
-  // Enter browser fullscreen mode (hides browser UI)
+  // Try to enter browser fullscreen mode (works on some devices, not all mobile browsers)
+  // This is optional enhancement - the CSS fullscreen mode is the primary mechanism
   var elem = document.documentElement;
   if (elem.requestFullscreen) {
     elem.requestFullscreen().catch(function(err) {
+      // Fullscreen API failed (common on mobile) - continue with CSS-only fullscreen
+      console.log('Fullscreen API not available or rejected - using CSS fullscreen mode');
     });
   } else if (elem.webkitRequestFullscreen) { /* Safari */
-    elem.webkitRequestFullscreen();
+    try {
+      elem.webkitRequestFullscreen();
+    } catch (err) {
+      console.log('Webkit fullscreen not available - using CSS fullscreen mode');
+    }
   } else if (elem.msRequestFullscreen) { /* IE11 */
-    elem.msRequestFullscreen();
+    try {
+      elem.msRequestFullscreen();
+    } catch (err) {
+      console.log('MS fullscreen not available - using CSS fullscreen mode');
+    }
+  }
+  
+  // Ensure scroll is locked at top
+  document.body.style.position = 'fixed';
+  document.body.style.top = '0';
+  document.body.style.left = '0';
+  document.body.style.right = '0';
+  document.body.style.bottom = '0';
+  document.body.style.width = window.innerWidth + 'px'; // Use actual viewport width
+  document.body.style.height = window.innerHeight + 'px'; // Use actual viewport height (not CSS units)
+  document.body.style.maxHeight = window.innerHeight + 'px';
+  
+  // Force a reflow to ensure menuBottom gets proper height
+  if (menuBottom) {
+    menuBottom.scrollTop = 0; // Ensure scrolled to top
   }
   
   // Refresh map and table to adjust to new size
@@ -4296,6 +4403,14 @@ export function enterMapPointsFullScreen() {
       State.leafletMap.invalidateSize();
       refreshMapMarkers();
     }
+    
+    // Force menuBottom to recalculate height after all rendering is done
+    if (menuBottom) {
+      // Trigger a reflow by accessing offsetHeight
+      var h = menuBottom.offsetHeight;
+      // Ensure scroll position is at top
+      menuBottom.scrollTop = 0;
+    }
   }, 300);
 }
 
@@ -4317,6 +4432,13 @@ export function exitMapPointsFullScreen() {
       document.msExitFullscreen();
     }
   }
+  
+  // Restore body position locking (for CSS fullscreen)
+  document.body.style.position = '';
+  document.body.style.top = '';
+  document.body.style.left = '';
+  document.body.style.right = '';
+  document.body.style.bottom = '';
   
   // Restore menuBottom to its original parent and position
   var menuBottom = $(Constants.ElementId.MenuBottom);
@@ -5498,6 +5620,7 @@ function renderMenusFor(contentId) {
   setTimeout(function() {
     ensureButtonSizes();
     applyMainMenuLayout();
+    applyBottomMenuLayout();
     handleMenuOverflow(Config.Constants.ElementId.MenuTop);
     handleMenuOverflow(Config.Constants.ElementId.MenuBottom);
     handleMenuOverflow('mapPoints');
@@ -6687,6 +6810,70 @@ function applyMobileStyling() {
     console.log('Mobile device detected - applying darker blue theme via CSS class');
   }
 }
+
+/* ===== Viewport Resize Handler for Fullscreen ===== */
+/**
+ * Handles viewport resize events in fullscreen mode (important for mobile when address bar shows/hides)
+ */
+function handleFullscreenResize() {
+  if (!State.fullScreen.active) return;
+  
+  // Update body height to match current viewport (handles address bar show/hide)
+  document.body.style.height = window.innerHeight + 'px';
+  document.body.style.maxHeight = window.innerHeight + 'px';
+  
+  // Update map size
+  if (State.leafletMap && State.mapPointsView.showMap) {
+    setTimeout(function() {
+      State.leafletMap.invalidateSize();
+    }, 100);
+  }
+  
+  // Update table size
+  if (State.pointsTable && State.mapPointsView.showList) {
+    setTimeout(function() {
+      var listDiv = document.querySelector('.mappoints-list');
+      if (listDiv) {
+        var targetHeight = listDiv.offsetHeight;
+        State.pointsTable.setHeight(targetHeight);
+        State.pointsTable.redraw(true);
+      }
+    }, 100);
+  }
+}
+
+// Debounced resize handler
+var resizeTimeout;
+window.addEventListener('resize', function() {
+  clearTimeout(resizeTimeout);
+  resizeTimeout = setTimeout(handleFullscreenResize, 250);
+});
+
+// Handle orientation change on mobile
+window.addEventListener('orientationchange', function() {
+  setTimeout(handleFullscreenResize, 300);
+});
+
+/* ===== Fullscreen Change Handler ===== */
+/**
+ * Handles browser fullscreen mode exit (ESC key, back button, etc.)
+ * If browser exits fullscreen but our app thinks it's still in fullscreen, sync the state
+ */
+function handleFullscreenChange() {
+  var isInBrowserFullscreen = !!(document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement);
+  
+  // If browser exited fullscreen but our app state shows fullscreen is active, exit our fullscreen
+  if (!isInBrowserFullscreen && State.fullScreen.active) {
+    console.log('Browser exited fullscreen - syncing app state');
+    exitMapPointsFullScreen();
+  }
+}
+
+// Listen for fullscreen change events
+document.addEventListener('fullscreenchange', handleFullscreenChange);
+document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+document.addEventListener('MSFullscreenChange', handleFullscreenChange);
 
 /* ===== Start ===== */
 window.addEventListener("load", () => {
