@@ -4316,9 +4316,13 @@ export function enterMapPointsFullScreen() {
   document.body.style.left = '0';
   document.body.style.right = '0';
   document.body.style.bottom = '0';
+  document.body.style.overflow = 'hidden'; // Prevent body scroll
   document.body.style.width = window.innerWidth + 'px'; // Use actual viewport width
   document.body.style.height = window.innerHeight + 'px'; // Use actual viewport height (not CSS units)
   document.body.style.maxHeight = window.innerHeight + 'px';
+  
+  rlog.debug('EnterFS: viewport=' + window.innerWidth + 'x' + window.innerHeight);
+  rlog.debug('EnterFS: body set to=' + document.body.style.width + 'x' + document.body.style.height);
   
   // Force a reflow to ensure menuBottom gets proper height
   if (menuBottom) {
@@ -4327,11 +4331,25 @@ export function enterMapPointsFullScreen() {
   
   // Refresh map and table to adjust to new size
   setTimeout(function() {
+    var mapPoints = $(Constants.ContentSection.MapPoints);
+    var mapPointsContainer = document.querySelector('#mapPoints-container');
+    var listDiv = document.querySelector('.mappoints-list');
+    var mapDiv = document.querySelector('.mappoints-geoview');
+    var menuBottom = $(Constants.ElementId.MenuBottom);
+    
+    rlog.debug('EnterFS timeout: body actual=' + document.body.offsetWidth + 'x' + document.body.offsetHeight);
+    if (mapPoints) rlog.debug('EnterFS: mapPoints=' + mapPoints.offsetWidth + 'x' + mapPoints.offsetHeight);
+    if (mapPointsContainer) rlog.debug('EnterFS: container=' + mapPointsContainer.offsetWidth + 'x' + mapPointsContainer.offsetHeight);
+    if (listDiv) rlog.debug('EnterFS: list=' + listDiv.offsetWidth + 'x' + listDiv.offsetHeight);
+    if (mapDiv) rlog.debug('EnterFS: map=' + mapDiv.offsetWidth + 'x' + mapDiv.offsetHeight);
+    if (menuBottom) rlog.debug('EnterFS: menuBottom=' + menuBottom.offsetWidth + 'x' + menuBottom.offsetHeight + ', collapsed=' + menuBottom.classList.contains('collapsed'));
+    
     // Update Tabulator to use full available space
     if (State.pointsTable) {
       // Calculate the height we want the tabulator to be
-      var listDiv = document.querySelector('.mappoints-list');
       var targetHeight = listDiv ? listDiv.offsetHeight : 700;
+      
+      rlog.debug('EnterFS: setting table height to ' + targetHeight);
       
       // Access Tabulator's internal options and modify maxHeight
       if (State.pointsTable.options) {
@@ -6794,17 +6812,35 @@ function handleFullscreenResize() {
     return;
   }
   
-  rlog.debug('handleFullscreenResize: updating body height to ' + window.innerHeight);
+  rlog.debug('handleFullscreenResize: updating body to ' + window.innerWidth + 'x' + window.innerHeight);
   
-  // Update body height to match current viewport (handles address bar show/hide)
+  // Update body dimensions to match current viewport (handles address bar show/hide and orientation change)
+  document.body.style.width = window.innerWidth + 'px';
   document.body.style.height = window.innerHeight + 'px';
   document.body.style.maxHeight = window.innerHeight + 'px';
+  
+  // Force immediate reflow
+  var dummy = document.body.offsetHeight;
+  
+  // Log dimensions after resize
+  setTimeout(function() {
+    var mapPoints = document.getElementById('mapPoints');
+    var mapPointsContainer = document.querySelector('#mapPoints-container');
+    var listDiv = document.querySelector('.mappoints-list');
+    var mapDiv = document.querySelector('.mappoints-geoview');
+    
+    rlog.debug('AfterResize: body=' + document.body.offsetWidth + 'x' + document.body.offsetHeight);
+    if (mapPoints) rlog.debug('AfterResize: mapPoints=' + mapPoints.offsetWidth + 'x' + mapPoints.offsetHeight);
+    if (mapPointsContainer) rlog.debug('AfterResize: container=' + mapPointsContainer.offsetWidth + 'x' + mapPointsContainer.offsetHeight);
+    if (listDiv) rlog.debug('AfterResize: list=' + listDiv.offsetWidth + 'x' + listDiv.offsetHeight);
+    if (mapDiv) rlog.debug('AfterResize: map=' + mapDiv.offsetWidth + 'x' + mapDiv.offsetHeight);
+  }, 100);
   
   // Update map size
   if (State.leafletMap && State.mapPointsView.showMap) {
     setTimeout(function() {
       State.leafletMap.invalidateSize();
-    }, 100);
+    }, 150);
   }
   
   // Update table size
@@ -6813,22 +6849,25 @@ function handleFullscreenResize() {
       var listDiv = document.querySelector('.mappoints-list');
       if (listDiv) {
         var targetHeight = listDiv.offsetHeight;
+        rlog.debug('AfterResize: updating table height to ' + targetHeight);
         State.pointsTable.setHeight(targetHeight);
         State.pointsTable.redraw(true);
       }
-    }, 100);
+    }, 150);
   }
 }
 
 // Debounced resize handler
 var resizeTimeout;
 window.addEventListener('resize', function() {
+  rlog.debug('resize event fired: ' + window.innerWidth + 'x' + window.innerHeight);
   clearTimeout(resizeTimeout);
   resizeTimeout = setTimeout(handleFullscreenResize, 250);
 });
 
 // Handle orientation change on mobile
 window.addEventListener('orientationchange', function() {
+  rlog.debug('orientationchange event fired: orientation=' + (window.orientation || screen.orientation.angle));
   setTimeout(handleFullscreenResize, 300);
 });
 

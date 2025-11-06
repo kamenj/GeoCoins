@@ -1,21 +1,95 @@
-[2025-11-06T12:49:30.218Z] [DEBUG] divider mouseMove called: moveCount=1
-[2025-11-06T12:49:31.318Z] [DEBUG] divider mouseMove called: moveCount=11
-[2025-11-06T12:49:33.586Z] [DEBUG] handleFullscreenResize called: fullscreen=false, isDragging=false
-[2025-11-06T12:49:34.246Z] [DEBUG] handleFullscreenResize called: fullscreen=true, isDragging=false
-[2025-11-06T12:49:34.544Z] [DEBUG] handleFullscreenResize: updating body height to 667
-[2025-11-06T12:49:35.405Z] [DEBUG] divider mouseMove called: moveCount=21
-[2025-11-06T12:49:36.535Z] [DEBUG] divider mouseMove called: moveCount=31
-[2025-11-06T12:49:37.486Z] [DEBUG] divider mouseMove called: moveCount=41
-[2025-11-06T12:49:38.547Z] [DEBUG] divider mouseMove called: moveCount=51
-[2025-11-06T12:50:29.702Z] [DEBUG] FS: window.innerHeight: 900
-[2025-11-06T12:50:29.937Z] [DEBUG] FS: document.body.offsetHeight: 699
-[2025-11-06T12:50:30.174Z] [DEBUG] FS: document.body.style.height: 699px
-[2025-11-06T12:50:30.407Z] [DEBUG] FS: mapPoints dimensions: 1600x652
-[2025-11-06T12:50:30.657Z] [DEBUG] FS: menuBottom collapsed: true, dimensions: 1600x47
-[2025-11-06T12:50:30.915Z] [DEBUG] FS: menuBottom content display: none
-[2025-11-06T12:50:31.274Z] [DEBUG] FS: mapPoints-container dimensions: 1600x629
-[2025-11-06T12:50:31.554Z] [DEBUG] FS: List visible: true, dimensions: 502x629
-[2025-11-06T12:50:31.795Z] [DEBUG] FS: Map visible: true, dimensions: 1090x629
-[2025-11-06T12:50:32.030Z] [DEBUG] FS: Divider visible: true
-[2025-11-06T12:50:32.267Z] [DEBUG] FS: State.mapPointsView.showList: true
-[2025-11-06T12:50:32.501Z] [DEBUG] FS: State.mapPointsView.showMap: true
+[2025-11-06T13:07:51.599Z] [DEBUG] resize event fired: 338x633
+[2025-11-06T13:07:51.838Z] [DEBUG] handleFullscreenResize called: fullscreen=false, isDragging=false
+[2025-11-06T13:07:52.352Z] [DEBUG] EnterFS: viewport=338x633
+[2025-11-06T13:07:52.562Z] [DEBUG] EnterFS: body set to=338pxx633px
+[2025-11-06T13:07:52.820Z] [DEBUG] resize event fired: 338x667
+[2025-11-06T13:07:53.055Z] [DEBUG] EnterFS timeout: body actual=338x633
+[2025-11-06T13:07:53.257Z] [DEBUG] EnterFS: mapPoints=338x585
+[2025-11-06T13:07:53.476Z] [DEBUG] EnterFS: container=338x562
+[2025-11-06T13:07:53.698Z] [DEBUG] EnterFS: list=338x354
+[2025-11-06T13:07:53.956Z] [DEBUG] EnterFS: map=338x200
+[2025-11-06T13:07:54.161Z] [DEBUG] EnterFS: menuBottom=338x48, collapsed=true
+[2025-11-06T13:07:54.384Z] [DEBUG] EnterFS: setting table height to 354
+[2025-11-06T13:07:54.653Z] [DEBUG] handleFullscreenResize called: fullscreen=true, isDragging=false
+[2025-11-06T13:07:54.860Z] [DEBUG] handleFullscreenResize: updating body to 338x667
+[2025-11-06T13:07:55.075Z] [DEBUG] AfterResize: body=338x667
+[2025-11-06T13:07:55.298Z] [DEBUG] AfterResize: mapPoints=338x619
+[2025-11-06T13:07:55.515Z] [DEBUG] AfterResize: container=338x596
+[2025-11-06T13:07:55.726Z] [DEBUG] AfterResize: list=338x388
+[2025-11-06T13:07:55.926Z] [DEBUG] AfterResize: map=338x200
+[2025-11-06T13:07:56.131Z] [DEBUG] AfterResize: updating table height to 388
+[2025-11-06T13:07:56.959Z] [DEBUG] orientationchange event fired: orientation=-90
+[2025-11-06T13:07:57.157Z] [DEBUG] resize event fired: 667x338
+[2025-11-06T13:07:57.448Z] [DEBUG] handleFullscreenResize called: fullscreen=true, isDragging=false
+[2025-11-06T13:07:57.659Z] [DEBUG] handleFullscreenResize: updating body to 667x338
+[2025-11-06T13:07:57.862Z] [DEBUG] handleFullscreenResize called: fullscreen=true, isDragging=false
+[2025-11-06T13:07:58.055Z] [DEBUG] handleFullscreenResize: updating body to 667x338
+[2025-11-06T13:07:58.250Z] [DEBUG] AfterResize: body=667x338
+[2025-11-06T13:07:58.466Z] [DEBUG] AfterResize: mapPoints=667x290
+[2025-11-06T13:07:58.673Z] [DEBUG] AfterResize: container=667x267
+[2025-11-06T13:07:58.883Z] [DEBUG] AfterResize: list=400x267
+[2025-11-06T13:07:59.091Z] [DEBUG] AfterResize: map=259x267
+[2025-11-06T13:07:59.291Z] [DEBUG] AfterResize: body=667x338
+[2025-11-06T13:07:59.496Z] [DEBUG] AfterResize: mapPoints=667x290
+[2025-11-06T13:07:59.706Z] [DEBUG] AfterResize: container=667x267
+[2025-11-06T13:07:59.917Z] [DEBUG] AfterResize: list=400x267
+[2025-11-06T13:08:00.122Z] [DEBUG] AfterResize: map=259x267
+[2025-11-06T13:08:00.339Z] [DEBUG] AfterResize: updating table height to 267
+[2025-11-06T13:08:06.481Z] [DEBUG] divider mouseMove called: moveCount=1
+[2025-11-06T13:08:06.797Z] [DEBUG] divider mouseMove called: moveCount=11
+[2025-11-06T13:08:07.120Z] [DEBUG] divider mouseMove called: moveCount=21
+[2025-11-06T13:08:07.319Z] [DEBUG] divider mouseMove called: moveCount=31
+[2025-11-06T13:08:07.537Z] [DEBUG] divider mouseMove called: moveCount=41
+[2025-11-06T13:08:07.754Z] [DEBUG] divider mouseMove called: moveCount=51
+[2025-11-06T13:08:10.339Z] [DEBUG] divider mouseMove called: moveCount=61
+[2025-11-06T13:08:10.536Z] [DEBUG] divider mouseMove called: moveCount=71
+[2025-11-06T13:08:10.751Z] [DEBUG] divider mouseMove called: moveCount=81
+[2025-11-06T13:08:10.969Z] [DEBUG] divider mouseMove called: moveCount=91
+[2025-11-06T13:08:11.654Z] [DEBUG] divider mouseMove called: moveCount=101
+[2025-11-06T13:08:11.943Z] [DEBUG] divider mouseMove called: moveCount=111
+[2025-11-06T13:08:12.178Z] [DEBUG] divider mouseMove called: moveCount=121
+[2025-11-06T13:08:12.416Z] [DEBUG] divider mouseMove called: moveCount=131
+[2025-11-06T13:08:12.654Z] [DEBUG] divider mouseMove called: moveCount=141
+[2025-11-06T13:08:12.904Z] [DEBUG] divider mouseMove called: moveCount=151
+[2025-11-06T13:08:13.446Z] [DEBUG] divider mouseMove called: moveCount=161
+[2025-11-06T13:08:13.825Z] [DEBUG] divider mouseMove called: moveCount=171
+[2025-11-06T13:08:14.066Z] [DEBUG] divider mouseMove called: moveCount=181
+[2025-11-06T13:08:14.307Z] [DEBUG] divider mouseMove called: moveCount=191
+[2025-11-06T13:08:24.894Z] [DEBUG] resize event fired: 667x338
+[2025-11-06T13:08:25.136Z] [DEBUG] resize event fired: 633x314
+[2025-11-06T13:08:25.377Z] [DEBUG] resize event fired: 633x258
+[2025-11-06T13:08:25.639Z] [DEBUG] handleFullscreenResize called: fullscreen=false, isDragging=false
+[2025-11-06T13:08:47.725Z] [DEBUG] divider mouseMove called: moveCount=1
+[2025-11-06T13:08:47.958Z] [DEBUG] divider mouseMove called: moveCount=11
+[2025-11-06T13:08:48.201Z] [DEBUG] divider mouseMove called: moveCount=21
+[2025-11-06T13:08:48.427Z] [DEBUG] divider mouseMove called: moveCount=31
+[2025-11-06T13:08:48.681Z] [DEBUG] divider mouseMove called: moveCount=41
+[2025-11-06T13:08:48.947Z] [DEBUG] divider mouseMove called: moveCount=51
+[2025-11-06T13:08:51.091Z] [DEBUG] resize event fired: 627x642
+[2025-11-06T13:08:51.353Z] [DEBUG] handleFullscreenResize called: fullscreen=false, isDragging=false
+[2025-11-06T13:08:56.804Z] [DEBUG] orientationchange event fired: orientation=0
+[2025-11-06T13:08:57.010Z] [DEBUG] resize event fired: 338x577
+[2025-11-06T13:08:57.309Z] [DEBUG] handleFullscreenResize called: fullscreen=false, isDragging=false
+[2025-11-06T13:08:57.510Z] [DEBUG] handleFullscreenResize called: fullscreen=false, isDragging=false
+[2025-11-06T13:09:00.100Z] [DEBUG] EnterFS: viewport=338x577
+[2025-11-06T13:09:00.327Z] [DEBUG] EnterFS: body set to=338pxx577px
+[2025-11-06T13:09:00.583Z] [DEBUG] resize event fired: 338x633
+[2025-11-06T13:09:00.810Z] [DEBUG] EnterFS timeout: body actual=338x577
+[2025-11-06T13:09:01.098Z] [DEBUG] EnterFS: mapPoints=338x529
+[2025-11-06T13:09:01.299Z] [DEBUG] EnterFS: container=338x506
+[2025-11-06T13:09:01.504Z] [DEBUG] EnterFS: list=338x303
+[2025-11-06T13:09:01.719Z] [DEBUG] EnterFS: map=338x195
+[2025-11-06T13:09:01.952Z] [DEBUG] EnterFS: menuBottom=338x48, collapsed=true
+[2025-11-06T13:09:02.201Z] [DEBUG] EnterFS: setting table height to 303
+[2025-11-06T13:09:02.466Z] [DEBUG] resize event fired: 338x667
+[2025-11-06T13:09:02.729Z] [DEBUG] handleFullscreenResize called: fullscreen=true, isDragging=false
+[2025-11-06T13:09:02.999Z] [DEBUG] handleFullscreenResize: updating body to 338x667
+[2025-11-06T13:09:03.267Z] [DEBUG] AfterResize: body=338x667
+[2025-11-06T13:09:03.524Z] [DEBUG] AfterResize: mapPoints=338x619
+[2025-11-06T13:09:03.779Z] [DEBUG] AfterResize: container=338x596
+[2025-11-06T13:09:04.247Z] [DEBUG] AfterResize: list=338x388
+[2025-11-06T13:09:04.727Z] [DEBUG] AfterResize: map=338x200
+[2025-11-06T13:09:05.190Z] [DEBUG] AfterResize: updating table height to 388
+[2025-11-06T13:09:05.733Z] [DEBUG] divider mouseMove called: moveCount=201
+[2025-11-06T13:09:05.981Z] [DEBUG] divider mouseMove called: moveCount=211
+[2025-11-06T13:09:08.317Z] [DEBUG] divider mouseMove called: moveCount=221
