@@ -4033,14 +4033,14 @@ function createTempMarkerPopupContent(lat, lng, title, accuracy) {
 }
 
 /* ===== My Location ===== */
-export function addPlaceholderAtMyLocation() {
+export async function addPlaceholderAtMyLocation() {
   if (!navigator.geolocation) {
-    showMessage("Geolocation is not supported by your browser.", "mapPoints");
+    await customAlert("Geolocation Error", "Geolocation is not supported by your browser.");
     return;
   }
   
-  // Show loading message (optional)
-  showMessage("Getting your location...", null);
+  // Show loading message in status bar
+  await showStatusBarMessage('Getting your location...', 3000);
   
   navigator.geolocation.getCurrentPosition(
     function(position) {
@@ -4078,11 +4078,8 @@ export function addPlaceholderAtMyLocation() {
           State.tempPlacemark.setPopupContent(createTempMarkerPopupContent(p.lat, p.lng, 'Your Location (adjusted)'));
         });
       }
-      
-      // Close the loading message
-      showContent("mapPoints");
     },
-    function(error) {
+    async function(error) {
       var errorMsg = "Unable to get your location. ";
       switch(error.code) {
         case error.PERMISSION_DENIED:
@@ -4097,7 +4094,7 @@ export function addPlaceholderAtMyLocation() {
         default:
           errorMsg += "Unknown error.";
       }
-      showMessage(errorMsg, "mapPoints");
+      await customAlert("Location Error", errorMsg);
     },
     {
       enableHighAccuracy: true,
