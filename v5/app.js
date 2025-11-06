@@ -164,8 +164,10 @@ const Config = {
   MenuButtons: {
     minWidth: 70,  // Reduced from 80 to fit more buttons on mobile
     minHeight: 30,
+    maxWidth: 150,  // Maximum button width (increased to allow wider buttons in grid)
+    maxHeight: 40,  // Maximum button height to prevent overly tall buttons
     MainMenu: {
-      maxWidth: 120  // If any button exceeds this width, arrange in multi-column grid
+      maxWidth: 100  // If any button exceeds this width, arrange in multi-column grid (reduced to trigger grid earlier)
     }
   },
   ISSUES_VIEW_LINK: "https://github.com/kamenj/GeoCoins/issues",
@@ -1016,9 +1018,9 @@ const Config = {
         window.open(Config.ISSUES_VIEW_LINK, '_blank');
       },
       visible: function() {
-        // Only show for users with tester or developer role
+        // Show for admins, testers, and developers
         if (!State.currentUser) return false;
-        return hasRole(State.currentUser, 'tester') || hasRole(State.currentUser, 'developer');
+        return hasRole(State.currentUser, 'admin') || hasRole(State.currentUser, 'tester') || hasRole(State.currentUser, 'developer');
       },
       enabled: true,
     },
@@ -1030,9 +1032,9 @@ const Config = {
         window.open(Config.ISSUES_NEW_LINK, '_blank');
       },
       visible: function() {
-        // Only show for users with tester or developer role
+        // Show for admins, testers, and developers
         if (!State.currentUser) return false;
-        return hasRole(State.currentUser, 'tester') || hasRole(State.currentUser, 'developer');
+        return hasRole(State.currentUser, 'admin') || hasRole(State.currentUser, 'tester') || hasRole(State.currentUser, 'developer');
       },
       enabled: true,
     },
@@ -1571,6 +1573,12 @@ export function ensureButtonSizes() {
     }
     if (Config.MenuButtons.minHeight) {
       btn.style.minHeight = Config.MenuButtons.minHeight + 'px';
+    }
+    if (Config.MenuButtons.maxWidth) {
+      btn.style.maxWidth = Config.MenuButtons.maxWidth + 'px';
+    }
+    if (Config.MenuButtons.maxHeight) {
+      btn.style.maxHeight = Config.MenuButtons.maxHeight + 'px';
     }
   });
 }

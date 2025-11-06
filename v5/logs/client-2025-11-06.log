@@ -1085,3 +1085,493 @@
 [2025-11-06T14:31:00.054Z] [DEBUG] refreshMapMarkers: created marker for point 21 at [43.23668510,27.83054470], draggable=null, opacity=1
 [2025-11-06T14:31:00.260Z] [DEBUG] resize event fired: 1600x699
 [2025-11-06T14:31:00.453Z] [DEBUG] handleFullscreenResize called: fullscreen=false, isDragging=false
+[2025-11-06T14:34:40.515Z] [DEBUG] refreshMapPointsTable: called - skipMapRefresh=false, caller=at loadAll (https://kkk.kaminooo.com/app.js:6668:3)
+[2025-11-06T14:35:14.956Z] [DEBUG] refreshMapPointsTable: called - skipMapRefresh=false, caller=at showContent (https://kkk.kaminooo.com/app.js:2060:7)
+[2025-11-06T14:35:15.170Z] [DEBUG] refreshMapMarkers: called - skipMapRefresh=false, changingPointLocation=null, caller=at initializeLeafletMap (https://kkk.kaminooo.com/app.js:4777:7)
+[2025-11-06T14:35:15.368Z] [DEBUG] refreshMapPointsTable: called - skipMapRefresh=false, caller=at https://kkk.kaminooo.com/app.js:4726:9
+[2025-11-06T14:35:15.566Z] [DEBUG] refreshMapMarkers: called - skipMapRefresh=false, changingPointLocation=null, caller=at https://kkk.kaminooo.com/app.js:3802:7
+[2025-11-06T14:35:15.764Z] [DEBUG] refreshMapMarkers: created marker for point 1 at [42.69770000,23.32190000], draggable=null, opacity=1
+[2025-11-06T14:35:15.976Z] [DEBUG] refreshMapMarkers: created marker for point 2 at [42.13540000,24.74530000], draggable=null, opacity=1
+[2025-11-06T14:35:16.187Z] [DEBUG] refreshMapMarkers: created marker for point 3 at [42.69500000,23.33500000], draggable=null, opacity=1
+[2025-11-06T14:35:16.392Z] [DEBUG] refreshMapMarkers: created marker for point 4 at [42.71000000,23.35000000], draggable=null, opacity=1
+[2025-11-06T14:35:16.595Z] [DEBUG] refreshMapMarkers: created marker for point 5 at [42.68500000,23.31000000], draggable=null, opacity=1
+[2025-11-06T14:35:16.795Z] [DEBUG] refreshMapMarkers: created marker for point 6 at [42.68000000,23.34000000], draggable=null, opacity=1
+[2025-11-06T14:35:17.009Z] [DEBUG] refreshMapMarkers: created marker for point 7 at [42.70500000,23.32500000], draggable=null, opacity=1
+[2025-11-06T14:35:17.234Z] [DEBUG] refreshMapMarkers: created marker for point 8 at [42.69500000,23.32800000], draggable=null, opacity=1
+[2025-11-06T14:35:17.473Z] [DEBUG] refreshMapMarkers: created marker for point 9 at [42.69000000,23.31500000], draggable=null, opacity=1
+[2025-11-06T14:35:17.664Z] [DEBUG] refreshMapMarkers: created marker for point 10 at [42.70000000,23.33200000], draggable=null, opacity=1
+[2025-11-06T14:35:17.874Z] [DEBUG] refreshMapMarkers: created marker for point 11 at [42.69600000,23.32000000], draggable=null, opacity=1
+[2025-11-06T14:35:18.079Z] [DEBUG] refreshMapMarkers: created marker for point 12 at [42.65500000,23.37000000], draggable=null, opacity=1
+[2025-11-06T14:35:18.289Z] [DEBUG] refreshMapMarkers: created marker for point 13 at [42.69000000,23.34500000], draggable=null, opacity=1
+[2025-11-06T14:35:18.484Z] [DEBUG] refreshMapMarkers: created marker for point 14 at [42.69800000,23.32400000], draggable=null, opacity=1
+[2025-11-06T14:35:18.675Z] [DEBUG] refreshMapMarkers: created marker for point 15 at [42.69400000,23.33100000], draggable=null, opacity=1
+[2025-11-06T14:35:18.879Z] [DEBUG] refreshMapMarkers: created marker for point 16 at [42.69700000,23.32300000], draggable=null, opacity=1
+[2025-11-06T14:35:19.080Z] [DEBUG] refreshMapMarkers: created marker for point 17 at [42.69200000,23.32900000], draggable=null, opacity=1
+[2025-11-06T14:35:19.301Z] [DEBUG] refreshMapMarkers: created marker for point 18 at [42.66558783,24.16634054], draggable=null, opacity=1
+[2025-11-06T14:35:19.507Z] [DEBUG] refreshMapMarkers: created marker for point 19 at [42.65000000,23.34000000], draggable=null, opacity=1
+[2025-11-06T14:35:19.712Z] [DEBUG] refreshMapMarkers: created marker for point 20 at [42.70200000,23.31800000], draggable=null, opacity=1
+[2025-11-06T14:35:19.927Z] [DEBUG] refreshMapMarkers: created marker for point 21 at [43.23668510,27.83054470], draggable=null, opacity=1
+[2025-11-06T14:35:20.155Z] [DEBUG] refreshMapMarkers: called - skipMapRefresh=false, changingPointLocation=null, caller=at https://kkk.kaminooo.com/app.js:3802:7
+[2025-11-06T14:35:20.375Z] [DEBUG] refreshMapMarkers: removing existing marker layer
+[2025-11-06T14:35:20.574Z] [DEBUG] refreshMapMarkers: removing existing marker layer
+[2025-11-06T14:35:20.778Z] [DEBUG] refreshMapMarkers: removing existing marker layer
+[2025-11-06T14:35:20.997Z] [DEBUG] refreshMapMarkers: removing existing marker layer
+[2025-11-06T14:35:21.209Z] [DEBUG] refreshMapMarkers: removing existing marker layer
+[2025-11-06T14:35:21.406Z] [DEBUG] refreshMapMarkers: removing existing marker layer
+[2025-11-06T14:35:21.609Z] [DEBUG] refreshMapMarkers: removing existing marker layer
+[2025-11-06T14:35:21.812Z] [DEBUG] refreshMapMarkers: removing existing marker layer
+[2025-11-06T14:35:22.013Z] [DEBUG] refreshMapMarkers: removing existing marker layer
+[2025-11-06T14:35:22.228Z] [DEBUG] refreshMapMarkers: removing existing marker layer
+[2025-11-06T14:35:22.440Z] [DEBUG] refreshMapMarkers: removing existing marker layer
+[2025-11-06T14:35:22.642Z] [DEBUG] refreshMapMarkers: removing existing marker layer
+[2025-11-06T14:35:22.858Z] [DEBUG] refreshMapMarkers: removing existing marker layer
+[2025-11-06T14:35:23.073Z] [DEBUG] refreshMapMarkers: removing existing marker layer
+[2025-11-06T14:35:23.278Z] [DEBUG] refreshMapMarkers: removing existing marker layer
+[2025-11-06T14:35:23.475Z] [DEBUG] refreshMapMarkers: removing existing marker layer
+[2025-11-06T14:35:23.688Z] [DEBUG] refreshMapMarkers: removing existing marker layer
+[2025-11-06T14:35:23.893Z] [DEBUG] refreshMapMarkers: removing existing marker layer
+[2025-11-06T14:35:24.098Z] [DEBUG] refreshMapMarkers: removing existing marker layer
+[2025-11-06T14:35:24.306Z] [DEBUG] refreshMapMarkers: removing existing marker layer
+[2025-11-06T14:35:24.532Z] [DEBUG] refreshMapMarkers: removing existing marker layer
+[2025-11-06T14:35:24.752Z] [DEBUG] refreshMapMarkers: created marker for point 1 at [42.69770000,23.32190000], draggable=null, opacity=1
+[2025-11-06T14:35:24.949Z] [DEBUG] refreshMapMarkers: created marker for point 2 at [42.13540000,24.74530000], draggable=null, opacity=1
+[2025-11-06T14:35:25.151Z] [DEBUG] refreshMapMarkers: created marker for point 3 at [42.69500000,23.33500000], draggable=null, opacity=1
+[2025-11-06T14:35:25.347Z] [DEBUG] refreshMapMarkers: created marker for point 4 at [42.71000000,23.35000000], draggable=null, opacity=1
+[2025-11-06T14:35:25.561Z] [DEBUG] refreshMapMarkers: created marker for point 5 at [42.68500000,23.31000000], draggable=null, opacity=1
+[2025-11-06T14:35:25.754Z] [DEBUG] refreshMapMarkers: created marker for point 6 at [42.68000000,23.34000000], draggable=null, opacity=1
+[2025-11-06T14:35:25.973Z] [DEBUG] refreshMapMarkers: created marker for point 7 at [42.70500000,23.32500000], draggable=null, opacity=1
+[2025-11-06T14:35:26.167Z] [DEBUG] refreshMapMarkers: created marker for point 8 at [42.69500000,23.32800000], draggable=null, opacity=1
+[2025-11-06T14:35:26.361Z] [DEBUG] refreshMapMarkers: created marker for point 9 at [42.69000000,23.31500000], draggable=null, opacity=1
+[2025-11-06T14:35:26.564Z] [DEBUG] refreshMapMarkers: created marker for point 10 at [42.70000000,23.33200000], draggable=null, opacity=1
+[2025-11-06T14:35:26.770Z] [DEBUG] refreshMapMarkers: created marker for point 11 at [42.69600000,23.32000000], draggable=null, opacity=1
+[2025-11-06T14:35:27.000Z] [DEBUG] refreshMapMarkers: created marker for point 12 at [42.65500000,23.37000000], draggable=null, opacity=1
+[2025-11-06T14:35:27.200Z] [DEBUG] refreshMapMarkers: created marker for point 13 at [42.69000000,23.34500000], draggable=null, opacity=1
+[2025-11-06T14:35:27.402Z] [DEBUG] refreshMapMarkers: created marker for point 14 at [42.69800000,23.32400000], draggable=null, opacity=1
+[2025-11-06T14:35:27.614Z] [DEBUG] refreshMapMarkers: created marker for point 15 at [42.69400000,23.33100000], draggable=null, opacity=1
+[2025-11-06T14:35:27.801Z] [DEBUG] refreshMapMarkers: created marker for point 16 at [42.69700000,23.32300000], draggable=null, opacity=1
+[2025-11-06T14:35:28.006Z] [DEBUG] refreshMapMarkers: created marker for point 17 at [42.69200000,23.32900000], draggable=null, opacity=1
+[2025-11-06T14:35:28.203Z] [DEBUG] refreshMapMarkers: created marker for point 18 at [42.66558783,24.16634054], draggable=null, opacity=1
+[2025-11-06T14:35:28.422Z] [DEBUG] refreshMapMarkers: created marker for point 19 at [42.65000000,23.34000000], draggable=null, opacity=1
+[2025-11-06T14:35:28.636Z] [DEBUG] refreshMapMarkers: created marker for point 20 at [42.70200000,23.31800000], draggable=null, opacity=1
+[2025-11-06T14:35:28.843Z] [DEBUG] refreshMapMarkers: created marker for point 21 at [43.23668510,27.83054470], draggable=null, opacity=1
+[2025-11-06T14:35:29.040Z] [DEBUG] refreshMapMarkers: created marker for point 1 at [42.69770000,23.32190000], draggable=null, opacity=1
+[2025-11-06T14:35:29.257Z] [DEBUG] refreshMapMarkers: created marker for point 2 at [42.13540000,24.74530000], draggable=null, opacity=1
+[2025-11-06T14:35:29.468Z] [DEBUG] refreshMapMarkers: created marker for point 3 at [42.69500000,23.33500000], draggable=null, opacity=1
+[2025-11-06T14:35:29.675Z] [DEBUG] refreshMapMarkers: created marker for point 4 at [42.71000000,23.35000000], draggable=null, opacity=1
+[2025-11-06T14:35:29.891Z] [DEBUG] refreshMapMarkers: created marker for point 5 at [42.68500000,23.31000000], draggable=null, opacity=1
+[2025-11-06T14:35:30.083Z] [DEBUG] refreshMapMarkers: created marker for point 6 at [42.68000000,23.34000000], draggable=null, opacity=1
+[2025-11-06T14:35:30.284Z] [DEBUG] refreshMapMarkers: created marker for point 7 at [42.70500000,23.32500000], draggable=null, opacity=1
+[2025-11-06T14:35:30.478Z] [DEBUG] refreshMapMarkers: created marker for point 8 at [42.69500000,23.32800000], draggable=null, opacity=1
+[2025-11-06T14:35:30.690Z] [DEBUG] refreshMapMarkers: created marker for point 9 at [42.69000000,23.31500000], draggable=null, opacity=1
+[2025-11-06T14:35:30.892Z] [DEBUG] refreshMapMarkers: created marker for point 10 at [42.70000000,23.33200000], draggable=null, opacity=1
+[2025-11-06T14:35:31.095Z] [DEBUG] refreshMapMarkers: created marker for point 11 at [42.69600000,23.32000000], draggable=null, opacity=1
+[2025-11-06T14:35:31.301Z] [DEBUG] refreshMapMarkers: created marker for point 12 at [42.65500000,23.37000000], draggable=null, opacity=1
+[2025-11-06T14:35:31.505Z] [DEBUG] refreshMapMarkers: created marker for point 13 at [42.69000000,23.34500000], draggable=null, opacity=1
+[2025-11-06T14:35:31.756Z] [DEBUG] refreshMapMarkers: created marker for point 14 at [42.69800000,23.32400000], draggable=null, opacity=1
+[2025-11-06T14:35:31.958Z] [DEBUG] refreshMapMarkers: created marker for point 15 at [42.69400000,23.33100000], draggable=null, opacity=1
+[2025-11-06T14:35:32.166Z] [DEBUG] refreshMapMarkers: created marker for point 16 at [42.69700000,23.32300000], draggable=null, opacity=1
+[2025-11-06T14:35:32.377Z] [DEBUG] refreshMapMarkers: created marker for point 17 at [42.69200000,23.32900000], draggable=null, opacity=1
+[2025-11-06T14:35:32.573Z] [DEBUG] refreshMapMarkers: created marker for point 18 at [42.66558783,24.16634054], draggable=null, opacity=1
+[2025-11-06T14:35:32.780Z] [DEBUG] refreshMapMarkers: created marker for point 19 at [42.65000000,23.34000000], draggable=null, opacity=1
+[2025-11-06T14:35:32.987Z] [DEBUG] refreshMapMarkers: created marker for point 20 at [42.70200000,23.31800000], draggable=null, opacity=1
+[2025-11-06T14:35:33.187Z] [DEBUG] refreshMapMarkers: created marker for point 21 at [43.23668510,27.83054470], draggable=null, opacity=1
+[2025-11-06T14:37:59.702Z] [DEBUG] refreshMapPointsTable: called - skipMapRefresh=false, caller=at loadAll (https://kkk.kaminooo.com/app.js:6668:3)
+[2025-11-06T14:38:07.814Z] [DEBUG] resize event fired: 627x642
+[2025-11-06T14:38:08.090Z] [DEBUG] handleFullscreenResize called: fullscreen=false, isDragging=false
+[2025-11-06T14:38:09.966Z] [DEBUG] resize event fired: 1600x699
+[2025-11-06T14:38:10.219Z] [DEBUG] handleFullscreenResize called: fullscreen=false, isDragging=false
+[2025-11-06T14:38:11.779Z] [DEBUG] resize event fired: 627x642
+[2025-11-06T14:38:12.003Z] [DEBUG] handleFullscreenResize called: fullscreen=false, isDragging=false
+[2025-11-06T14:38:14.250Z] [DEBUG] resize event fired: 632x642
+[2025-11-06T14:38:14.449Z] [DEBUG] resize event fired: 645x642
+[2025-11-06T14:38:14.650Z] [DEBUG] resize event fired: 660x642
+[2025-11-06T14:38:14.922Z] [DEBUG] resize event fired: 692x642
+[2025-11-06T14:38:15.116Z] [DEBUG] resize event fired: 705x642
+[2025-11-06T14:38:15.330Z] [DEBUG] resize event fired: 710x642
+[2025-11-06T14:38:15.544Z] [DEBUG] resize event fired: 717x642
+[2025-11-06T14:38:15.741Z] [DEBUG] resize event fired: 719x642
+[2025-11-06T14:38:15.941Z] [DEBUG] resize event fired: 725x642
+[2025-11-06T14:38:16.154Z] [DEBUG] resize event fired: 745x642
+[2025-11-06T14:38:16.362Z] [DEBUG] resize event fired: 757x642
+[2025-11-06T14:38:16.575Z] [DEBUG] resize event fired: 762x642
+[2025-11-06T14:38:16.781Z] [DEBUG] resize event fired: 769x642
+[2025-11-06T14:38:17.018Z] [DEBUG] resize event fired: 782x642
+[2025-11-06T14:38:17.228Z] [DEBUG] resize event fired: 789x642
+[2025-11-06T14:38:17.429Z] [DEBUG] resize event fired: 794x642
+[2025-11-06T14:38:17.664Z] [DEBUG] resize event fired: 809x642
+[2025-11-06T14:38:17.867Z] [DEBUG] resize event fired: 810x642
+[2025-11-06T14:38:18.132Z] [DEBUG] resize event fired: 812x642
+[2025-11-06T14:38:18.349Z] [DEBUG] resize event fired: 814x642
+[2025-11-06T14:38:18.547Z] [DEBUG] resize event fired: 820x642
+[2025-11-06T14:38:18.748Z] [DEBUG] resize event fired: 827x642
+[2025-11-06T14:38:18.962Z] [DEBUG] resize event fired: 832x642
+[2025-11-06T14:38:19.171Z] [DEBUG] resize event fired: 839x642
+[2025-11-06T14:38:19.427Z] [DEBUG] resize event fired: 842x642
+[2025-11-06T14:38:19.642Z] [DEBUG] resize event fired: 842x642
+[2025-11-06T14:38:19.856Z] [DEBUG] handleFullscreenResize called: fullscreen=false, isDragging=false
+[2025-11-06T14:38:20.106Z] [DEBUG] resize event fired: 842x642
+[2025-11-06T14:38:20.311Z] [DEBUG] resize event fired: 840x642
+[2025-11-06T14:38:20.526Z] [DEBUG] resize event fired: 837x642
+[2025-11-06T14:38:20.745Z] [DEBUG] resize event fired: 829x642
+[2025-11-06T14:38:20.947Z] [DEBUG] resize event fired: 819x642
+[2025-11-06T14:38:21.146Z] [DEBUG] resize event fired: 807x642
+[2025-11-06T14:38:21.355Z] [DEBUG] resize event fired: 797x642
+[2025-11-06T14:38:21.561Z] [DEBUG] resize event fired: 772x642
+[2025-11-06T14:38:21.769Z] [DEBUG] resize event fired: 765x642
+[2025-11-06T14:38:21.965Z] [DEBUG] resize event fired: 760x642
+[2025-11-06T14:38:22.163Z] [DEBUG] resize event fired: 752x642
+[2025-11-06T14:38:22.370Z] [DEBUG] resize event fired: 732x642
+[2025-11-06T14:38:22.570Z] [DEBUG] resize event fired: 720x642
+[2025-11-06T14:38:22.769Z] [DEBUG] resize event fired: 697x642
+[2025-11-06T14:38:22.980Z] [DEBUG] resize event fired: 679x642
+[2025-11-06T14:38:23.265Z] [DEBUG] resize event fired: 662x642
+[2025-11-06T14:38:23.462Z] [DEBUG] resize event fired: 652x642
+[2025-11-06T14:38:23.675Z] [DEBUG] resize event fired: 642x642
+[2025-11-06T14:38:23.878Z] [DEBUG] resize event fired: 632x642
+[2025-11-06T14:38:24.078Z] [DEBUG] resize event fired: 625x642
+[2025-11-06T14:38:24.270Z] [DEBUG] handleFullscreenResize called: fullscreen=false, isDragging=false
+[2025-11-06T14:38:24.474Z] [DEBUG] resize event fired: 627x642
+[2025-11-06T14:38:24.682Z] [DEBUG] resize event fired: 634x642
+[2025-11-06T14:38:24.894Z] [DEBUG] resize event fired: 642x642
+[2025-11-06T14:38:25.094Z] [DEBUG] resize event fired: 652x642
+[2025-11-06T14:38:25.306Z] [DEBUG] resize event fired: 662x642
+[2025-11-06T14:38:25.510Z] [DEBUG] resize event fired: 680x642
+[2025-11-06T14:38:25.748Z] [DEBUG] resize event fired: 685x642
+[2025-11-06T14:38:25.960Z] [DEBUG] resize event fired: 697x642
+[2025-11-06T14:38:26.190Z] [DEBUG] resize event fired: 707x642
+[2025-11-06T14:38:26.418Z] [DEBUG] resize event fired: 717x642
+[2025-11-06T14:38:26.635Z] [DEBUG] resize event fired: 725x642
+[2025-11-06T14:38:26.850Z] [DEBUG] resize event fired: 732x642
+[2025-11-06T14:38:27.065Z] [DEBUG] resize event fired: 737x642
+[2025-11-06T14:38:27.265Z] [DEBUG] resize event fired: 745x642
+[2025-11-06T14:38:27.478Z] [DEBUG] resize event fired: 757x642
+[2025-11-06T14:38:27.669Z] [DEBUG] resize event fired: 762x642
+[2025-11-06T14:38:27.866Z] [DEBUG] resize event fired: 767x642
+[2025-11-06T14:38:28.077Z] [DEBUG] resize event fired: 772x642
+[2025-11-06T14:38:28.299Z] [DEBUG] resize event fired: 777x642
+[2025-11-06T14:38:28.512Z] [DEBUG] resize event fired: 782x642
+[2025-11-06T14:38:28.722Z] [DEBUG] resize event fired: 789x642
+[2025-11-06T14:38:28.934Z] [DEBUG] resize event fired: 792x642
+[2025-11-06T14:38:29.146Z] [DEBUG] resize event fired: 794x642
+[2025-11-06T14:38:29.349Z] [DEBUG] resize event fired: 799x642
+[2025-11-06T14:38:29.549Z] [DEBUG] resize event fired: 797x642
+[2025-11-06T14:38:29.783Z] [DEBUG] resize event fired: 792x642
+[2025-11-06T14:38:29.983Z] [DEBUG] resize event fired: 777x642
+[2025-11-06T14:38:30.189Z] [DEBUG] resize event fired: 735x642
+[2025-11-06T14:38:30.394Z] [DEBUG] resize event fired: 710x642
+[2025-11-06T14:38:30.589Z] [DEBUG] resize event fired: 692x642
+[2025-11-06T14:38:30.795Z] [DEBUG] resize event fired: 685x642
+[2025-11-06T14:38:31.016Z] [DEBUG] resize event fired: 682x642
+[2025-11-06T14:38:31.235Z] [DEBUG] resize event fired: 670x642
+[2025-11-06T14:38:31.435Z] [DEBUG] resize event fired: 662x642
+[2025-11-06T14:38:31.660Z] [DEBUG] resize event fired: 652x642
+[2025-11-06T14:38:31.868Z] [DEBUG] resize event fired: 644x642
+[2025-11-06T14:38:32.074Z] [DEBUG] resize event fired: 639x642
+[2025-11-06T14:38:32.315Z] [DEBUG] resize event fired: 637x642
+[2025-11-06T14:38:32.571Z] [DEBUG] handleFullscreenResize called: fullscreen=false, isDragging=false
+[2025-11-06T14:38:32.768Z] [DEBUG] resize event fired: 642x642
+[2025-11-06T14:38:32.969Z] [DEBUG] resize event fired: 655x642
+[2025-11-06T14:38:33.183Z] [DEBUG] resize event fired: 665x642
+[2025-11-06T14:38:33.411Z] [DEBUG] resize event fired: 687x642
+[2025-11-06T14:38:33.611Z] [DEBUG] resize event fired: 697x642
+[2025-11-06T14:38:33.811Z] [DEBUG] resize event fired: 700x642
+[2025-11-06T14:38:34.014Z] [DEBUG] resize event fired: 702x642
+[2025-11-06T14:38:34.215Z] [DEBUG] resize event fired: 705x642
+[2025-11-06T14:38:34.405Z] [DEBUG] resize event fired: 725x642
+[2025-11-06T14:38:34.620Z] [DEBUG] resize event fired: 732x642
+[2025-11-06T14:38:34.841Z] [DEBUG] resize event fired: 752x642
+[2025-11-06T14:38:35.145Z] [DEBUG] resize event fired: 760x642
+[2025-11-06T14:38:35.343Z] [DEBUG] resize event fired: 762x642
+[2025-11-06T14:38:35.574Z] [DEBUG] resize event fired: 772x642
+[2025-11-06T14:38:35.800Z] [DEBUG] resize event fired: 784x642
+[2025-11-06T14:38:36.027Z] [DEBUG] resize event fired: 792x642
+[2025-11-06T14:38:36.243Z] [DEBUG] resize event fired: 807x642
+[2025-11-06T14:38:36.439Z] [DEBUG] resize event fired: 815x642
+[2025-11-06T14:38:36.642Z] [DEBUG] resize event fired: 829x642
+[2025-11-06T14:38:36.837Z] [DEBUG] resize event fired: 832x642
+[2025-11-06T14:38:37.042Z] [DEBUG] resize event fired: 837x642
+[2025-11-06T14:38:37.245Z] [DEBUG] resize event fired: 840x642
+[2025-11-06T14:38:37.441Z] [DEBUG] resize event fired: 842x642
+[2025-11-06T14:38:37.648Z] [DEBUG] resize event fired: 847x642
+[2025-11-06T14:38:37.837Z] [DEBUG] resize event fired: 850x642
+[2025-11-06T14:38:38.065Z] [DEBUG] resize event fired: 854x642
+[2025-11-06T14:38:38.271Z] [DEBUG] resize event fired: 859x642
+[2025-11-06T14:38:38.474Z] [DEBUG] resize event fired: 862x642
+[2025-11-06T14:38:38.680Z] [DEBUG] resize event fired: 870x642
+[2025-11-06T14:38:38.878Z] [DEBUG] resize event fired: 877x642
+[2025-11-06T14:38:39.098Z] [DEBUG] resize event fired: 882x642
+[2025-11-06T14:38:39.299Z] [DEBUG] resize event fired: 882x642
+[2025-11-06T14:38:39.498Z] [DEBUG] handleFullscreenResize called: fullscreen=false, isDragging=false
+[2025-11-06T14:38:39.716Z] [DEBUG] resize event fired: 884x642
+[2025-11-06T14:38:39.919Z] [DEBUG] resize event fired: 885x642
+[2025-11-06T14:38:40.129Z] [DEBUG] resize event fired: 889x642
+[2025-11-06T14:38:40.321Z] [DEBUG] resize event fired: 894x642
+[2025-11-06T14:38:40.521Z] [DEBUG] resize event fired: 907x642
+[2025-11-06T14:38:40.710Z] [DEBUG] resize event fired: 912x642
+[2025-11-06T14:38:40.911Z] [DEBUG] resize event fired: 922x642
+[2025-11-06T14:38:41.139Z] [DEBUG] resize event fired: 927x642
+[2025-11-06T14:38:41.348Z] [DEBUG] resize event fired: 929x642
+[2025-11-06T14:38:41.548Z] [DEBUG] resize event fired: 935x642
+[2025-11-06T14:38:41.796Z] [DEBUG] resize event fired: 942x642
+[2025-11-06T14:38:41.999Z] [DEBUG] resize event fired: 947x642
+[2025-11-06T14:38:42.231Z] [DEBUG] resize event fired: 955x642
+[2025-11-06T14:38:42.435Z] [DEBUG] resize event fired: 962x642
+[2025-11-06T14:38:42.640Z] [DEBUG] resize event fired: 965x642
+[2025-11-06T14:38:42.846Z] [DEBUG] resize event fired: 969x642
+[2025-11-06T14:38:43.055Z] [DEBUG] resize event fired: 970x642
+[2025-11-06T14:38:43.264Z] [DEBUG] resize event fired: 975x642
+[2025-11-06T14:38:43.471Z] [DEBUG] resize event fired: 985x642
+[2025-11-06T14:38:43.684Z] [DEBUG] resize event fired: 987x642
+[2025-11-06T14:38:43.920Z] [DEBUG] resize event fired: 990x642
+[2025-11-06T14:38:44.135Z] [DEBUG] resize event fired: 994x642
+[2025-11-06T14:38:44.346Z] [DEBUG] handleFullscreenResize called: fullscreen=false, isDragging=false
+[2025-11-06T14:38:44.550Z] [DEBUG] resize event fired: 992x642
+[2025-11-06T14:38:44.764Z] [DEBUG] resize event fired: 990x642
+[2025-11-06T14:38:45.018Z] [DEBUG] resize event fired: 974x642
+[2025-11-06T14:38:45.232Z] [DEBUG] resize event fired: 965x642
+[2025-11-06T14:38:45.448Z] [DEBUG] resize event fired: 960x642
+[2025-11-06T14:38:45.650Z] [DEBUG] resize event fired: 947x642
+[2025-11-06T14:38:45.863Z] [DEBUG] resize event fired: 945x642
+[2025-11-06T14:38:46.067Z] [DEBUG] resize event fired: 939x642
+[2025-11-06T14:38:46.266Z] [DEBUG] resize event fired: 927x642
+[2025-11-06T14:38:46.481Z] [DEBUG] resize event fired: 910x642
+[2025-11-06T14:38:46.721Z] [DEBUG] resize event fired: 902x642
+[2025-11-06T14:38:46.925Z] [DEBUG] resize event fired: 900x642
+[2025-11-06T14:38:47.158Z] [DEBUG] resize event fired: 899x642
+[2025-11-06T14:38:47.367Z] [DEBUG] resize event fired: 897x642
+[2025-11-06T14:38:47.578Z] [DEBUG] resize event fired: 889x642
+[2025-11-06T14:38:47.779Z] [DEBUG] resize event fired: 879x642
+[2025-11-06T14:38:48.046Z] [DEBUG] resize event fired: 865x642
+[2025-11-06T14:38:48.245Z] [DEBUG] resize event fired: 845x642
+[2025-11-06T14:38:48.482Z] [DEBUG] resize event fired: 837x642
+[2025-11-06T14:38:48.687Z] [DEBUG] resize event fired: 822x642
+[2025-11-06T14:38:48.940Z] [DEBUG] resize event fired: 820x642
+[2025-11-06T14:38:49.149Z] [DEBUG] resize event fired: 815x642
+[2025-11-06T14:38:49.356Z] [DEBUG] resize event fired: 812x642
+[2025-11-06T14:38:49.576Z] [DEBUG] resize event fired: 802x642
+[2025-11-06T14:38:49.896Z] [DEBUG] resize event fired: 792x642
+[2025-11-06T14:38:50.122Z] [DEBUG] resize event fired: 779x642
+[2025-11-06T14:38:50.314Z] [DEBUG] resize event fired: 767x642
+[2025-11-06T14:38:50.527Z] [DEBUG] resize event fired: 757x642
+[2025-11-06T14:38:50.729Z] [DEBUG] resize event fired: 749x642
+[2025-11-06T14:38:50.923Z] [DEBUG] resize event fired: 740x642
+[2025-11-06T14:38:51.144Z] [DEBUG] resize event fired: 737x642
+[2025-11-06T14:38:51.355Z] [DEBUG] resize event fired: 727x642
+[2025-11-06T14:38:51.568Z] [DEBUG] resize event fired: 722x642
+[2025-11-06T14:38:51.786Z] [DEBUG] resize event fired: 710x642
+[2025-11-06T14:38:52.025Z] [DEBUG] resize event fired: 707x642
+[2025-11-06T14:38:52.224Z] [DEBUG] resize event fired: 705x642
+[2025-11-06T14:38:52.496Z] [DEBUG] resize event fired: 702x642
+[2025-11-06T14:38:52.699Z] [DEBUG] resize event fired: 699x642
+[2025-11-06T14:38:52.895Z] [DEBUG] resize event fired: 695x642
+[2025-11-06T14:38:53.090Z] [DEBUG] resize event fired: 690x642
+[2025-11-06T14:38:53.294Z] [DEBUG] resize event fired: 687x642
+[2025-11-06T14:38:53.485Z] [DEBUG] resize event fired: 687x642
+[2025-11-06T14:38:53.682Z] [DEBUG] resize event fired: 685x642
+[2025-11-06T14:38:53.917Z] [DEBUG] resize event fired: 684x642
+[2025-11-06T14:38:54.147Z] [DEBUG] resize event fired: 682x642
+[2025-11-06T14:38:54.398Z] [DEBUG] resize event fired: 682x642
+[2025-11-06T14:38:54.598Z] [DEBUG] resize event fired: 680x642
+[2025-11-06T14:38:54.803Z] [DEBUG] resize event fired: 679x642
+[2025-11-06T14:38:55.006Z] [DEBUG] resize event fired: 677x642
+[2025-11-06T14:38:55.207Z] [DEBUG] resize event fired: 677x642
+[2025-11-06T14:38:55.471Z] [DEBUG] resize event fired: 675x642
+[2025-11-06T14:38:55.677Z] [DEBUG] resize event fired: 674x642
+[2025-11-06T14:38:55.895Z] [DEBUG] resize event fired: 672x642
+[2025-11-06T14:38:56.114Z] [DEBUG] resize event fired: 670x642
+[2025-11-06T14:38:56.318Z] [DEBUG] resize event fired: 667x642
+[2025-11-06T14:38:56.510Z] [DEBUG] resize event fired: 667x642
+[2025-11-06T14:38:56.728Z] [DEBUG] resize event fired: 665x642
+[2025-11-06T14:38:56.939Z] [DEBUG] resize event fired: 664x642
+[2025-11-06T14:38:57.139Z] [DEBUG] resize event fired: 662x642
+[2025-11-06T14:38:57.390Z] [DEBUG] resize event fired: 662x642
+[2025-11-06T14:38:57.595Z] [DEBUG] resize event fired: 660x642
+[2025-11-06T14:38:57.802Z] [DEBUG] resize event fired: 657x642
+[2025-11-06T14:38:58.014Z] [DEBUG] resize event fired: 657x642
+[2025-11-06T14:38:58.216Z] [DEBUG] resize event fired: 655x642
+[2025-11-06T14:38:58.454Z] [DEBUG] resize event fired: 654x642
+[2025-11-06T14:38:58.671Z] [DEBUG] resize event fired: 652x642
+[2025-11-06T14:38:58.882Z] [DEBUG] handleFullscreenResize called: fullscreen=false, isDragging=false
+[2025-11-06T14:38:59.106Z] [DEBUG] resize event fired: 654x642
+[2025-11-06T14:38:59.334Z] [DEBUG] resize event fired: 655x642
+[2025-11-06T14:38:59.532Z] [DEBUG] resize event fired: 657x642
+[2025-11-06T14:38:59.742Z] [DEBUG] resize event fired: 660x642
+[2025-11-06T14:38:59.949Z] [DEBUG] resize event fired: 670x642
+[2025-11-06T14:39:00.155Z] [DEBUG] resize event fired: 677x642
+[2025-11-06T14:39:00.373Z] [DEBUG] resize event fired: 685x642
+[2025-11-06T14:39:00.610Z] [DEBUG] resize event fired: 702x642
+[2025-11-06T14:39:00.806Z] [DEBUG] resize event fired: 709x642
+[2025-11-06T14:39:01.041Z] [DEBUG] resize event fired: 717x642
+[2025-11-06T14:39:01.284Z] [DEBUG] resize event fired: 737x642
+[2025-11-06T14:39:01.524Z] [DEBUG] resize event fired: 750x642
+[2025-11-06T14:39:01.793Z] [DEBUG] resize event fired: 769x642
+[2025-11-06T14:39:02.001Z] [DEBUG] resize event fired: 784x642
+[2025-11-06T14:39:02.219Z] [DEBUG] resize event fired: 794x642
+[2025-11-06T14:39:02.438Z] [DEBUG] resize event fired: 814x642
+[2025-11-06T14:39:02.647Z] [DEBUG] resize event fired: 825x642
+[2025-11-06T14:39:02.867Z] [DEBUG] resize event fired: 835x642
+[2025-11-06T14:39:03.071Z] [DEBUG] resize event fired: 850x642
+[2025-11-06T14:39:03.267Z] [DEBUG] resize event fired: 879x642
+[2025-11-06T14:39:03.473Z] [DEBUG] resize event fired: 894x642
+[2025-11-06T14:39:03.691Z] [DEBUG] resize event fired: 899x642
+[2025-11-06T14:39:03.916Z] [DEBUG] resize event fired: 902x642
+[2025-11-06T14:39:04.153Z] [DEBUG] resize event fired: 915x642
+[2025-11-06T14:39:04.375Z] [DEBUG] resize event fired: 927x642
+[2025-11-06T14:39:04.580Z] [DEBUG] resize event fired: 942x642
+[2025-11-06T14:39:04.791Z] [DEBUG] resize event fired: 955x642
+[2025-11-06T14:39:04.998Z] [DEBUG] resize event fired: 964x642
+[2025-11-06T14:39:05.202Z] [DEBUG] resize event fired: 972x642
+[2025-11-06T14:39:05.411Z] [DEBUG] resize event fired: 975x642
+[2025-11-06T14:39:05.633Z] [DEBUG] resize event fired: 992x642
+[2025-11-06T14:39:05.831Z] [DEBUG] resize event fired: 1000x642
+[2025-11-06T14:39:06.050Z] [DEBUG] resize event fired: 1022x642
+[2025-11-06T14:39:06.247Z] [DEBUG] resize event fired: 1032x642
+[2025-11-06T14:39:06.444Z] [DEBUG] resize event fired: 1034x642
+[2025-11-06T14:39:06.707Z] [DEBUG] resize event fired: 1042x642
+[2025-11-06T14:39:06.902Z] [DEBUG] resize event fired: 1047x642
+[2025-11-06T14:39:07.103Z] [DEBUG] resize event fired: 1057x642
+[2025-11-06T14:39:07.356Z] [DEBUG] resize event fired: 1062x642
+[2025-11-06T14:39:07.561Z] [DEBUG] resize event fired: 1070x642
+[2025-11-06T14:39:07.763Z] [DEBUG] resize event fired: 1072x642
+[2025-11-06T14:39:07.981Z] [DEBUG] resize event fired: 1075x642
+[2025-11-06T14:39:08.186Z] [DEBUG] resize event fired: 1082x642
+[2025-11-06T14:39:08.386Z] [DEBUG] handleFullscreenResize called: fullscreen=false, isDragging=false
+[2025-11-06T14:39:08.601Z] [DEBUG] resize event fired: 1082x642
+[2025-11-06T14:39:08.811Z] [DEBUG] resize event fired: 1070x642
+[2025-11-06T14:39:09.028Z] [DEBUG] resize event fired: 1052x642
+[2025-11-06T14:39:09.248Z] [DEBUG] resize event fired: 1042x642
+[2025-11-06T14:39:09.501Z] [DEBUG] resize event fired: 1032x642
+[2025-11-06T14:39:09.733Z] [DEBUG] resize event fired: 1007x642
+[2025-11-06T14:39:10.075Z] [DEBUG] resize event fired: 984x642
+[2025-11-06T14:39:10.278Z] [DEBUG] resize event fired: 965x642
+[2025-11-06T14:39:10.498Z] [DEBUG] resize event fired: 935x642
+[2025-11-06T14:39:10.725Z] [DEBUG] resize event fired: 917x642
+[2025-11-06T14:39:10.971Z] [DEBUG] resize event fired: 900x642
+[2025-11-06T14:39:11.176Z] [DEBUG] resize event fired: 872x642
+[2025-11-06T14:39:11.392Z] [DEBUG] resize event fired: 832x642
+[2025-11-06T14:39:11.605Z] [DEBUG] resize event fired: 815x642
+[2025-11-06T14:39:11.806Z] [DEBUG] resize event fired: 797x642
+[2025-11-06T14:39:12.031Z] [DEBUG] resize event fired: 780x642
+[2025-11-06T14:39:12.236Z] [DEBUG] resize event fired: 770x642
+[2025-11-06T14:39:12.446Z] [DEBUG] resize event fired: 765x642
+[2025-11-06T14:39:12.676Z] [DEBUG] resize event fired: 754x642
+[2025-11-06T14:39:12.944Z] [DEBUG] resize event fired: 749x642
+[2025-11-06T14:39:13.142Z] [DEBUG] resize event fired: 730x642
+[2025-11-06T14:39:13.333Z] [DEBUG] resize event fired: 725x642
+[2025-11-06T14:39:13.531Z] [DEBUG] handleFullscreenResize called: fullscreen=false, isDragging=false
+[2025-11-06T14:39:13.726Z] [DEBUG] resize event fired: 1600x699
+[2025-11-06T14:39:13.932Z] [DEBUG] handleFullscreenResize called: fullscreen=false, isDragging=false
+[2025-11-06T14:39:14.129Z] [DEBUG] resize event fired: 725x642
+[2025-11-06T14:39:14.334Z] [DEBUG] handleFullscreenResize called: fullscreen=false, isDragging=false
+[2025-11-06T14:39:14.569Z] [DEBUG] refreshMapPointsTable: called - skipMapRefresh=false, caller=at showContent (https://kkk.kaminooo.com/app.js:2060:7)
+[2025-11-06T14:39:14.788Z] [DEBUG] refreshMapMarkers: called - skipMapRefresh=false, changingPointLocation=null, caller=at initializeLeafletMap (https://kkk.kaminooo.com/app.js:4777:7)
+[2025-11-06T14:39:15.021Z] [DEBUG] refreshMapMarkers: called - skipMapRefresh=false, changingPointLocation=null, caller=at https://kkk.kaminooo.com/app.js:3802:7
+[2025-11-06T14:39:15.225Z] [DEBUG] refreshMapPointsTable: called - skipMapRefresh=false, caller=at https://kkk.kaminooo.com/app.js:4726:9
+[2025-11-06T14:39:15.449Z] [DEBUG] refreshMapMarkers: created marker for point 1 at [42.69770000,23.32190000], draggable=null, opacity=1
+[2025-11-06T14:39:15.655Z] [DEBUG] refreshMapMarkers: created marker for point 2 at [42.13540000,24.74530000], draggable=null, opacity=1
+[2025-11-06T14:39:15.864Z] [DEBUG] refreshMapMarkers: created marker for point 3 at [42.69500000,23.33500000], draggable=null, opacity=1
+[2025-11-06T14:39:16.071Z] [DEBUG] refreshMapMarkers: created marker for point 4 at [42.71000000,23.35000000], draggable=null, opacity=1
+[2025-11-06T14:39:16.274Z] [DEBUG] refreshMapMarkers: created marker for point 5 at [42.68500000,23.31000000], draggable=null, opacity=1
+[2025-11-06T14:39:16.483Z] [DEBUG] refreshMapMarkers: created marker for point 6 at [42.68000000,23.34000000], draggable=null, opacity=1
+[2025-11-06T14:39:16.696Z] [DEBUG] refreshMapMarkers: created marker for point 7 at [42.70500000,23.32500000], draggable=null, opacity=1
+[2025-11-06T14:39:16.919Z] [DEBUG] refreshMapMarkers: created marker for point 8 at [42.69500000,23.32800000], draggable=null, opacity=1
+[2025-11-06T14:39:17.130Z] [DEBUG] refreshMapMarkers: created marker for point 9 at [42.69000000,23.31500000], draggable=null, opacity=1
+[2025-11-06T14:39:17.345Z] [DEBUG] refreshMapMarkers: created marker for point 10 at [42.70000000,23.33200000], draggable=null, opacity=1
+[2025-11-06T14:39:17.551Z] [DEBUG] refreshMapMarkers: created marker for point 11 at [42.69600000,23.32000000], draggable=null, opacity=1
+[2025-11-06T14:39:17.749Z] [DEBUG] refreshMapMarkers: created marker for point 12 at [42.65500000,23.37000000], draggable=null, opacity=1
+[2025-11-06T14:39:17.974Z] [DEBUG] refreshMapMarkers: created marker for point 13 at [42.69000000,23.34500000], draggable=null, opacity=1
+[2025-11-06T14:39:18.200Z] [DEBUG] refreshMapMarkers: created marker for point 14 at [42.69800000,23.32400000], draggable=null, opacity=1
+[2025-11-06T14:39:18.410Z] [DEBUG] refreshMapMarkers: created marker for point 15 at [42.69400000,23.33100000], draggable=null, opacity=1
+[2025-11-06T14:39:18.603Z] [DEBUG] refreshMapMarkers: created marker for point 16 at [42.69700000,23.32300000], draggable=null, opacity=1
+[2025-11-06T14:39:18.826Z] [DEBUG] refreshMapMarkers: created marker for point 17 at [42.69200000,23.32900000], draggable=null, opacity=1
+[2025-11-06T14:39:19.028Z] [DEBUG] refreshMapMarkers: created marker for point 18 at [42.66558783,24.16634054], draggable=null, opacity=1
+[2025-11-06T14:39:19.233Z] [DEBUG] refreshMapMarkers: created marker for point 19 at [42.65000000,23.34000000], draggable=null, opacity=1
+[2025-11-06T14:39:19.444Z] [DEBUG] refreshMapMarkers: created marker for point 20 at [42.70200000,23.31800000], draggable=null, opacity=1
+[2025-11-06T14:39:19.660Z] [DEBUG] refreshMapMarkers: created marker for point 21 at [43.23668510,27.83054470], draggable=null, opacity=1
+[2025-11-06T14:39:19.864Z] [DEBUG] refreshMapMarkers: created marker for point 1 at [42.69770000,23.32190000], draggable=null, opacity=1
+[2025-11-06T14:39:20.068Z] [DEBUG] refreshMapMarkers: created marker for point 2 at [42.13540000,24.74530000], draggable=null, opacity=1
+[2025-11-06T14:39:20.289Z] [DEBUG] refreshMapMarkers: created marker for point 3 at [42.69500000,23.33500000], draggable=null, opacity=1
+[2025-11-06T14:39:20.517Z] [DEBUG] refreshMapMarkers: created marker for point 4 at [42.71000000,23.35000000], draggable=null, opacity=1
+[2025-11-06T14:39:20.716Z] [DEBUG] refreshMapMarkers: created marker for point 5 at [42.68500000,23.31000000], draggable=null, opacity=1
+[2025-11-06T14:39:20.937Z] [DEBUG] refreshMapMarkers: created marker for point 6 at [42.68000000,23.34000000], draggable=null, opacity=1
+[2025-11-06T14:39:21.138Z] [DEBUG] refreshMapMarkers: created marker for point 7 at [42.70500000,23.32500000], draggable=null, opacity=1
+[2025-11-06T14:39:21.339Z] [DEBUG] refreshMapMarkers: created marker for point 8 at [42.69500000,23.32800000], draggable=null, opacity=1
+[2025-11-06T14:39:21.577Z] [DEBUG] refreshMapMarkers: created marker for point 9 at [42.69000000,23.31500000], draggable=null, opacity=1
+[2025-11-06T14:39:21.796Z] [DEBUG] refreshMapMarkers: created marker for point 10 at [42.70000000,23.33200000], draggable=null, opacity=1
+[2025-11-06T14:39:22.014Z] [DEBUG] refreshMapMarkers: created marker for point 11 at [42.69600000,23.32000000], draggable=null, opacity=1
+[2025-11-06T14:39:22.258Z] [DEBUG] refreshMapMarkers: created marker for point 12 at [42.65500000,23.37000000], draggable=null, opacity=1
+[2025-11-06T14:39:22.477Z] [DEBUG] refreshMapMarkers: created marker for point 13 at [42.69000000,23.34500000], draggable=null, opacity=1
+[2025-11-06T14:39:22.685Z] [DEBUG] refreshMapMarkers: created marker for point 14 at [42.69800000,23.32400000], draggable=null, opacity=1
+[2025-11-06T14:39:22.891Z] [DEBUG] refreshMapMarkers: created marker for point 15 at [42.69400000,23.33100000], draggable=null, opacity=1
+[2025-11-06T14:39:23.105Z] [DEBUG] refreshMapMarkers: created marker for point 16 at [42.69700000,23.32300000], draggable=null, opacity=1
+[2025-11-06T14:39:23.302Z] [DEBUG] refreshMapMarkers: created marker for point 17 at [42.69200000,23.32900000], draggable=null, opacity=1
+[2025-11-06T14:39:23.509Z] [DEBUG] refreshMapMarkers: created marker for point 18 at [42.66558783,24.16634054], draggable=null, opacity=1
+[2025-11-06T14:39:23.715Z] [DEBUG] refreshMapMarkers: created marker for point 19 at [42.65000000,23.34000000], draggable=null, opacity=1
+[2025-11-06T14:39:23.919Z] [DEBUG] refreshMapMarkers: created marker for point 20 at [42.70200000,23.31800000], draggable=null, opacity=1
+[2025-11-06T14:39:24.116Z] [DEBUG] refreshMapMarkers: created marker for point 21 at [43.23668510,27.83054470], draggable=null, opacity=1
+[2025-11-06T14:39:24.312Z] [DEBUG] refreshMapMarkers: called - skipMapRefresh=false, changingPointLocation=null, caller=at https://kkk.kaminooo.com/app.js:3802:7
+[2025-11-06T14:39:24.564Z] [DEBUG] refreshMapMarkers: removing existing marker layer
+[2025-11-06T14:39:24.772Z] [DEBUG] refreshMapMarkers: removing existing marker layer
+[2025-11-06T14:39:24.963Z] [DEBUG] refreshMapMarkers: removing existing marker layer
+[2025-11-06T14:39:25.172Z] [DEBUG] refreshMapMarkers: removing existing marker layer
+[2025-11-06T14:39:25.420Z] [DEBUG] refreshMapMarkers: removing existing marker layer
+[2025-11-06T14:39:25.633Z] [DEBUG] refreshMapMarkers: removing existing marker layer
+[2025-11-06T14:39:25.848Z] [DEBUG] refreshMapMarkers: removing existing marker layer
+[2025-11-06T14:39:26.054Z] [DEBUG] refreshMapMarkers: removing existing marker layer
+[2025-11-06T14:39:26.272Z] [DEBUG] refreshMapMarkers: removing existing marker layer
+[2025-11-06T14:39:26.491Z] [DEBUG] refreshMapMarkers: removing existing marker layer
+[2025-11-06T14:39:26.697Z] [DEBUG] refreshMapMarkers: removing existing marker layer
+[2025-11-06T14:39:26.915Z] [DEBUG] refreshMapMarkers: removing existing marker layer
+[2025-11-06T14:39:27.119Z] [DEBUG] refreshMapMarkers: removing existing marker layer
+[2025-11-06T14:39:27.319Z] [DEBUG] refreshMapMarkers: removing existing marker layer
+[2025-11-06T14:39:27.567Z] [DEBUG] refreshMapMarkers: removing existing marker layer
+[2025-11-06T14:39:27.779Z] [DEBUG] refreshMapMarkers: removing existing marker layer
+[2025-11-06T14:39:27.987Z] [DEBUG] refreshMapMarkers: removing existing marker layer
+[2025-11-06T14:39:28.201Z] [DEBUG] refreshMapMarkers: removing existing marker layer
+[2025-11-06T14:39:28.398Z] [DEBUG] refreshMapMarkers: removing existing marker layer
+[2025-11-06T14:39:28.642Z] [DEBUG] refreshMapMarkers: removing existing marker layer
+[2025-11-06T14:39:28.854Z] [DEBUG] refreshMapMarkers: removing existing marker layer
+[2025-11-06T14:39:29.071Z] [DEBUG] refreshMapMarkers: removing existing marker layer
+[2025-11-06T14:39:29.265Z] [DEBUG] refreshMapMarkers: removing existing marker layer
+[2025-11-06T14:39:29.482Z] [DEBUG] refreshMapMarkers: removing existing marker layer
+[2025-11-06T14:39:29.699Z] [DEBUG] refreshMapMarkers: removing existing marker layer
+[2025-11-06T14:39:29.911Z] [DEBUG] refreshMapMarkers: removing existing marker layer
+[2025-11-06T14:39:30.107Z] [DEBUG] refreshMapMarkers: removing existing marker layer
+[2025-11-06T14:39:30.377Z] [DEBUG] refreshMapMarkers: removing existing marker layer
+[2025-11-06T14:39:30.566Z] [DEBUG] refreshMapMarkers: removing existing marker layer
+[2025-11-06T14:39:30.773Z] [DEBUG] refreshMapMarkers: removing existing marker layer
+[2025-11-06T14:39:30.975Z] [DEBUG] refreshMapMarkers: removing existing marker layer
+[2025-11-06T14:39:31.177Z] [DEBUG] refreshMapMarkers: removing existing marker layer
+[2025-11-06T14:39:31.377Z] [DEBUG] refreshMapMarkers: removing existing marker layer
+[2025-11-06T14:39:31.605Z] [DEBUG] refreshMapMarkers: removing existing marker layer
+[2025-11-06T14:39:31.825Z] [DEBUG] refreshMapMarkers: removing existing marker layer
+[2025-11-06T14:39:32.034Z] [DEBUG] refreshMapMarkers: removing existing marker layer
+[2025-11-06T14:39:32.258Z] [DEBUG] refreshMapMarkers: removing existing marker layer
+[2025-11-06T14:39:32.478Z] [DEBUG] refreshMapMarkers: removing existing marker layer
+[2025-11-06T14:39:32.689Z] [DEBUG] refreshMapMarkers: removing existing marker layer
+[2025-11-06T14:39:32.887Z] [DEBUG] refreshMapMarkers: removing existing marker layer
+[2025-11-06T14:39:33.095Z] [DEBUG] refreshMapMarkers: removing existing marker layer
+[2025-11-06T14:39:33.313Z] [DEBUG] refreshMapMarkers: removing existing marker layer
+[2025-11-06T14:39:33.532Z] [DEBUG] refreshMapMarkers: created marker for point 1 at [42.69770000,23.32190000], draggable=null, opacity=1
+[2025-11-06T14:39:33.744Z] [DEBUG] refreshMapMarkers: created marker for point 2 at [42.13540000,24.74530000], draggable=null, opacity=1
+[2025-11-06T14:39:33.962Z] [DEBUG] refreshMapMarkers: created marker for point 3 at [42.69500000,23.33500000], draggable=null, opacity=1
+[2025-11-06T14:39:34.184Z] [DEBUG] refreshMapMarkers: created marker for point 4 at [42.71000000,23.35000000], draggable=null, opacity=1
+[2025-11-06T14:39:34.398Z] [DEBUG] refreshMapMarkers: created marker for point 5 at [42.68500000,23.31000000], draggable=null, opacity=1
+[2025-11-06T14:39:34.598Z] [DEBUG] refreshMapMarkers: created marker for point 6 at [42.68000000,23.34000000], draggable=null, opacity=1
+[2025-11-06T14:39:34.816Z] [DEBUG] refreshMapMarkers: created marker for point 7 at [42.70500000,23.32500000], draggable=null, opacity=1
+[2025-11-06T14:39:35.018Z] [DEBUG] refreshMapMarkers: created marker for point 8 at [42.69500000,23.32800000], draggable=null, opacity=1
+[2025-11-06T14:39:35.227Z] [DEBUG] refreshMapMarkers: created marker for point 9 at [42.69000000,23.31500000], draggable=null, opacity=1
+[2025-11-06T14:39:35.436Z] [DEBUG] refreshMapMarkers: created marker for point 10 at [42.70000000,23.33200000], draggable=null, opacity=1
+[2025-11-06T14:39:36.528Z] [DEBUG] refreshMapMarkers: created marker for point 11 at [42.69600000,23.32000000], draggable=null, opacity=1
+[2025-11-06T14:39:37.515Z] [DEBUG] refreshMapMarkers: created marker for point 12 at [42.65500000,23.37000000], draggable=null, opacity=1
+[2025-11-06T14:39:38.535Z] [DEBUG] refreshMapMarkers: created marker for point 13 at [42.69000000,23.34500000], draggable=null, opacity=1
+[2025-11-06T14:39:39.528Z] [DEBUG] refreshMapMarkers: created marker for point 14 at [42.69800000,23.32400000], draggable=null, opacity=1
+[2025-11-06T14:39:40.534Z] [DEBUG] refreshMapMarkers: created marker for point 15 at [42.69400000,23.33100000], draggable=null, opacity=1
+[2025-11-06T14:39:41.556Z] [DEBUG] refreshMapMarkers: created marker for point 16 at [42.69700000,23.32300000], draggable=null, opacity=1
+[2025-11-06T14:39:42.535Z] [DEBUG] refreshMapMarkers: created marker for point 17 at [42.69200000,23.32900000], draggable=null, opacity=1
+[2025-11-06T14:39:43.529Z] [DEBUG] refreshMapMarkers: created marker for point 18 at [42.66558783,24.16634054], draggable=null, opacity=1
+[2025-11-06T14:39:44.530Z] [DEBUG] refreshMapMarkers: created marker for point 19 at [42.65000000,23.34000000], draggable=null, opacity=1
+[2025-11-06T14:39:45.526Z] [DEBUG] refreshMapMarkers: created marker for point 20 at [42.70200000,23.31800000], draggable=null, opacity=1
+[2025-11-06T14:39:46.529Z] [DEBUG] refreshMapMarkers: created marker for point 21 at [43.23668510,27.83054470], draggable=null, opacity=1
+[2025-11-06T14:39:47.511Z] [DEBUG] resize event fired: 1600x699
+[2025-11-06T14:39:48.530Z] [DEBUG] handleFullscreenResize called: fullscreen=false, isDragging=false
