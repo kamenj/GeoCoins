@@ -5743,20 +5743,33 @@ export function setupMapPointsDivider() {
   dividerHandlers.touchStart = function(e) {
     if (e.touches.length === 1) {
       var touch = e.touches[0];
-      dividerHandlers.mouseDown({ clientX: touch.clientX, clientY: touch.clientY, preventDefault: function() { e.preventDefault(); } });
+      dividerHandlers.mouseDown({ 
+        clientX: touch.clientX, 
+        clientY: touch.clientY, 
+        preventDefault: function() { e.preventDefault(); },
+        stopPropagation: function() { e.stopPropagation(); }
+      });
     }
   };
   
   dividerHandlers.touchMove = function(e) {
     if (dividerHandlers.isDragging && e.touches.length === 1) {
       var touch = e.touches[0];
-      dividerHandlers.mouseMove({ clientX: touch.clientX, clientY: touch.clientY, preventDefault: function() { e.preventDefault(); } });
+      dividerHandlers.mouseMove({ 
+        clientX: touch.clientX, 
+        clientY: touch.clientY, 
+        preventDefault: function() { e.preventDefault(); },
+        stopPropagation: function() { e.stopPropagation(); }
+      });
     }
   };
   
   dividerHandlers.touchEnd = function(e) {
     if (dividerHandlers.isDragging) {
-      dividerHandlers.mouseUp({ preventDefault: function() { e.preventDefault(); } });
+      dividerHandlers.mouseUp({ 
+        preventDefault: function() { e.preventDefault(); },
+        stopPropagation: function() { e.stopPropagation(); }
+      });
     }
   };
   
@@ -6182,46 +6195,31 @@ async function loadAll() {
     var menuBottomContent = menuBottomHeaderEl.nextElementSibling;
     if (menuBottomContent && menuBottomContent.classList.contains('section-content')) {
       // Track touch state to distinguish between tap and scroll
-      var touchState = { startY: 0, hasMoved: false };
+      var touchState = { startY: 0, hasMoved: false, target: null };
       
-      // Prevent clicks and touches in content area from bubbling to header
-      // Use capture phase (true) to intercept events before they reach buttons
+      // Prevent clicks from bubbling to header (bubble phase, not capture)
       menuBottomContent.addEventListener("click", function(e) { 
         e.stopPropagation();
-      }, true); // Capture phase
+        // If this was after a scroll gesture, also prevent the click
+        if (touchState.hasMoved) {
+          e.preventDefault();
+        }
+      }, false); // Bubble phase - let buttons handle their clicks first
       
       menuBottomContent.addEventListener("touchstart", function(e) { 
-        e.stopPropagation();
-        // Record start position
+        // Record start position and target
         touchState.startY = e.touches[0].clientY;
         touchState.hasMoved = false;
-      }, true); // Capture phase
+        touchState.target = e.target;
+      }, false);
       
       menuBottomContent.addEventListener("touchmove", function(e) { 
-        e.stopPropagation();
         // Check if user has moved significantly (scrolling)
         var moveDistance = Math.abs(e.touches[0].clientY - touchState.startY);
         if (moveDistance > 10) {
           touchState.hasMoved = true;
         }
-        // Don't prevent default - allow scrolling
-      }, true); // Capture phase
-      
-      menuBottomContent.addEventListener("touchend", function(e) { 
-        e.stopPropagation();
-        // ALWAYS prevent default to stop synthetic click on header
-        e.preventDefault();
-        
-        // If user was scrolling (moved > 10px), don't trigger button click
-        if (touchState.hasMoved) {
-          return;
-        }
-        
-        // User tapped (didn't scroll) - manually trigger button click
-        if (e.target.tagName === 'BUTTON') {
-          e.target.click();
-        }
-      }, true); // Capture phase
+      }, false);
     }
   }
   

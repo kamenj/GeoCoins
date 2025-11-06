@@ -61,3 +61,27 @@
 [2025-11-06T10:41:39.289Z] [INFO] menuBottom section-content touchstart blocked, target=cmd-btn
 [2025-11-06T10:41:39.922Z] [INFO] menuBottom section-content touchend, target=cmd-btn hasMoved=true
 [2025-11-06T10:41:40.130Z] [INFO] menuBottom: touch was a scroll gesture - preventDefault called but no button click
+[2025-11-06T10:45:29.507Z] [INFO] menuBottom section-content touchstart blocked, target=cmd-btn
+[2025-11-06T10:45:29.730Z] [INFO] menuBottom section-content touchend, target=cmd-btn hasMoved=false
+[2025-11-06T10:45:29.934Z] [INFO] menuBottom section-content click blocked, target=cmd-btn
+[2025-11-06T10:45:30.134Z] [INFO] menuBottom: manually triggered click on button
+[2025-11-06T10:45:31.136Z] [INFO] menuBottom section-content touchstart blocked, target=cmd-btn
+[2025-11-06T10:45:31.340Z] [INFO] menuBottom section-content touchend, target=cmd-btn hasMoved=false
+[2025-11-06T10:45:31.546Z] [INFO] menuBottom section-content click blocked, target=cmd-btn
+[2025-11-06T10:45:31.752Z] [INFO] menuBottom: manually triggered click on button
+[2025-11-06T10:45:31.949Z] [INFO] menuBottom section-content touchstart blocked, target=cmd-btn
+[2025-11-06T10:45:32.152Z] [INFO] menuBottom section-content touchend, target=cmd-btn hasMoved=false
+[2025-11-06T10:45:32.348Z] [INFO] menuBottom section-content click blocked, target=cmd-btn
+[2025-11-06T10:45:32.546Z] [INFO] menuBottom: manually triggered click on button
+[2025-11-06T10:45:32.744Z] [INFO] menuBottom section-content touchstart blocked, target=cmd-btn
+[2025-11-06T10:45:32.968Z] [INFO] menuBottom section-content touchend, target=cmd-btn hasMoved=false
+[2025-11-06T10:45:33.164Z] [INFO] menuBottom section-content click blocked, target=cmd-btn
+[2025-11-06T10:45:33.382Z] [INFO] menuBottom: manually triggered click on button
+[2025-11-06T10:45:33.948Z] [INFO] menuBottom section-content touchstart blocked, target=cmd-btn
+[2025-11-06T10:45:34.145Z] [INFO] menuBottom section-content touchend, target=cmd-btn hasMoved=false
+[2025-11-06T10:45:34.353Z] [INFO] menuBottom section-content click blocked, target=cmd-btn
+[2025-11-06T10:45:34.604Z] [INFO] menuBottom: manually triggered click on button
+[2025-11-06T10:45:34.810Z] [INFO] menuBottom section-content touchstart blocked, target=cmd-btn
+[2025-11-06T10:45:35.002Z] [INFO] menuBottom section-content touchend, target=cmd-btn hasMoved=false
+[2025-11-06T10:45:35.211Z] [INFO] menuBottom section-content click blocked, target=cmd-btn
+[2025-11-06T10:45:35.410Z] [INFO] menuBottom: manually triggered click on button
