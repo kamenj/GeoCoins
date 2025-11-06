@@ -1,0 +1,63 @@
+[2025-11-06T10:12:29.571Z] [INFO] menuBottomHandler triggered: type=click target=chev-menuBottom targetPath=[chev-menuBottom > title-left > menuBottom-header > menuBottom > mobile-device] currentTarget=menuBottom-header contains=true
+[2025-11-06T10:12:29.779Z] [INFO] menuBottomHandler: TOGGLING collapse
+[2025-11-06T10:12:29.975Z] [INFO] toggleCollapse called: id=menuBottom wasCollapsed=true willBeCollapsed=false caller=    at HTMLDivElement.menuBottomHandler (https://kkk.kaminooo.com/app.js:6198:5)
+[2025-11-06T10:12:30.176Z] [INFO] setCollapsed: id=menuBottom collapsed=false caller=    at toggleCollapse (https://kkk.kaminooo.com/app.js:1545:3)
+[2025-11-06T10:12:30.376Z] [INFO] menuBottom section-content touchstart blocked, target=cmd-btn
+[2025-11-06T10:12:30.965Z] [INFO] menuBottom section-content touchend, target=cmd-btn hasMoved=true
+[2025-11-06T10:12:31.158Z] [INFO] menuBottom: touch was a scroll gesture - preventDefault called but no button click
+[2025-11-06T10:12:32.653Z] [INFO] menuBottom section-content touchstart blocked, target=cmd-btn
+[2025-11-06T10:12:33.524Z] [INFO] menuBottom section-content touchend, target=cmd-btn hasMoved=true
+[2025-11-06T10:12:33.737Z] [INFO] menuBottom: touch was a scroll gesture - preventDefault called but no button click
+[2025-11-06T10:12:34.932Z] [INFO] menuBottom section-content touchstart blocked, target=cmd-btn
+[2025-11-06T10:12:35.605Z] [INFO] menuBottom section-content touchend, target=cmd-btn hasMoved=true
+[2025-11-06T10:12:35.813Z] [INFO] menuBottom: touch was a scroll gesture - preventDefault called but no button click
+[2025-11-06T10:12:36.924Z] [INFO] menuBottom section-content touchstart blocked, target=cmd-btn
+[2025-11-06T10:12:37.504Z] [INFO] menuBottom section-content touchend, target=cmd-btn hasMoved=true
+[2025-11-06T10:12:37.703Z] [INFO] menuBottom: touch was a scroll gesture - preventDefault called but no button click
+[2025-11-06T10:12:38.585Z] [INFO] menuBottom section-content touchstart blocked, target=cmd-btn
+[2025-11-06T10:12:39.007Z] [INFO] menuBottom section-content touchend, target=cmd-btn hasMoved=true
+[2025-11-06T10:12:39.219Z] [INFO] menuBottom: touch was a scroll gesture - preventDefault called but no button click
+[2025-11-06T10:13:08.690Z] [INFO] menuBottom section-content touchstart blocked, target=cmd-btn
+[2025-11-06T10:13:09.175Z] [INFO] menuBottom section-content touchend, target=cmd-btn hasMoved=true
+[2025-11-06T10:13:09.373Z] [INFO] menuBottom: touch was a scroll gesture - preventDefault called but no button click
+[2025-11-06T10:13:20.979Z] [INFO] menuBottom section-content touchstart blocked, target=cmd-btn
+[2025-11-06T10:13:21.508Z] [INFO] menuBottom section-content touchend, target=cmd-btn hasMoved=true
+[2025-11-06T10:13:21.733Z] [INFO] menuBottom: touch was a scroll gesture - preventDefault called but no button click
+[2025-11-06T10:13:22.367Z] [INFO] menuBottom section-content touchstart blocked, target=cmd-btn
+[2025-11-06T10:13:22.767Z] [INFO] menuBottom section-content touchend, target=cmd-btn hasMoved=true
+[2025-11-06T10:13:22.960Z] [INFO] menuBottom: touch was a scroll gesture - preventDefault called but no button click
+[2025-11-06T10:13:23.827Z] [INFO] menuBottom section-content touchstart blocked, target=cmd-btn
+[2025-11-06T10:13:24.212Z] [INFO] menuBottom section-content touchend, target=cmd-btn hasMoved=true
+[2025-11-06T10:13:24.411Z] [INFO] menuBottom: touch was a scroll gesture - preventDefault called but no button click
+[2025-11-06T10:13:24.828Z] [INFO] menuBottom section-content touchstart blocked, target=cmd-btn
+[2025-11-06T10:13:25.360Z] [INFO] menuBottom section-content touchend, target=cmd-btn hasMoved=true
+[2025-11-06T10:13:25.563Z] [INFO] menuBottom: touch was a scroll gesture - preventDefault called but no button click
+[2025-11-06T10:41:31.790Z] [INFO] === APP STARTED === Remote logging initialized, Config.RemoteLogging=true
+[2025-11-06T10:41:33.387Z] [INFO] setCollapsed: id=menuTop collapsed=false caller=    at setMenusVisibility (https://kkk.kaminooo.com/app.js:5350:3)
+[2025-11-06T10:41:33.659Z] [INFO] setCollapsed: id=menuBottom collapsed=false caller=    at setMenusVisibility (https://kkk.kaminooo.com/app.js:5357:3)
+[2025-11-06T10:41:34.275Z] [INFO] setCollapsed: id=menuTop collapsed=false caller=    at setMenusVisibility (https://kkk.kaminooo.com/app.js:5350:3)
+[2025-11-06T10:41:34.525Z] [INFO] setCollapsed: id=menuBottom collapsed=true caller=    at setMenusVisibility (https://kkk.kaminooo.com/app.js:5357:3)
+[2025-11-06T10:41:34.769Z] [INFO] setCollapsed: id=login collapsed=false caller=    at https://kkk.kaminooo.com/app.js:1319:11
+[2025-11-06T10:41:35.020Z] [INFO] setCollapsed: id=usersList collapsed=false caller=    at https://kkk.kaminooo.com/app.js:1319:11
+[2025-11-06T10:41:35.264Z] [INFO] setCollapsed: id=userDetails collapsed=false caller=    at https://kkk.kaminooo.com/app.js:1319:11
+[2025-11-06T10:41:35.528Z] [INFO] setCollapsed: id=message collapsed=false caller=    at https://kkk.kaminooo.com/app.js:1319:11
+[2025-11-06T10:41:35.743Z] [INFO] setCollapsed: id=mapPoints collapsed=true caller=    at https://kkk.kaminooo.com/app.js:1319:11
+[2025-11-06T10:41:35.941Z] [INFO] setCollapsed: id=mapPointDetails collapsed=false caller=    at https://kkk.kaminooo.com/app.js:1319:11
+[2025-11-06T10:41:36.164Z] [INFO] setCollapsed: id=settings collapsed=false caller=    at https://kkk.kaminooo.com/app.js:1319:11
+[2025-11-06T10:41:36.375Z] [INFO] setCollapsed: id=about collapsed=false caller=    at https://kkk.kaminooo.com/app.js:1319:11
+[2025-11-06T10:41:36.587Z] [INFO] setCollapsed: id=developerTools collapsed=false caller=    at https://kkk.kaminooo.com/app.js:1319:11
+[2025-11-06T10:41:36.798Z] [INFO] setCollapsed: id=help collapsed=false caller=    at https://kkk.kaminooo.com/app.js:1319:11
+[2025-11-06T10:41:36.994Z] [INFO] setCollapsed: id=errors collapsed=false caller=    at https://kkk.kaminooo.com/app.js:1319:11
+[2025-11-06T10:41:37.193Z] [INFO] setCollapsed: id=menuTop collapsed=true caller=    at https://kkk.kaminooo.com/app.js:1319:11
+[2025-11-06T10:41:37.398Z] [INFO] setCollapsed: id=menuBottom collapsed=true caller=    at https://kkk.kaminooo.com/app.js:1319:11
+[2025-11-06T10:41:37.611Z] [INFO] setCollapsed: id=help collapsed=false caller=    at restoreGuiState (https://kkk.kaminooo.com/app.js:1329:9)
+[2025-11-06T10:41:37.822Z] [INFO] menuBottomHandler triggered: type=click target=title-text targetPath=[title-text > title-left > menuBottom-header > menuBottom > mobile-device] currentTarget=menuBottom-header contains=true
+[2025-11-06T10:41:38.028Z] [INFO] menuBottomHandler: TOGGLING collapse
+[2025-11-06T10:41:38.225Z] [INFO] toggleCollapse called: id=menuBottom wasCollapsed=true willBeCollapsed=false caller=    at HTMLDivElement.menuBottomHandler (https://kkk.kaminooo.com/app.js:6206:5)
+[2025-11-06T10:41:38.432Z] [INFO] setCollapsed: id=menuBottom collapsed=false caller=    at toggleCollapse (https://kkk.kaminooo.com/app.js:1545:3)
+[2025-11-06T10:41:38.640Z] [INFO] menuBottom section-content touchstart blocked, target=cmd-btn
+[2025-11-06T10:41:38.837Z] [INFO] menuBottom section-content touchend, target=cmd-btn hasMoved=true
+[2025-11-06T10:41:39.064Z] [INFO] menuBottom: touch was a scroll gesture - preventDefault called but no button click
+[2025-11-06T10:41:39.289Z] [INFO] menuBottom section-content touchstart blocked, target=cmd-btn
+[2025-11-06T10:41:39.922Z] [INFO] menuBottom section-content touchend, target=cmd-btn hasMoved=true
+[2025-11-06T10:41:40.130Z] [INFO] menuBottom: touch was a scroll gesture - preventDefault called but no button click

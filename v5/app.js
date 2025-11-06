@@ -162,7 +162,7 @@ const Config = {
   Constants: Constants,
   AppTitle: "Dani-Geo-Coins v5",
   MenuButtons: {
-    minWidth: 80,
+    minWidth: 70,  // Reduced from 80 to fit more buttons on mobile
     minHeight: 30,
     MainMenu: {
       maxWidth: 120  // If any button exceeds this width, arrange in multi-column grid
@@ -172,7 +172,7 @@ const Config = {
   ISSUES_NEW_LINK: "https://github.com/kamenj/GeoCoins/issues/new",
   Errors_GlobalHandlerEnabled: true, // Global error handler (admin setting)
   SaveGuiState: true, // Save GUI state to cookies (admin setting) - default TRUE
-  RemoteLogging: false, // Enable remote logging to backend /log endpoint (admin setting) - default FALSE
+  RemoteLogging: false, // Enable remote logging to backend /log endpoint (admin setting) - default FALSE (auto-enabled for admin/dev/tester on first login)
   Debug: {
     UseDefaultCredentials: true,
     //  DefaultUser: "bob", //hider
@@ -542,8 +542,8 @@ const Config = {
           addPlaceholderAtMyLocation();
         },
         visible: function() {
-          // Only show when map view is visible
-          return State.mapPointsView.showMap;
+          // Always show - useful for everyone to see their location
+          return true;
         },
         enabled: true,
       },
@@ -1629,6 +1629,14 @@ export function handleMenuOverflow(menuId) {
   var topCommands = menu.querySelector('[id$="-top-commands"]');
   if (!topCommands) return;
   
+  // Check if menu is currently expanded - if so, don't rearrange buttons
+  // This prevents buttons from shifting during user interaction
+  var isExpanded = !menu.classList.contains(Config.Constants.ClassName.Collapsed);
+  if (isExpanded) {
+    // Menu is expanded, user might be interacting - don't rearrange
+    return;
+  }
+  
   // First, remove any existing expand button to start fresh
   var existingExpandBtn = titleCommands.querySelector('.menu-expand-btn');
   if (existingExpandBtn && existingExpandBtn.parentNode) {
@@ -1675,8 +1683,8 @@ export function handleMenuOverflow(menuId) {
   // If all buttons fit, no overflow needed
   if (totalWidth <= availableWidth) {
     topCommands.style.display = 'none';
-    // Ensure menu is collapsed when no overflow
-    setCollapsed(menuId, true);
+    // Don't auto-collapse - let user control expand/collapse state
+    // Just update the chevron to reflect current state
     updateChevron(menuId);
     return;
   }
@@ -1725,15 +1733,13 @@ export function handleMenuOverflow(menuId) {
     
     // Show top commands section (will be visible when menu is expanded)
     topCommands.style.display = 'grid';
-    // Ensure menu starts collapsed when there's overflow
-    setCollapsed(menuId, true);
+    // Don't auto-collapse - let user control the expand/collapse state
   } else {
-    // No overflow - hide top commands and collapse menu
+    // No overflow - hide top commands but don't force collapse
     topCommands.style.display = 'none';
-    setCollapsed(menuId, true);
   }
   
-  // Update chevron
+  // Update chevron to reflect current state
   updateChevron(menuId);
 }
 
@@ -3468,6 +3474,36 @@ export async function handleLogin() {
     await DB.setCurrentUser(result.data.username);
     // Cache the user data immediately for menu rendering
     State._userCache[result.data.username] = result.data;
+    
+    // Check if this is first login (no cached GUI state)
+    var guiStateCookie = getCookie('guiState');
+    var isFirstLogin = !guiStateCookie;
+    
+    // Enable remote logging by default for admin/debug/tester users on first login
+    if (isFirstLogin && (hasRole(result.data, 'admin') || hasRole(result.data, 'developer') || hasRole(result.data, 'tester'))) {
+      // Load current settings or create defaults
+      var settingsResult = await DB.getSettings();
+      if (settingsResult.success && settingsResult.data) {
+        State.settings = settingsResult.data;
+      } else {
+        State.settings = {
+          theme: Config.Constants.Theme.Light,
+          font: Config.Constants.FontSize.Medium,
+          autoHideTopMenu: true,
+          saveGuiState: true,
+          errorsGlobalHandlerEnabled: true,
+          remoteLogging: false
+        };
+      }
+      
+      // Enable remote logging
+      State.settings.remoteLogging = true;
+      Config.RemoteLogging = true;
+      await DB.saveSettings(State.settings);
+      setRemoteLoggerConfig(Config);
+      console.log('Remote logging enabled by default for admin/developer/tester user:', result.data.username);
+    }
+    
     await updateStatusBar();
     // No message on successful login - just proceed
     showContent(null);
@@ -5182,7 +5218,8 @@ function on_before_command_added(target_menu, cmd) {
       Config.Constants.CommandName.PointsShowBoth,
       Config.Constants.CommandName.PointsFullScreen,
       Config.Constants.CommandName.PointsCancel,
-      Config.Constants.CommandName.PointsLogin
+      Config.Constants.CommandName.PointsLogin,
+      Config.Constants.CommandName.PointsMyLoc  // Allow My Location button even when not logged in
     ];
     
     if (allowedCommands.indexOf(cmd.name) === -1) {
@@ -5246,8 +5283,10 @@ function on_before_command_added(target_menu, cmd) {
   btn.textContent = cmd.caption || cmd.name || "(cmd)";
   btn.setAttribute('data-cmd', cmd.name); // Store command name for identification
   if (!enabled) btn.disabled = true;
-  btn.addEventListener("click", function () {
+  btn.addEventListener("click", function (e) {
     if (!enabled) return;
+    // Stop event from bubbling up to header (prevents chevron toggle on mobile)
+    e.stopPropagation();
     cmd.action();
   });
   
@@ -5922,7 +5961,8 @@ async function loadAll() {
       font: Config.Constants.FontSize.Medium,
       autoHideTopMenu: true,
       saveGuiState: true,
-      errorsGlobalHandlerEnabled: true
+      errorsGlobalHandlerEnabled: true,
+      remoteLogging: false
     };
     
     // Ensure default values if undefined
@@ -5935,13 +5975,17 @@ async function loadAll() {
     if (State.settings.errorsGlobalHandlerEnabled === undefined) {
       State.settings.errorsGlobalHandlerEnabled = true;
     }
+    if (State.settings.remoteLogging === undefined) {
+      State.settings.remoteLogging = false;
+    }
   } else {
     State.settings = { 
       theme: Config.Constants.Theme.Light, 
       font: Config.Constants.FontSize.Medium,
       autoHideTopMenu: true,
       saveGuiState: true,
-      errorsGlobalHandlerEnabled: true
+      errorsGlobalHandlerEnabled: true,
+      remoteLogging: false
     };
   }
   
@@ -5950,6 +5994,10 @@ async function loadAll() {
   Config.Errors_GlobalHandlerEnabled = State.settings.errorsGlobalHandlerEnabled !== undefined 
     ? State.settings.errorsGlobalHandlerEnabled 
     : true;
+  Config.RemoteLogging = State.settings.remoteLogging !== undefined ? State.settings.remoteLogging : false;
+  
+  // Update remote logger with loaded config
+  setRemoteLoggerConfig(Config);
 
   // Load current user from DB
   // Load user if either AutoLoadCachedUser is enabled OR SaveGuiState is enabled
@@ -6053,27 +6101,135 @@ async function loadAll() {
   var menuTopHeaderEl = $(Config.Constants.ElementId.MenuTopHeader);
   
   var menuTopHandler = function(e) {
+    // Only toggle if the event target is actually inside the header (not bubbled from content area)
+    var headerEl = e.currentTarget;
+    if (!headerEl.contains(e.target)) {
+      // Event came from outside this header element - ignore it
+      e.stopPropagation();
+      return;
+    }
+    
+    // Additional safety: check if target is in section-content (should never happen, but just in case)
+    var contentSection = e.target.closest('.section-content');
+    if (contentSection) {
+      e.stopPropagation();
+      return;
+    }
+    
+    // Don't toggle if clicking on a button inside the header
+    if (e.target.tagName === 'BUTTON' || e.target.closest('button')) {
+      e.stopPropagation();
+      return;
+    }
+    // Don't toggle if clicking in the command bar area (buttons container)
+    if (e.target.classList.contains('cmd-bar') || e.target.closest('.cmd-bar')) {
+      e.stopPropagation();
+      return;
+    }
     e.preventDefault();
+    e.stopPropagation();
     toggleCollapse(Config.Constants.ElementId.MenuTop);
   };
   
   if (menuTopHeaderEl) {
+    // Only use click event - avoid touchstart which can interfere with swipe gestures
     menuTopHeaderEl.addEventListener("click", menuTopHandler);
-    menuTopHeaderEl.addEventListener("touchstart", menuTopHandler);
+    
+    // Also add handlers to the section-content to prevent event bubbling
+    var menuTopContent = menuTopHeaderEl.nextElementSibling;
+    if (menuTopContent && menuTopContent.classList.contains('section-content')) {
+      menuTopContent.addEventListener("click", function(e) { e.stopPropagation(); });
+    }
   }
   
   var menuBottomHeaderEl = $(Config.Constants.ElementId.MenuBottomHeader);
   
   var menuBottomHandler = function(e) {
+    // Only toggle if the event target is actually inside the header (not bubbled from content area)
+    var headerEl = e.currentTarget;
+    if (!headerEl.contains(e.target)) {
+      e.stopPropagation();
+      return;
+    }
+    
+    // Additional safety: check if target is in section-content (should never happen, but just in case)
+    var contentSection = e.target.closest('.section-content');
+    if (contentSection) {
+      e.stopPropagation();
+      return;
+    }
+    
+    // Don't toggle if clicking on a button inside the header
+    if (e.target.tagName === 'BUTTON' || e.target.closest('button')) {
+      e.stopPropagation();
+      return;
+    }
+    // Don't toggle if clicking in the command bar area (buttons container)  
+    if (e.target.classList.contains('cmd-bar') || e.target.closest('.cmd-bar')) {
+      e.stopPropagation();
+      return;
+    }
     e.preventDefault();
+    e.stopPropagation();
     toggleCollapse(Config.Constants.ElementId.MenuBottom);
   };
   
   if (menuBottomHeaderEl) {
+    // Only use click event - avoid touchstart which can interfere with swipe gestures
     menuBottomHeaderEl.addEventListener("click", menuBottomHandler);
-    menuBottomHeaderEl.addEventListener("touchstart", menuBottomHandler);
+    
+    // Prevent event bubbling from section-content (especially important for mobile)
+    var menuBottomContent = menuBottomHeaderEl.nextElementSibling;
+    if (menuBottomContent && menuBottomContent.classList.contains('section-content')) {
+      // Track touch state to distinguish between tap and scroll
+      var touchState = { startY: 0, hasMoved: false };
+      
+      // Prevent clicks and touches in content area from bubbling to header
+      // Use capture phase (true) to intercept events before they reach buttons
+      menuBottomContent.addEventListener("click", function(e) { 
+        e.stopPropagation();
+      }, true); // Capture phase
+      
+      menuBottomContent.addEventListener("touchstart", function(e) { 
+        e.stopPropagation();
+        // Record start position
+        touchState.startY = e.touches[0].clientY;
+        touchState.hasMoved = false;
+      }, true); // Capture phase
+      
+      menuBottomContent.addEventListener("touchmove", function(e) { 
+        e.stopPropagation();
+        // Check if user has moved significantly (scrolling)
+        var moveDistance = Math.abs(e.touches[0].clientY - touchState.startY);
+        if (moveDistance > 10) {
+          touchState.hasMoved = true;
+        }
+        // Don't prevent default - allow scrolling
+      }, true); // Capture phase
+      
+      menuBottomContent.addEventListener("touchend", function(e) { 
+        e.stopPropagation();
+        // ALWAYS prevent default to stop synthetic click on header
+        e.preventDefault();
+        
+        // If user was scrolling (moved > 10px), don't trigger button click
+        if (touchState.hasMoved) {
+          return;
+        }
+        
+        // User tapped (didn't scroll) - manually trigger button click
+        if (e.target.tagName === 'BUTTON') {
+          e.target.click();
+        }
+      }, true); // Capture phase
+    }
   }
-  $(Config.Constants.ElementId.LoginHeader).addEventListener("click", function () {
+  
+  $(Config.Constants.ElementId.LoginHeader).addEventListener("click", function (e) {
+    // Don't toggle if clicking on a button inside the header
+    if (e.target.tagName === 'BUTTON' || e.target.closest('button')) {
+      return;
+    }
     toggleCollapse(Config.Constants.ContentSection.Login);
   });
   
@@ -6096,13 +6252,25 @@ async function loadAll() {
       }
     });
   }
-  $(Config.Constants.ElementId.UsersListHeader).addEventListener("click", function () {
+  $(Config.Constants.ElementId.UsersListHeader).addEventListener("click", function (e) {
+    // Don't toggle if clicking on a button inside the header
+    if (e.target.tagName === 'BUTTON' || e.target.closest('button')) {
+      return;
+    }
     toggleCollapse(Config.Constants.ContentSection.UsersList);
   });
-  $(Config.Constants.ElementId.UserDetailsHeader).addEventListener("click", function () {
+  $(Config.Constants.ElementId.UserDetailsHeader).addEventListener("click", function (e) {
+    // Don't toggle if clicking on a button inside the header
+    if (e.target.tagName === 'BUTTON' || e.target.closest('button')) {
+      return;
+    }
     toggleCollapse(Config.Constants.ContentSection.UserDetails);
   });
-  $(Config.Constants.ElementId.MessageHeader).addEventListener("click", function () {
+  $(Config.Constants.ElementId.MessageHeader).addEventListener("click", function (e) {
+    // Don't toggle if clicking on a button inside the header
+    if (e.target.tagName === 'BUTTON' || e.target.closest('button')) {
+      return;
+    }
     toggleCollapse(Config.Constants.ContentSection.Message);
   });
   var mapPointsHeaderEl = $(Config.Constants.ElementId.MapPointsHeader);
@@ -6111,35 +6279,81 @@ async function loadAll() {
     mapPointsHeaderEl._mapPointsHandlerAttached = true;
     
     var mapPointsHandler = function(e) {
+      // Only toggle if the event target is actually inside the header (not bubbled from content area)
+      var headerEl = e.currentTarget;
+      if (!headerEl.contains(e.target)) {
+        // Event came from outside this header element - ignore it
+        e.stopPropagation();
+        return;
+      }
+      
+      // Additional safety: check if target is in section-content (should never happen, but just in case)
+      var contentSection = e.target.closest('.section-content');
+      if (contentSection) {
+        e.stopPropagation();
+        return;
+      }
+      
+      // Don't toggle if clicking on a button inside the header
+      if (e.target.tagName === 'BUTTON' || e.target.closest('button')) {
+        e.stopPropagation();
+        return;
+      }
+      // Don't toggle if clicking in the command bar area (buttons container)
+      if (e.target.classList.contains('cmd-bar') || e.target.closest('.cmd-bar')) {
+        e.stopPropagation();
+        return;
+      }
       e.preventDefault();
+      e.stopPropagation();
       toggleCollapse(Config.Constants.ContentSection.MapPoints);
     };
     
+    // Only use click event - avoid touchstart which can interfere with swipe gestures
     mapPointsHeaderEl.addEventListener("click", mapPointsHandler);
-    mapPointsHeaderEl.addEventListener("touchstart", mapPointsHandler);
   }
   
   var mapPointDetailsHandler = function(e) {
+    // Don't toggle if clicking on a button inside the header
+    if (e.target.tagName === 'BUTTON' || e.target.closest('button')) {
+      return;
+    }
     e.preventDefault();
     toggleCollapse(Config.Constants.ContentSection.MapPointDetails);
   };
+  // Only use click event - avoid touchstart which can interfere with swipe gestures
   $(Config.Constants.ElementId.MapPointDetailsHeader).addEventListener("click", mapPointDetailsHandler);
-  $(Config.Constants.ElementId.MapPointDetailsHeader).addEventListener("touchstart", mapPointDetailsHandler);
   $(Config.Constants.ElementId.SettingsHeader).addEventListener("click", function (e) {
+    // Don't toggle if clicking on a button inside the header
+    if (e.target.tagName === 'BUTTON' || e.target.closest('button')) {
+      return;
+    }
     console.log('[DEBUG] Settings header CLICKED!', e);
     // When Settings header is clicked, call openSettings() to initialize form values
     openSettings();
   });
-  $(Config.Constants.ElementId.AboutHeader).addEventListener("click", function () {
+  $(Config.Constants.ElementId.AboutHeader).addEventListener("click", function (e) {
+    // Don't toggle if clicking on a button inside the header
+    if (e.target.tagName === 'BUTTON' || e.target.closest('button')) {
+      return;
+    }
     toggleCollapse(Config.Constants.ContentSection.About);
   });
-  $(Config.Constants.ElementId.DeveloperToolsHeader).addEventListener("click", function () {
+  $(Config.Constants.ElementId.DeveloperToolsHeader).addEventListener("click", function (e) {
+    // Don't toggle if clicking on a button inside the header
+    if (e.target.tagName === 'BUTTON' || e.target.closest('button')) {
+      return;
+    }
     toggleCollapse(Config.Constants.ContentSection.DeveloperTools);
   });
   var helpHeaderEl = $(Config.Constants.ElementId.HelpHeader);
   if (helpHeaderEl && !helpHeaderEl._helpHandlerAttached) {
     helpHeaderEl._helpHandlerAttached = true;
-    helpHeaderEl.addEventListener("click", function() {
+    helpHeaderEl.addEventListener("click", function(e) {
+      // Don't toggle if clicking on a button inside the header
+      if (e.target.tagName === 'BUTTON' || e.target.closest('button')) {
+        return;
+      }
       var helpSection = $(Config.Constants.ContentSection.Help);
       var wasCollapsed = helpSection ? helpSection.classList.contains(Config.Constants.ClassName.Collapsed) : true;
       
@@ -6151,7 +6365,11 @@ async function loadAll() {
       }
     });
   }
-  $(Config.Constants.ElementId.ErrorsHeader).addEventListener("click", function () {
+  $(Config.Constants.ElementId.ErrorsHeader).addEventListener("click", function (e) {
+    // Don't toggle if clicking on a button inside the header
+    if (e.target.tagName === 'BUTTON' || e.target.closest('button')) {
+      return;
+    }
     toggleCollapse(Config.Constants.ContentSection.Errors);
   });
 
