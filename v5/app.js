@@ -4285,57 +4285,7 @@ export function enterMapPointsFullScreen() {
       setCollapsed(Constants.ElementId.MenuBottom, true);
     }
     
-    // Log MapPoints container dimensions after render
-    setTimeout(function() {
-      // Log body and viewport dimensions
-      rlog.debug('FS: window.innerHeight: ' + window.innerHeight);
-      rlog.debug('FS: document.body.offsetHeight: ' + document.body.offsetHeight);
-      rlog.debug('FS: document.body.style.height: ' + document.body.style.height);
-      
-      // Log mapPoints dimensions
-      var mapPoints = $(Constants.ContentSection.MapPoints);
-      if (mapPoints) {
-        rlog.debug('FS: mapPoints dimensions: ' + mapPoints.offsetWidth + 'x' + mapPoints.offsetHeight);
-      }
-      
-      // Log menuBottom dimensions
-      var menuBottom = $(Constants.ElementId.MenuBottom);
-      if (menuBottom) {
-        var isCollapsed = menuBottom.classList.contains(Constants.ClassName.Collapsed);
-        rlog.debug('FS: menuBottom collapsed: ' + isCollapsed + ', dimensions: ' + menuBottom.offsetWidth + 'x' + menuBottom.offsetHeight);
-        var menuBottomContent = menuBottom.querySelector('.section-content');
-        if (menuBottomContent) {
-          rlog.debug('FS: menuBottom content display: ' + window.getComputedStyle(menuBottomContent).display);
-        }
-      }
-      
-      var mapPointsContainer = document.querySelector('#mapPoints-container');
-      if (mapPointsContainer) {
-        rlog.debug('FS: mapPoints-container dimensions: ' + mapPointsContainer.offsetWidth + 'x' + mapPointsContainer.offsetHeight);
-        
-        var listDiv = document.querySelector('#mapPointsList');
-        var mapDiv = document.querySelector('#mapPointsGeoView');
-        var divider = document.querySelector('#mapPointsDivider');
-        
-        if (listDiv) {
-          var listVisible = !listDiv.classList.contains('hidden');
-          rlog.debug('FS: List visible: ' + listVisible + ', dimensions: ' + listDiv.offsetWidth + 'x' + listDiv.offsetHeight);
-        }
-        
-        if (mapDiv) {
-          var mapVisible = !mapDiv.classList.contains('hidden');
-          rlog.debug('FS: Map visible: ' + mapVisible + ', dimensions: ' + mapDiv.offsetWidth + 'x' + mapDiv.offsetHeight);
-        }
-        
-        if (divider) {
-          var dividerVisible = !divider.classList.contains('hidden');
-          rlog.debug('FS: Divider visible: ' + dividerVisible);
-        }
-        
-        rlog.debug('FS: State.mapPointsView.showList: ' + State.mapPointsView.showList);
-        rlog.debug('FS: State.mapPointsView.showMap: ' + State.mapPointsView.showMap);
-      }
-    }, 100);
+
   }, 50);
   
   // Try to enter browser fullscreen mode (works on some devices, not all mobile browsers)
@@ -5753,7 +5703,21 @@ export function setupMapPointsDivider() {
       dividerHandlers.startWidth = listDiv.getBoundingClientRect().width;
     } else {
       dividerHandlers.startY = e.clientY;
-      dividerHandlers.startHeight = listDiv.getBoundingClientRect().height;
+      var currentHeight = listDiv.getBoundingClientRect().height;
+      
+      // Ensure starting height is within valid constraints
+      var containerHeight = container.getBoundingClientRect().height;
+      var minHeight = 100;
+      var maxHeight = containerHeight - 150;
+      
+      // If current height is outside constraints, clamp it
+      dividerHandlers.startHeight = Math.max(minHeight, Math.min(currentHeight, maxHeight));
+      
+      // If we had to clamp it, apply the clamped height immediately
+      if (dividerHandlers.startHeight !== currentHeight) {
+        container.style.setProperty('--list-dock-top-height', dividerHandlers.startHeight + 'px');
+        listDiv.style.height = dividerHandlers.startHeight + 'px';
+      }
     }
     
     // Prevent text selection and default behavior
@@ -5767,6 +5731,13 @@ export function setupMapPointsDivider() {
   
   dividerHandlers.mouseMove = function(e) {
     if (!dividerHandlers.isDragging) return;
+    
+    // Throttle logging to avoid flooding (only log every 10th move)
+    if (!dividerHandlers.moveCount) dividerHandlers.moveCount = 0;
+    dividerHandlers.moveCount++;
+    if (dividerHandlers.moveCount % 10 === 1) {
+      rlog.debug('divider mouseMove called: moveCount=' + dividerHandlers.moveCount);
+    }
     
     var isHorizontal = container.classList.contains("layout-horizontal");
     
@@ -5791,15 +5762,12 @@ export function setupMapPointsDivider() {
     } else {
       var deltaY = e.clientY - dividerHandlers.startY;
       
-      // Only apply changes if delta is significant (avoid micro-jumps)
-      if (Math.abs(deltaY) < 1) return;
-      
       var newHeight = dividerHandlers.startHeight + deltaY;
       
       // Apply constraints
-      var minHeight = 200; // Minimum height for list
+      var minHeight = 100; // Reduced minimum height for list
       var containerHeight = container.getBoundingClientRect().height;
-      var maxHeight = containerHeight - 200; // Leave at least 200px for map
+      var maxHeight = containerHeight - 150; // Leave at least 150px for map
       
       newHeight = Math.max(minHeight, Math.min(newHeight, maxHeight));
       
@@ -6816,7 +6784,17 @@ function applyMobileStyling() {
  * Handles viewport resize events in fullscreen mode (important for mobile when address bar shows/hides)
  */
 function handleFullscreenResize() {
+  rlog.debug('handleFullscreenResize called: fullscreen=' + State.fullScreen.active + ', isDragging=' + (dividerHandlers ? dividerHandlers.isDragging : 'N/A'));
+  
   if (!State.fullScreen.active) return;
+  
+  // Don't resize if divider is being dragged - prevents resize loop
+  if (dividerHandlers && dividerHandlers.isDragging) {
+    rlog.debug('handleFullscreenResize: skipped - divider is being dragged');
+    return;
+  }
+  
+  rlog.debug('handleFullscreenResize: updating body height to ' + window.innerHeight);
   
   // Update body height to match current viewport (handles address bar show/hide)
   document.body.style.height = window.innerHeight + 'px';

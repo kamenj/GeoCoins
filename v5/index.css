@@ -475,6 +475,8 @@ tr.selected { background: var(--highlight); }
   transition: background 0.2s;
   z-index: 10;
   user-select: none;
+  touch-action: none; /* Prevent browser from handling touch - let JS handle it */
+  -webkit-touch-callout: none; /* Disable iOS callout */
 }
 
 .mappoints-container.layout-horizontal .mappoints-divider:hover,
@@ -526,6 +528,8 @@ tr.selected { background: var(--highlight); }
   transition: background 0.2s;
   z-index: 10;
   user-select: none;
+  touch-action: none; /* Prevent browser from handling touch - let JS handle it */
+  -webkit-touch-callout: none; /* Disable iOS callout */
 }
 
 .mappoints-container.layout-vertical .mappoints-divider:hover,
@@ -1218,15 +1222,14 @@ body.fullscreen-mode > #mapPoints .mappoints-container.layout-horizontal .mappoi
 
 /* In both mode (list + map) - vertical layout (portrait) */
 body.fullscreen-mode > #mapPoints .mappoints-container.layout-vertical .mappoints-list {
-  height: auto !important; /* Auto height - will be set by CSS variable */
-  max-height: 50% !important; /* Max 50% of container */
+  /* height and max-height removed - allow JS to control via inline styles for dragging */
   overflow: auto !important;
   display: flex !important;
   flex-direction: column !important;
   flex-shrink: 0 !important;
   padding: 0 !important;
   margin: 0 !important;
-  min-height: 150px !important; /* Minimum height for list */
+  min-height: 100px !important; /* Minimum height for list */
   border: none !important;
   border-radius: 0 !important;
 }

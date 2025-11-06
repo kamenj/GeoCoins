@@ -1,81 +1,21 @@
-[2025-11-06T12:27:20.410Z] [DEBUG] applyBottomMenuLayout: called, fullscreen=false
-[2025-11-06T12:27:25.152Z] [DEBUG] applyBottomMenuLayout: called, fullscreen=false
-[2025-11-06T12:27:26.136Z] [DEBUG] applyBottomMenuLayout: called, fullscreen=false
-[2025-11-06T12:27:31.329Z] [DEBUG] applyBottomMenuLayout: called, fullscreen=true
-[2025-11-06T12:27:31.652Z] [DEBUG] applyBottomMenuLayout: bottomMenu element=found
-[2025-11-06T12:27:31.937Z] [DEBUG] applyBottomMenuLayout: buttons.length=0
-[2025-11-06T12:27:32.146Z] [DEBUG] FS: window.innerHeight: 667
-[2025-11-06T12:27:32.359Z] [DEBUG] FS: document.body.offsetHeight: 633
-[2025-11-06T12:27:32.561Z] [DEBUG] FS: document.body.style.height: 633px
-[2025-11-06T12:27:32.773Z] [DEBUG] FS: mapPoints dimensions: 338x585
-[2025-11-06T12:27:32.981Z] [DEBUG] FS: menuBottom collapsed: true, dimensions: 338x48
-[2025-11-06T12:27:33.176Z] [DEBUG] FS: menuBottom content display: none
-[2025-11-06T12:27:33.376Z] [DEBUG] FS: mapPoints-container dimensions: 338x562
-[2025-11-06T12:27:33.570Z] [DEBUG] FS: List visible: true, dimensions: 338x150
-[2025-11-06T12:27:33.778Z] [DEBUG] FS: Map visible: true, dimensions: 338x404
-[2025-11-06T12:27:33.978Z] [DEBUG] FS: Divider visible: true
-[2025-11-06T12:27:34.170Z] [DEBUG] FS: State.mapPointsView.showList: true
-[2025-11-06T12:27:34.376Z] [DEBUG] FS: State.mapPointsView.showMap: true
-[2025-11-06T12:27:34.585Z] [DEBUG] applyBottomMenuLayout: called, fullscreen=true
-[2025-11-06T12:27:34.791Z] [DEBUG] applyBottomMenuLayout: bottomMenu element=found
-[2025-11-06T12:27:34.991Z] [DEBUG] applyBottomMenuLayout: buttons.length=6
-[2025-11-06T12:27:35.189Z] [DEBUG] applyBottomMenuLayout: applied grid with 3 columns
-[2025-11-06T12:28:07.453Z] [DEBUG] applyBottomMenuLayout: called, fullscreen=false
-[2025-11-06T12:28:10.278Z] [DEBUG] applyBottomMenuLayout: called, fullscreen=false
-[2025-11-06T12:28:18.333Z] [DEBUG] applyBottomMenuLayout: called, fullscreen=false
-[2025-11-06T12:28:22.762Z] [DEBUG] applyBottomMenuLayout: called, fullscreen=true
-[2025-11-06T12:28:23.115Z] [DEBUG] applyBottomMenuLayout: bottomMenu element=found
-[2025-11-06T12:28:23.421Z] [DEBUG] applyBottomMenuLayout: buttons.length=0
-[2025-11-06T12:28:23.670Z] [DEBUG] FS: window.innerHeight: 667
-[2025-11-06T12:28:23.925Z] [DEBUG] FS: document.body.offsetHeight: 633
-[2025-11-06T12:28:24.176Z] [DEBUG] FS: document.body.style.height: 633px
-[2025-11-06T12:28:24.421Z] [DEBUG] FS: mapPoints dimensions: 338x585
-[2025-11-06T12:28:24.667Z] [DEBUG] FS: menuBottom collapsed: true, dimensions: 338x48
-[2025-11-06T12:28:24.931Z] [DEBUG] FS: menuBottom content display: none
-[2025-11-06T12:28:25.166Z] [DEBUG] FS: mapPoints-container dimensions: 338x562
-[2025-11-06T12:28:25.407Z] [DEBUG] FS: List visible: true, dimensions: 338x150
-[2025-11-06T12:28:25.660Z] [DEBUG] FS: Map visible: true, dimensions: 338x404
-[2025-11-06T12:28:26.016Z] [DEBUG] FS: Divider visible: true
-[2025-11-06T12:28:26.260Z] [DEBUG] FS: State.mapPointsView.showList: true
-[2025-11-06T12:28:26.506Z] [DEBUG] FS: State.mapPointsView.showMap: true
-[2025-11-06T12:28:26.754Z] [DEBUG] applyBottomMenuLayout: called, fullscreen=true
-[2025-11-06T12:28:27.004Z] [DEBUG] applyBottomMenuLayout: bottomMenu element=found
-[2025-11-06T12:28:27.256Z] [DEBUG] applyBottomMenuLayout: buttons.length=6
-[2025-11-06T12:28:27.527Z] [DEBUG] applyBottomMenuLayout: applied grid with 3 columns
-[2025-11-06T12:28:27.840Z] [DEBUG] applyBottomMenuLayout: called, fullscreen=false
-[2025-11-06T12:28:51.611Z] [DEBUG] FS: window.innerHeight: 667
-[2025-11-06T12:28:51.839Z] [DEBUG] FS: document.body.offsetHeight: 633
-[2025-11-06T12:28:52.112Z] [DEBUG] FS: document.body.style.height: 633px
-[2025-11-06T12:28:52.313Z] [DEBUG] FS: mapPoints dimensions: 338x585
-[2025-11-06T12:28:52.515Z] [DEBUG] FS: menuBottom collapsed: true, dimensions: 338x48
-[2025-11-06T12:28:52.712Z] [DEBUG] FS: menuBottom content display: none
-[2025-11-06T12:28:52.925Z] [DEBUG] FS: mapPoints-container dimensions: 338x562
-[2025-11-06T12:28:53.133Z] [DEBUG] FS: List visible: true, dimensions: 338x150
-[2025-11-06T12:28:53.336Z] [DEBUG] FS: Map visible: true, dimensions: 338x404
-[2025-11-06T12:28:53.534Z] [DEBUG] FS: Divider visible: true
-[2025-11-06T12:28:53.740Z] [DEBUG] FS: State.mapPointsView.showList: true
-[2025-11-06T12:28:53.933Z] [DEBUG] FS: State.mapPointsView.showMap: true
-[2025-11-06T12:29:06.852Z] [DEBUG] FS: window.innerHeight: 900
-[2025-11-06T12:29:07.104Z] [DEBUG] FS: document.body.offsetHeight: 699
-[2025-11-06T12:29:07.351Z] [DEBUG] FS: document.body.style.height: 699px
-[2025-11-06T12:29:07.583Z] [DEBUG] FS: mapPoints dimensions: 1600x652
-[2025-11-06T12:29:07.848Z] [DEBUG] FS: menuBottom collapsed: true, dimensions: 1600x47
-[2025-11-06T12:29:08.090Z] [DEBUG] FS: menuBottom content display: none
-[2025-11-06T12:29:08.324Z] [DEBUG] FS: mapPoints-container dimensions: 1600x629
-[2025-11-06T12:29:08.562Z] [DEBUG] FS: List visible: true, dimensions: 400x629
-[2025-11-06T12:29:08.788Z] [DEBUG] FS: Map visible: true, dimensions: 1192x629
-[2025-11-06T12:29:09.026Z] [DEBUG] FS: Divider visible: true
-[2025-11-06T12:29:09.259Z] [DEBUG] FS: State.mapPointsView.showList: true
-[2025-11-06T12:29:09.501Z] [DEBUG] FS: State.mapPointsView.showMap: true
-[2025-11-06T12:30:38.053Z] [DEBUG] FS: window.innerHeight: 667
-[2025-11-06T12:30:38.301Z] [DEBUG] FS: document.body.offsetHeight: 633
-[2025-11-06T12:30:38.548Z] [DEBUG] FS: document.body.style.height: 633px
-[2025-11-06T12:30:38.813Z] [DEBUG] FS: mapPoints dimensions: 338x585
-[2025-11-06T12:30:39.076Z] [DEBUG] FS: menuBottom collapsed: true, dimensions: 338x48
-[2025-11-06T12:30:39.342Z] [DEBUG] FS: menuBottom content display: none
-[2025-11-06T12:30:39.593Z] [DEBUG] FS: mapPoints-container dimensions: 338x562
-[2025-11-06T12:30:39.848Z] [DEBUG] FS: List visible: true, dimensions: 338x150
-[2025-11-06T12:30:40.095Z] [DEBUG] FS: Map visible: true, dimensions: 338x404
-[2025-11-06T12:30:40.394Z] [DEBUG] FS: Divider visible: true
-[2025-11-06T12:30:40.743Z] [DEBUG] FS: State.mapPointsView.showList: true
-[2025-11-06T12:30:41.081Z] [DEBUG] FS: State.mapPointsView.showMap: true
+[2025-11-06T12:49:30.218Z] [DEBUG] divider mouseMove called: moveCount=1
+[2025-11-06T12:49:31.318Z] [DEBUG] divider mouseMove called: moveCount=11
+[2025-11-06T12:49:33.586Z] [DEBUG] handleFullscreenResize called: fullscreen=false, isDragging=false
+[2025-11-06T12:49:34.246Z] [DEBUG] handleFullscreenResize called: fullscreen=true, isDragging=false
+[2025-11-06T12:49:34.544Z] [DEBUG] handleFullscreenResize: updating body height to 667
+[2025-11-06T12:49:35.405Z] [DEBUG] divider mouseMove called: moveCount=21
+[2025-11-06T12:49:36.535Z] [DEBUG] divider mouseMove called: moveCount=31
+[2025-11-06T12:49:37.486Z] [DEBUG] divider mouseMove called: moveCount=41
+[2025-11-06T12:49:38.547Z] [DEBUG] divider mouseMove called: moveCount=51
+[2025-11-06T12:50:29.702Z] [DEBUG] FS: window.innerHeight: 900
+[2025-11-06T12:50:29.937Z] [DEBUG] FS: document.body.offsetHeight: 699
+[2025-11-06T12:50:30.174Z] [DEBUG] FS: document.body.style.height: 699px
+[2025-11-06T12:50:30.407Z] [DEBUG] FS: mapPoints dimensions: 1600x652
+[2025-11-06T12:50:30.657Z] [DEBUG] FS: menuBottom collapsed: true, dimensions: 1600x47
+[2025-11-06T12:50:30.915Z] [DEBUG] FS: menuBottom content display: none
+[2025-11-06T12:50:31.274Z] [DEBUG] FS: mapPoints-container dimensions: 1600x629
+[2025-11-06T12:50:31.554Z] [DEBUG] FS: List visible: true, dimensions: 502x629
+[2025-11-06T12:50:31.795Z] [DEBUG] FS: Map visible: true, dimensions: 1090x629
+[2025-11-06T12:50:32.030Z] [DEBUG] FS: Divider visible: true
+[2025-11-06T12:50:32.267Z] [DEBUG] FS: State.mapPointsView.showList: true
+[2025-11-06T12:50:32.501Z] [DEBUG] FS: State.mapPointsView.showMap: true
