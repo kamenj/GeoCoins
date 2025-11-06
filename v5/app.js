@@ -1087,6 +1087,8 @@ const State = {
   _userCache: {}, // username -> user object
   _pointCache: {}, // id -> point object
   markers: {}, // pointId -> Leaflet marker object
+  changingPointLocation: null, // Track when a point location is being changed: { pointId, originalLat, originalLng }
+  skipMapRefresh: false, // Flag to prevent map refresh (used during point location changes)
 };
 
 // Expose Config, State, and showContent to window for errorHandler.js and connectionManager.js
@@ -1241,6 +1243,10 @@ export function restoreGuiState() {
     
     var guiState = JSON.parse(guiStateCookie);
     
+    // Skip map refreshes during entire restoration to avoid race conditions
+    var wasSkipping = State.skipMapRefresh;
+    State.skipMapRefresh = true;
+    
     // Restore input field values
     if (guiState.inputs) {
       Object.keys(guiState.inputs).forEach(function(inputId) {
@@ -1330,8 +1336,20 @@ export function restoreGuiState() {
       }
     }
     
+    // Restore skipMapRefresh flag and trigger one final refresh
+    State.skipMapRefresh = wasSkipping;
+    
+    // Now trigger a single refresh after all restoration is complete
+    if (State.leafletMap) {
+      setTimeout(function() {
+        refreshMapMarkers();
+      }, 100);
+    }
+    
   } catch (e) {
     console.error('❌ Failed to restore GUI state from cookie:', e);
+    // Make sure to restore the flag even on error
+    State.skipMapRefresh = false;
   }
 }
 
@@ -3594,6 +3612,9 @@ function renderPointsRow(p, i) {
   return html;
 }
 export function refreshMapPointsTable() {
+  var stack = new Error().stack;
+  var caller = stack.split('\n')[2] || 'unknown';
+  rlog.debug('refreshMapPointsTable: called - skipMapRefresh=' + State.skipMapRefresh + ', caller=' + caller.trim());
   // Control visibility of the form based on user login status
   var mapPointsForm = $("mapPointsForm");
   if (mapPointsForm) {
@@ -3632,7 +3653,7 @@ export function refreshMapPointsTable() {
       }
       
       // Also refresh map markers if map is initialized
-      if (State.leafletMap) {
+      if (State.leafletMap && !State.skipMapRefresh) {
         refreshMapMarkers();
       }
       
@@ -3769,7 +3790,7 @@ export function refreshMapPointsTable() {
     }
     
     // Also refresh map markers if map is initialized
-    if (State.leafletMap) {
+    if (State.leafletMap && !State.skipMapRefresh) {
       refreshMapMarkers();
     }
     
@@ -4204,7 +4225,9 @@ export function toggleMapPointsView(mode) {
   if (State.mapPointsView.showMap && State.leafletMap) {
     setTimeout(function() {
       State.leafletMap.invalidateSize();
-      refreshMapMarkers();
+      if (!State.skipMapRefresh) {
+        refreshMapMarkers();
+      }
     }, 100);
   }
   
@@ -4398,7 +4421,9 @@ export function enterMapPointsFullScreen() {
     
     if (State.leafletMap && State.mapPointsView.showMap) {
       State.leafletMap.invalidateSize();
-      refreshMapMarkers();
+      if (!State.skipMapRefresh) {
+        refreshMapMarkers();
+      }
     }
     
     // Force menuBottom to recalculate height after all rendering is done
@@ -4559,7 +4584,9 @@ export function exitMapPointsFullScreen() {
     // Refresh map to adjust to new size
     if (State.leafletMap && State.mapPointsView.showMap) {
       State.leafletMap.invalidateSize();
-      refreshMapMarkers();
+      if (!State.skipMapRefresh) {
+        refreshMapMarkers();
+      }
     }
   }, 100);
   
@@ -4836,11 +4863,26 @@ function getStatusBadgeHTML(status) {
 }
 
 export function refreshMapMarkers() {
+  // Get call stack to see who called this function
+  var stack = new Error().stack;
+  var caller = stack ? stack.split('\n')[2] : 'unknown';
+  
+  rlog.debug('refreshMapMarkers: called - skipMapRefresh=' + State.skipMapRefresh + 
+             ', changingPointLocation=' + (State.changingPointLocation ? State.changingPointLocation.pointId : 'null') +
+             ', caller=' + caller.trim());
+  
+  // Check if map refresh should be skipped (during point location changes)
+  if (State.skipMapRefresh) {
+    rlog.debug('refreshMapMarkers: SKIPPED - skipMapRefresh flag is true');
+    return;
+  }
+  
   if (!State.leafletMap) return;
   
   // Clear existing markers but preserve the temporary placeholder
   State.leafletMap.eachLayer(function(layer) {
     if (layer instanceof L.Marker && layer !== State.tempPlacemark) {
+      rlog.debug('refreshMapMarkers: removing existing marker layer');
       State.leafletMap.removeLayer(layer);
     }
   });
@@ -4862,11 +4904,93 @@ export function refreshMapMarkers() {
         var status = point.status || 'pending';
         var icon = getMarkerIconForStatus(status);
         
-        // Create marker with custom icon
-        var marker = L.marker([point.lat, point.lng], { icon: icon }).addTo(State.leafletMap);
+        // Check if this point is in change location mode
+        var isChanging = State.changingPointLocation && State.changingPointLocation.pointId === point.id;
+        
+        // Create marker with custom icon (draggable if in change mode)
+        var marker = L.marker([point.lat, point.lng], { 
+          icon: icon,
+          draggable: isChanging,
+          opacity: isChanging ? 0.6 : 1.0
+        }).addTo(State.leafletMap);
+        
+        rlog.debug('refreshMapMarkers: created marker for point ' + point.id + 
+                   ' at [' + point.lat + ',' + point.lng + ']' +
+                   ', draggable=' + isChanging + ', opacity=' + (isChanging ? 0.6 : 1.0));
         
         // Store marker in State for later access
         State.markers[point.id] = marker;
+        
+        // If in change mode, re-attach the dragend handler
+        if (isChanging) {
+          rlog.debug('refreshMapMarkers: attaching dragend handler for point ' + point.id);
+          
+          marker.once('dragend', async function(ev) {
+            var newLatLng = ev.target.getLatLng();
+            
+            rlog.debug('DragEnd: *** DRAGEND EVENT FIRED *** marker dragged to lat=' + newLatLng.lat + ', lng=' + newLatLng.lng);
+            
+            // Fetch fresh point data from database to ensure we have all fields
+            var freshPoint = await findPointById(point.id);
+            
+            rlog.debug('DragEnd: fetched fresh point - id=' + (freshPoint ? freshPoint.id : 'null') + 
+                       ', username=' + (freshPoint ? freshPoint.username : 'null') + 
+                       ', status=' + (freshPoint ? freshPoint.status : 'null'));
+            
+            if (!freshPoint) {
+              await customAlert('Error', 'Failed to fetch point data');
+              return;
+            }
+            
+            // Update coordinates
+            freshPoint.lat = newLatLng.lat;
+            freshPoint.lng = newLatLng.lng;
+            
+            rlog.debug('DragEnd: updating point to new coordinates - username=' + freshPoint.username);
+            
+            // Save to backend
+            var result = await DB.updatePoint(freshPoint.id, freshPoint);
+            
+            rlog.debug('DragEnd: DB.updatePoint result - success=' + result.success + 
+                       ', error=' + (result.error || 'none'));
+            
+            if (result.success) {
+              // Invalidate cache
+              invalidatePointCache(freshPoint.id);
+              
+              // Clear change mode
+              State.changingPointLocation = null;
+              State.skipMapRefresh = false; // Re-enable map refresh
+              marker.setOpacity(1.0);
+              marker.dragging.disable();
+              
+              // Refresh UI to show new position and reset buttons
+              refreshMapPointsTable();
+              refreshMapMarkers();
+              
+              // Re-open popup at new location
+              setTimeout(function() {
+                if (State.markers[freshPoint.id]) {
+                  State.markers[freshPoint.id].openPopup();
+                }
+              }, 300);
+              
+              await showStatusBarMessage('Location updated successfully', 2000);
+            } else {
+              await customAlert('Error', 'Failed to update point location: ' + result.error);
+              
+              // Restore original position on error
+              if (State.changingPointLocation) {
+                marker.setLatLng([State.changingPointLocation.originalLat, State.changingPointLocation.originalLng]);
+              }
+              State.changingPointLocation = null;
+              State.skipMapRefresh = false; // Re-enable map refresh
+              marker.setOpacity(1.0);
+              marker.dragging.disable();
+              refreshMapMarkers();
+            }
+          });
+        }
         
         // Build popup content with status badge
         var statusBadge = getStatusBadgeHTML(status);
@@ -4888,6 +5012,16 @@ export function refreshMapMarkers() {
         // Add Enter Code button for seekers/admins on unfound, non-pending points they don't own
         if (canEnterCode) {
           popupContent += '<button onclick="window.appEnterPointCode(' + point.id + ')" style="margin-top:5px;">Enter Code</button> ';
+        }
+        
+        // Add Change/Cancel button if user can edit the point
+        var isChanging = State.changingPointLocation && State.changingPointLocation.pointId === point.id;
+        if (canEdit) {
+          if (isChanging) {
+            popupContent += '<button onclick="window.appCancelChangeLocation(' + point.id + ')" style="margin-top:5px;">Cancel</button> ';
+          } else {
+            popupContent += '<button onclick="window.appChangeLocation(' + point.id + ')" style="margin-top:5px;">Change</button> ';
+          }
         }
         
         // Only show Delete button if user has permission
@@ -6796,6 +6930,281 @@ window.appEnterPointCode = async function(pointId) {
     }
   } else {
     await customAlert('Incorrect Code', 'Incorrect code. Try again!');
+  }
+};
+
+// Enter change location mode for a point
+window.appChangeLocation = async function(pointId) {
+  rlog.debug('ChangeLocation: entering change mode for pointId=' + pointId);
+  
+  // Invalidate cache first to ensure we get fresh data
+  invalidatePointCache(pointId);
+  
+  // Fetch the point first to check permissions
+  var point = await findPointById(pointId);
+  
+  rlog.debug('ChangeLocation: fetched point - id=' + (point ? point.id : 'null') + 
+             ', title=' + (point ? point.title : 'null') + 
+             ', username=' + (point ? point.username : 'null') + 
+             ', status=' + (point ? point.status : 'null') + 
+             ', lat=' + (point ? point.lat : 'null') + 
+             ', lng=' + (point ? point.lng : 'null'));
+  
+  if (!point) {
+    await customAlert('Error', 'Point not found');
+    return;
+  }
+  
+  // Check if user has permission to edit
+  if (!canCurrentUserEditPoint(point)) {
+    await customAlert('Permission Denied', 'You do not have permission to change this point location');
+    return;
+  }
+  
+  // Get the marker
+  var marker = State.markers[pointId];
+  if (!marker) {
+    await customAlert('Error', 'Marker not found on map');
+    return;
+  }
+  
+  // Store original coordinates and set state BEFORE making changes
+  State.changingPointLocation = {
+    pointId: pointId,
+    originalLat: point.lat,
+    originalLng: point.lng
+  };
+  
+  // Prevent automatic map refresh while in change mode
+  State.skipMapRefresh = true;
+  
+  // Make marker draggable
+  marker.dragging.enable();
+  marker.setOpacity(0.6); // Visual feedback that it's in edit mode
+  
+  rlog.debug('ChangeLocation: marker made draggable for point ' + pointId + ', skipMapRefresh=true');
+  
+  // Update the popup content to show Cancel button instead of Change
+  var status = point.status || 'pending';
+  var statusBadge = getStatusBadgeHTML(status);
+  var isOwner = State.currentUser && point.username === getCurrentUsername();
+  var canEnterCode = canCurrentUserSeekPoints() && !isOwner && point.status !== 'found' && point.status !== 'pending';
+  var canEdit = canCurrentUserEditPoint(point);
+  
+  var popupContent = '<b>' + (point.title || 'Untitled') + '</b>' + statusBadge + '<br>' +
+                    'User: ' + (point.username || 'Unknown') + '<br>' +
+                    (point.foundBy ? 'Found by: ' + point.foundBy + '<br>' : '') +
+                    (point.description || '') + '<br>';
+  
+  // Add Navigate button
+  var googleMapsUrl = 'https://www.google.com/maps?q=' + point.lat + ',' + point.lng;
+  popupContent += '<button onclick="window.open(\'' + googleMapsUrl + '\', \'_blank\')" style="margin-top:5px;">Navigate</button> ';
+  
+  // Add Enter Code button if applicable
+  if (canEnterCode) {
+    popupContent += '<button onclick="window.appEnterPointCode(' + point.id + ')" style="margin-top:5px;">Enter Code</button> ';
+  }
+  
+  // Show Save and Cancel buttons (we're now in change mode)
+  if (canEdit) {
+    popupContent += '<button onclick="window.appSaveChangeLocation(' + point.id + ')" style="margin-top:5px;">Save</button> ';
+    popupContent += '<button onclick="window.appCancelChangeLocation(' + point.id + ')" style="margin-top:5px;">Cancel</button> ';
+  }
+  
+  // Add Delete button
+  if (canEdit) {
+    popupContent += '<button onclick="window.appDeleteMapPoint(' + point.id + ')" style="margin-top:5px;">Delete</button>';
+  }
+  
+  // Update popup content and re-open
+  marker.setPopupContent(popupContent);
+  marker.openPopup();
+  
+  await showStatusBarMessage('Drag the marker to new location', 3000);
+};
+
+// Cancel change location mode
+window.appCancelChangeLocation = async function(pointId) {
+  rlog.debug('CancelChangeLocation: called for pointId=' + pointId);
+  
+  if (!State.changingPointLocation || State.changingPointLocation.pointId !== pointId) {
+    rlog.debug('CancelChangeLocation: not in change mode for this point, aborting');
+    return; // Not in change mode for this point
+  }
+  
+  // Invalidate cache first to ensure we get fresh data
+  invalidatePointCache(pointId);
+  
+  // Fetch the point to rebuild popup
+  var point = await findPointById(pointId);
+  
+  rlog.debug('CancelChangeLocation: fetched point - id=' + (point ? point.id : 'null') + 
+             ', username=' + (point ? point.username : 'null') + 
+             ', status=' + (point ? point.status : 'null'));
+  
+  if (!point) {
+    return;
+  }
+  
+  // Get the marker
+  var marker = State.markers[pointId];
+  if (!marker) {
+    return;
+  }
+  
+  // Restore original position
+  marker.setLatLng([State.changingPointLocation.originalLat, State.changingPointLocation.originalLng]);
+  
+  // Reset state first (before building popup)
+  State.changingPointLocation = null;
+  State.skipMapRefresh = false; // Re-enable map refresh
+  marker.setOpacity(1.0); // Restore normal opacity
+  marker.dragging.disable();
+  
+  // Rebuild popup with Change button
+  var status = point.status || 'pending';
+  var statusBadge = getStatusBadgeHTML(status);
+  var isOwner = State.currentUser && point.username === getCurrentUsername();
+  var canEnterCode = canCurrentUserSeekPoints() && !isOwner && point.status !== 'found' && point.status !== 'pending';
+  var canEdit = canCurrentUserEditPoint(point);
+  
+  var popupContent = '<b>' + (point.title || 'Untitled') + '</b>' + statusBadge + '<br>' +
+                    'User: ' + (point.username || 'Unknown') + '<br>' +
+                    (point.foundBy ? 'Found by: ' + point.foundBy + '<br>' : '') +
+                    (point.description || '') + '<br>';
+  
+  // Add Navigate button
+  var googleMapsUrl = 'https://www.google.com/maps?q=' + point.lat + ',' + point.lng;
+  popupContent += '<button onclick="window.open(\'' + googleMapsUrl + '\', \'_blank\')" style="margin-top:5px;">Navigate</button> ';
+  
+  // Add Enter Code button if applicable
+  if (canEnterCode) {
+    popupContent += '<button onclick="window.appEnterPointCode(' + point.id + ')" style="margin-top:5px;">Enter Code</button> ';
+  }
+  
+  // Show Change button (we've exited change mode)
+  if (canEdit) {
+    popupContent += '<button onclick="window.appChangeLocation(' + point.id + ')" style="margin-top:5px;">Change</button> ';
+  }
+  
+  // Add Delete button
+  if (canEdit) {
+    popupContent += '<button onclick="window.appDeleteMapPoint(' + point.id + ')" style="margin-top:5px;">Delete</button>';
+  }
+  
+  // Update popup content and re-open
+  marker.setPopupContent(popupContent);
+  marker.openPopup();
+  
+  await showStatusBarMessage('Change cancelled', 2000);
+};
+
+// Save change location mode
+window.appSaveChangeLocation = async function(pointId) {
+  rlog.debug('SaveChangeLocation: called for pointId=' + pointId);
+  
+  if (!State.changingPointLocation || State.changingPointLocation.pointId !== pointId) {
+    rlog.debug('SaveChangeLocation: not in change mode for this point, aborting');
+    return; // Not in change mode for this point
+  }
+  
+  // Get the marker
+  var marker = State.markers[pointId];
+  if (!marker) {
+    rlog.debug('SaveChangeLocation: marker not found');
+    return;
+  }
+  
+  // Get current marker position
+  var latlng = marker.getLatLng();
+  
+  rlog.debug('SaveChangeLocation: saving new position - lat=' + latlng.lat + ', lng=' + latlng.lng);
+  
+  // Invalidate cache first
+  invalidatePointCache(pointId);
+  
+  // Fetch the point with fresh data
+  var freshPoint = await findPointById(pointId);
+  
+  if (!freshPoint) {
+    rlog.debug('SaveChangeLocation: point not found after fetch');
+    await showStatusBarMessage('Error: Point not found', 3000);
+    return;
+  }
+  
+  // Update coordinates
+  freshPoint.lat = latlng.lat;
+  freshPoint.lng = latlng.lng;
+  
+  // Remove foundBy field as it's read-only (comes from backend as camelCase but DB expects snake_case)
+  delete freshPoint.foundBy;
+  
+  rlog.debug('SaveChangeLocation: updating point to new coordinates - username=' + freshPoint.username);
+  
+  // Save to backend
+  var result = await DB.updatePoint(freshPoint.id, freshPoint);
+  
+  rlog.debug('SaveChangeLocation: DB.updatePoint result - success=' + result.success + 
+             ', error=' + (result.error || 'none'));
+  
+  if (result.success) {
+    // Invalidate cache
+    invalidatePointCache(freshPoint.id);
+    
+    // Clear change mode
+    State.changingPointLocation = null;
+    State.skipMapRefresh = false; // Re-enable map refresh
+    marker.setOpacity(1.0);
+    marker.dragging.disable();
+    
+    // Rebuild popup with Change button
+    var status = freshPoint.status || 'pending';
+    var statusBadge = getStatusBadgeHTML(status);
+    var isOwner = State.currentUser && freshPoint.username === getCurrentUsername();
+    var canEnterCode = canCurrentUserSeekPoints() && !isOwner && freshPoint.status !== 'found' && freshPoint.status !== 'pending';
+    var canEdit = canCurrentUserEditPoint(freshPoint);
+    
+    var popupContent = '<b>' + (freshPoint.title || 'Untitled') + '</b>' + statusBadge + '<br>' +
+                      'User: ' + (freshPoint.username || 'Unknown') + '<br>' +
+                      (freshPoint.foundBy ? 'Found by: ' + freshPoint.foundBy + '<br>' : '') +
+                      (freshPoint.description || '') + '<br>';
+    
+    // Add Navigate button
+    var googleMapsUrl = 'https://www.google.com/maps?q=' + freshPoint.lat + ',' + freshPoint.lng;
+    popupContent += '<button onclick="window.open(\'' + googleMapsUrl + '\', \'_blank\')" style="margin-top:5px;">Navigate</button> ';
+    
+    // Add Enter Code button if applicable
+    if (canEnterCode) {
+      popupContent += '<button onclick="window.appEnterPointCode(' + freshPoint.id + ')" style="margin-top:5px;">Enter Code</button> ';
+    }
+    
+    // Show Change button (we've exited change mode)
+    if (canEdit) {
+      popupContent += '<button onclick="window.appChangeLocation(' + freshPoint.id + ')" style="margin-top:5px;">Change</button> ';
+    }
+    
+    // Add Delete button
+    if (canEdit) {
+      popupContent += '<button onclick="window.appDeleteMapPoint(' + freshPoint.id + ')" style="margin-top:5px;">Delete</button>';
+    }
+    
+    // Update popup content
+    marker.setPopupContent(popupContent);
+    
+    // Refresh UI to show new position
+    refreshMapPointsTable();
+    refreshMapMarkers();
+    
+    // Re-open popup at new location
+    setTimeout(function() {
+      if (State.markers[freshPoint.id]) {
+        State.markers[freshPoint.id].openPopup();
+      }
+    }, 300);
+    
+    await showStatusBarMessage('Location updated successfully', 2000);
+  } else {
+    await showStatusBarMessage('Error updating location: ' + (result.error || 'Unknown error'), 3000);
   }
 };
 
