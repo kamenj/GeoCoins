@@ -1052,6 +1052,38 @@ tr.selected { background: var(--highlight); }
   }
 }
 
+/* ===== Mobile Device Styling ===== */
+/* Darker blue theme for mobile devices - applied via JS-added class */
+body.mobile-device {
+  --accent: #0d47a1;
+  --accent-hover: #08306b;
+}
+
+body.mobile-device[data-theme="dark"] {
+  --accent: #1565c0;
+  --accent-hover: #0d47a1;
+}
+
+/* Darker chevrons on mobile */
+body.mobile-device .section-header .chev {
+  color: #0d47a1;
+}
+
+body.mobile-device[data-theme="dark"] .section-header .chev {
+  color: #1565c0;
+}
+
+/* Darker status bar background on mobile */
+body.mobile-device .status-bar {
+  background: #0d47a1;
+  border-bottom: 2px solid #08306b;
+}
+
+body.mobile-device[data-theme="dark"] .status-bar {
+  background: #1565c0;
+  border-bottom: 2px solid #0d47a1;
+}
+
 /* ===== Connection Loss Dialog ===== */
 .connection-status {
   display: flex;

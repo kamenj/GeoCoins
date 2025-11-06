@@ -6448,5 +6448,35 @@ window.appEnterPointCode = async function(pointId) {
   }
 };
 
+/* ===== Mobile Device Detection ===== */
+/**
+ * Detects if the app is being viewed on a mobile device
+ * @returns {boolean} True if mobile device is detected
+ */
+function isMobileDevice() {
+  const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+  const mobileRegex = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i;
+  const isMobileUserAgent = mobileRegex.test(userAgent);
+  const isMobileScreenSize = window.innerWidth < 768;
+  
+  return isMobileUserAgent || isMobileScreenSize;
+}
+
+/**
+ * Applies mobile-specific styling (darker blue theme)
+ * Adds 'mobile-device' class to body for CSS targeting
+ */
+function applyMobileStyling() {
+  if (isMobileDevice()) {
+    document.body.classList.add('mobile-device');
+    
+    // Log for debugging
+    console.log('Mobile device detected - applying darker blue theme via CSS class');
+  }
+}
+
 /* ===== Start ===== */
-window.addEventListener("load", loadAll);
+window.addEventListener("load", () => {
+  applyMobileStyling();
+  loadAll();
+});
