@@ -1,97 +1,139 @@
-# GeoCoins Docker Setup
+# GeoCoins Docker
 
-This folder contains all Docker-related files for the GeoCoins application.
+This folder contains everything needed to run GeoCoins in Docker containers.
 
-## Structure
+## 📁 Folder Structure
 
 ```
 docker/
-├── Dockerfile.frontend              # Frontend container definition
-├── docker-compose.base.yml          # Base configuration (shared)
+├── scripts/
+│   ├── dev/              # Development scripts (for developers)
+│   │   ├── start-dev-windows.bat    # Start with 4 terminal windows
+│   │   ├── start-dev.bat            # Start with combined logs
+│   │   ├── stop-docker.bat          # Stop containers (keep data)
+│   │   ├── view-logs.bat            # Interactive log viewer
+│   │   └── test-tunnel.bat          # Test Cloudflare tunnel
+│   │
+│   └── publish/          # Publishing scripts (for distribution)
+│       ├── publish.bat              # Publish to GitHub Registry
+│       ├── publish-dockerhub.bat    # Publish to Docker Hub
+│       ├── login-github.bat         # Easy GitHub login
+│       ├── save-github-token.bat    # Save token once
+│       └── PUBLISHING_GUIDE.md      # Complete publishing guide
+│
+├── deploy/               # Distribution package (for end users)
+│   ├── install.bat                  # One-click installer
+│   ├── start.bat                    # Start services
+│   ├── stop.bat                     # Stop services
+│   ├── update.bat                   # Update to latest version
+│   ├── logs.bat                     # View logs
+│   ├── docker-compose.yml           # Production config
+│   ├── .env.example                 # Config template
+│   └── README.md                    # User instructions
+│
+├── docker-compose.base.yml          # Base configuration
 ├── docker-compose.dev.yml           # Development overrides
 ├── docker-compose.prod.yml          # Production overrides
-├── cloudflare-config.yml            # Cloudflare tunnel configuration
-├── tunnel-credentials.json          # Cloudflare credentials (NOT in git)
-├── tunnel-credentials.json.example  # Template for credentials
-├── .env.example                     # Environment variables template
-├── .gitignore                       # Git ignore rules
-├── start-dev.bat                    # Start in development mode
-├── start-prod.bat                   # Start in production mode
-├── stop-docker.bat                  # Stop all containers
+├── Dockerfile.frontend              # Frontend image definition
+├── .dockerignore                    # Excluded files
 └── README.md                        # This file
-
-kzzNodeServer/docker/
-├── Dockerfile                       # Backend container definition
-└── .dockerignore                    # Files to exclude from backend image
 ```
 
-## Quick Start
+## 🚀 Quick Start
 
-### Development Mode
+### Recommended: Git Clone Method (Easiest for Developers)
+
+**Best for**: Developers who want full source access and easy updates
+
+See **[INSTALLATION_GUIDE.md](INSTALLATION_GUIDE.md)** for complete step-by-step instructions.
+
+**Quick version**:
+1. Install Git + Docker Desktop
+2. Clone repos: `git clone https://github.com/kamenj/GeoCoins.git`
+3. Run: `GeoCoins\docker\scripts\dev\start-dev-windows.bat`
+
+**Benefits**: Live code editing, instant updates via `git pull`, full control
+
+---
+
+### Alternative: Pre-built Images (For Production Deployment)
+
+### For Development (You):
+
+1. **Start development environment**:
+   ```bash
+   scripts\dev\start-dev-windows.bat
+   ```
+   Opens 4 terminal windows (database, backend, frontend, tunnel)
+
+2. **View logs**:
+   ```bash
+   scripts\dev\view-logs.bat
+   ```
+
+3. **Stop and reset database**:
+   ```bash
+   cd scripts\dev
+   stop-and-clean-db.bat
+   ```
+
+### For Publishing (Distribution):
+
+1. **Login once**:
+   ```bash
+   scripts\publish\save-github-token.bat
+   ```
+
+2. **Publish new version**:
+   ```bash
+   scripts\publish\publish.bat
+   ```
+   OR for Docker Hub:
+   ```bash
+   scripts\publish\publish-dockerhub.bat
+   ```
+
+### For End Users (Distribution):
+
+Give users the `deploy/` folder. They run:
 ```bash
-cd docker
-start-dev.bat
-```
-- Live code editing enabled
-- Development settings
-- Runs in foreground
-
-### Production Mode
-```bash
-cd docker
-copy .env.example .env
-notepad .env  (configure secrets)
-start-prod.bat
-```
-- Optimized for production
-- Uses .env for secrets
-- Runs in background
-
-### Stop Everything
-```bash
-cd docker
-stop-docker.bat
+install.bat
 ```
 
-## Access Points
+## 📖 Documentation
 
-- **Frontend (Local):** http://localhost:8081
-- **Frontend (Internet):** https://kkk.kaminooo.com
-- **Backend API:** http://localhost:3000
-- **Database:** localhost:5433 (PostgreSQL 17)
+- **Development**: Scripts in `scripts/dev/`
+- **Publishing**: Read `scripts/publish/PUBLISHING_GUIDE.md`
+- **Deployment**: See `deploy/README.md`
 
-## Services
+## 🔧 Configuration Files
 
-1. **db** - PostgreSQL 17 database
-2. **backend** - kzzNodeServer (Node.js Express API)
-3. **frontend** - GeoCoins v5 web interface
-4. **tunnel** - Cloudflare Tunnel (exposes app to internet via kkk.kaminooo.com)
+- `docker-compose.base.yml` - Shared settings (database, networks, volumes)
+- `docker-compose.dev.yml` - Development (volume mounts, no restart)
+- `docker-compose.prod.yml` - Production (auto-restart, no mounts)
 
-## Environment Variables
+## 📦 Docker Images
 
-Copy `.env.example` to `.env` for production:
-- `POSTGRES_PASSWORD` - Database password
-- `JWT_SECRET` - JWT token secret key
+- **Backend**: `ghcr.io/kamenj/geocoins-backend`
+- **Frontend**: `ghcr.io/kamenj/geocoins-frontend`
+- **Database**: `postgres:17` (official)
+- **Tunnel**: `cloudflare/cloudflared` (official)
 
-## Volumes
+## 🌐 Access Points
 
-- `postgres_data` - Persistent database storage
+- **Frontend (Local)**: http://localhost:8081
+- **Frontend (Internet)**: https://kkk.kaminooo.com
+- **Backend API**: http://localhost:3000
+- **Database**: localhost:5433 (PostgreSQL 17)
 
-## Network
+## 🆘 Troubleshooting
 
-All services communicate via `geocoins-network` bridge network.
+**Containers won't start**: Run `scripts\dev\stop-and-clean-db.bat` to reset
 
-## Cloudflare Tunnel Setup
+**Database empty**: Volume persists old data - clean it with script above
 
-The tunnel exposes your local app to the internet via `kkk.kaminooo.com`.
+**Port conflicts**: Stop local services or other Docker containers
 
-**What it does:**
-- Routes internet traffic through Cloudflare to your Docker frontend
-- No port forwarding needed
-- Automatic HTTPS with Cloudflare certificate
+**Tunnel 502 errors**: Check backend is running first
 
-**Configuration:**
-- `cloudflare-config.yml` - Tunnel routing configuration
-- `tunnel-credentials.json` - Your tunnel credentials (NOT in git!)
-
-**Note:** The tunnel container connects to `http://frontend:8081` internally, not `localhost`.
+**Image pull fails**: Check you're logged in to registry

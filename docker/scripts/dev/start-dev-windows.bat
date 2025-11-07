@@ -2,7 +2,7 @@
 REM Start each Docker service in a separate terminal window
 REM Similar to your current 3-terminal development setup
 
-cd /d "%~dp0"
+cd /d "%~dp0\..\.."
 
 echo ========================================
 echo Starting GeoCoins in Multi-Window Mode
