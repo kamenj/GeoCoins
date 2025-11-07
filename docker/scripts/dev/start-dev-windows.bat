@@ -11,27 +11,33 @@ echo.
 
 echo Detecting project structure...
 
-REM Find kzzNodeServer location relative to GeoCoins
-set PROJECTS_ROOT=%cd%\..
-set KZZ_PATH_2UP=..\..\kzzNodeServer
-set KZZ_PATH_7UP=..\..\..\..\..\..\..\kzz\kzzNodeServer
+REM Find kzzNodeServer location relative to GeoCoins/docker
+REM After cd to docker folder, we need to go up 2 levels to reach GeoCoins parent
+set KZZ_PATH_STANDARD=..\..\kzzNodeServer
+set KZZ_PATH_ORIGINAL=..\..\..\..\..\..\..\kzz\kzzNodeServer
 
-REM Check which path exists
-if exist "%PROJECTS_ROOT%\kzzNodeServer" (
-    echo Found kzzNodeServer at standard location: %PROJECTS_ROOT%\kzzNodeServer
-    set KZZ_RELATIVE_PATH=%KZZ_PATH_2UP%
+REM Check which path exists - try STANDARD first
+if exist "%cd%\%KZZ_PATH_STANDARD%\package.json" (
+    echo Found kzzNodeServer at STANDARD location
+    set KZZ_RELATIVE_PATH=%KZZ_PATH_STANDARD%
     set STRUCTURE=STANDARD
-) else if exist "%cd%\..\..\..\..\..\..\..\kzz\kzzNodeServer" (
-    echo Found kzzNodeServer at original dev location
-    set KZZ_RELATIVE_PATH=%KZZ_PATH_7UP%
+) else if exist "%cd%\%KZZ_PATH_ORIGINAL%\package.json" (
+    echo Found kzzNodeServer at ORIGINAL dev location
+    set KZZ_RELATIVE_PATH=%KZZ_PATH_ORIGINAL%
     set STRUCTURE=ORIGINAL
 ) else (
     echo ERROR: Cannot find kzzNodeServer directory!
-    echo Searched:
-    echo   - %PROJECTS_ROOT%\kzzNodeServer
-    echo   - %cd%\..\..\..\..\..\..\..\kzz\kzzNodeServer
+    echo.
+    echo Searched for package.json at:
+    echo   - %cd%\%KZZ_PATH_STANDARD%\package.json
+    echo   - %cd%\%KZZ_PATH_ORIGINAL%\package.json
     echo.
     echo Please ensure kzzNodeServer is cloned next to GeoCoins folder.
+    echo.
+    echo Expected structure:
+    echo   YourFolder\
+    echo     ├── GeoCoins\
+    echo     └── kzzNodeServer\
     pause
     exit /b 1
 )
