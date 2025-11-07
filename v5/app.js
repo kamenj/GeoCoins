@@ -3620,9 +3620,6 @@ function renderPointsRow(p, i) {
   return html;
 }
 export function refreshMapPointsTable() {
-  var stack = new Error().stack;
-  var caller = stack.split('\n')[2] || 'unknown';
-  rlog.debug('refreshMapPointsTable: called - skipMapRefresh=' + State.skipMapRefresh + ', caller=' + caller.trim());
   // Control visibility of the form based on user login status
   var mapPointsForm = $("mapPointsForm");
   if (mapPointsForm) {
@@ -4381,9 +4378,6 @@ export function enterMapPointsFullScreen() {
   document.body.style.height = window.innerHeight + 'px'; // Use actual viewport height (not CSS units)
   document.body.style.maxHeight = window.innerHeight + 'px';
   
-  rlog.debug('EnterFS: viewport=' + window.innerWidth + 'x' + window.innerHeight);
-  rlog.debug('EnterFS: body set to=' + document.body.style.width + 'x' + document.body.style.height);
-  
   // Force a reflow to ensure menuBottom gets proper height
   if (menuBottom) {
     menuBottom.scrollTop = 0; // Ensure scrolled to top
@@ -4397,19 +4391,10 @@ export function enterMapPointsFullScreen() {
     var mapDiv = document.querySelector('.mappoints-geoview');
     var menuBottom = $(Constants.ElementId.MenuBottom);
     
-    rlog.debug('EnterFS timeout: body actual=' + document.body.offsetWidth + 'x' + document.body.offsetHeight);
-    if (mapPoints) rlog.debug('EnterFS: mapPoints=' + mapPoints.offsetWidth + 'x' + mapPoints.offsetHeight);
-    if (mapPointsContainer) rlog.debug('EnterFS: container=' + mapPointsContainer.offsetWidth + 'x' + mapPointsContainer.offsetHeight);
-    if (listDiv) rlog.debug('EnterFS: list=' + listDiv.offsetWidth + 'x' + listDiv.offsetHeight);
-    if (mapDiv) rlog.debug('EnterFS: map=' + mapDiv.offsetWidth + 'x' + mapDiv.offsetHeight);
-    if (menuBottom) rlog.debug('EnterFS: menuBottom=' + menuBottom.offsetWidth + 'x' + menuBottom.offsetHeight + ', collapsed=' + menuBottom.classList.contains('collapsed'));
-    
     // Update Tabulator to use full available space
     if (State.pointsTable) {
       // Calculate the height we want the tabulator to be
       var targetHeight = listDiv ? listDiv.offsetHeight : 700;
-      
-      rlog.debug('EnterFS: setting table height to ' + targetHeight);
       
       // Access Tabulator's internal options and modify maxHeight
       if (State.pointsTable.options) {
@@ -4872,16 +4857,8 @@ function getStatusBadgeHTML(status) {
 
 export function refreshMapMarkers() {
   // Get call stack to see who called this function
-  var stack = new Error().stack;
-  var caller = stack ? stack.split('\n')[2] : 'unknown';
-  
-  rlog.debug('refreshMapMarkers: called - skipMapRefresh=' + State.skipMapRefresh + 
-             ', changingPointLocation=' + (State.changingPointLocation ? State.changingPointLocation.pointId : 'null') +
-             ', caller=' + caller.trim());
-  
   // Check if map refresh should be skipped (during point location changes)
   if (State.skipMapRefresh) {
-    rlog.debug('refreshMapMarkers: SKIPPED - skipMapRefresh flag is true');
     return;
   }
   
@@ -4890,7 +4867,6 @@ export function refreshMapMarkers() {
   // Clear existing markers but preserve the temporary placeholder
   State.leafletMap.eachLayer(function(layer) {
     if (layer instanceof L.Marker && layer !== State.tempPlacemark) {
-      rlog.debug('refreshMapMarkers: removing existing marker layer');
       State.leafletMap.removeLayer(layer);
     }
   });
@@ -4922,28 +4898,17 @@ export function refreshMapMarkers() {
           opacity: isChanging ? 0.6 : 1.0
         }).addTo(State.leafletMap);
         
-        rlog.debug('refreshMapMarkers: created marker for point ' + point.id + 
-                   ' at [' + point.lat + ',' + point.lng + ']' +
-                   ', draggable=' + isChanging + ', opacity=' + (isChanging ? 0.6 : 1.0));
-        
         // Store marker in State for later access
         State.markers[point.id] = marker;
         
         // If in change mode, re-attach the dragend handler
         if (isChanging) {
-          rlog.debug('refreshMapMarkers: attaching dragend handler for point ' + point.id);
           
           marker.once('dragend', async function(ev) {
             var newLatLng = ev.target.getLatLng();
             
-            rlog.debug('DragEnd: *** DRAGEND EVENT FIRED *** marker dragged to lat=' + newLatLng.lat + ', lng=' + newLatLng.lng);
-            
             // Fetch fresh point data from database to ensure we have all fields
             var freshPoint = await findPointById(point.id);
-            
-            rlog.debug('DragEnd: fetched fresh point - id=' + (freshPoint ? freshPoint.id : 'null') + 
-                       ', username=' + (freshPoint ? freshPoint.username : 'null') + 
-                       ', status=' + (freshPoint ? freshPoint.status : 'null'));
             
             if (!freshPoint) {
               await customAlert('Error', 'Failed to fetch point data');
@@ -4954,13 +4919,8 @@ export function refreshMapMarkers() {
             freshPoint.lat = newLatLng.lat;
             freshPoint.lng = newLatLng.lng;
             
-            rlog.debug('DragEnd: updating point to new coordinates - username=' + freshPoint.username);
-            
             // Save to backend
             var result = await DB.updatePoint(freshPoint.id, freshPoint);
-            
-            rlog.debug('DragEnd: DB.updatePoint result - success=' + result.success + 
-                       ', error=' + (result.error || 'none'));
             
             if (result.success) {
               // Invalidate cache
@@ -5194,7 +5154,6 @@ function initializeSettingsControls() {
         if (statusEl) statusEl.textContent = 'Sending test messages...';
         
         try {
-          await rlog.info('Remote logging test: INFO level message');
           await rlog.warn('Remote logging test: WARN level message');
           await rlog.error('Remote logging test: ERROR level message');
           
@@ -5921,12 +5880,6 @@ export function setupMapPointsDivider() {
   dividerHandlers.mouseMove = function(e) {
     if (!dividerHandlers.isDragging) return;
     
-    // Throttle logging to avoid flooding (only log every 10th move)
-    if (!dividerHandlers.moveCount) dividerHandlers.moveCount = 0;
-    dividerHandlers.moveCount++;
-    if (dividerHandlers.moveCount % 10 === 1) {
-      rlog.debug('divider mouseMove called: moveCount=' + dividerHandlers.moveCount);
-    }
     
     var isHorizontal = container.classList.contains("layout-horizontal");
     
@@ -6943,20 +6896,12 @@ window.appEnterPointCode = async function(pointId) {
 
 // Enter change location mode for a point
 window.appChangeLocation = async function(pointId) {
-  rlog.debug('ChangeLocation: entering change mode for pointId=' + pointId);
   
   // Invalidate cache first to ensure we get fresh data
   invalidatePointCache(pointId);
   
   // Fetch the point first to check permissions
   var point = await findPointById(pointId);
-  
-  rlog.debug('ChangeLocation: fetched point - id=' + (point ? point.id : 'null') + 
-             ', title=' + (point ? point.title : 'null') + 
-             ', username=' + (point ? point.username : 'null') + 
-             ', status=' + (point ? point.status : 'null') + 
-             ', lat=' + (point ? point.lat : 'null') + 
-             ', lng=' + (point ? point.lng : 'null'));
   
   if (!point) {
     await customAlert('Error', 'Point not found');
@@ -6989,8 +6934,6 @@ window.appChangeLocation = async function(pointId) {
   // Make marker draggable
   marker.dragging.enable();
   marker.setOpacity(0.6); // Visual feedback that it's in edit mode
-  
-  rlog.debug('ChangeLocation: marker made draggable for point ' + pointId + ', skipMapRefresh=true');
   
   // Update the popup content to show Cancel button instead of Change
   var status = point.status || 'pending';
@@ -7033,10 +6976,8 @@ window.appChangeLocation = async function(pointId) {
 
 // Cancel change location mode
 window.appCancelChangeLocation = async function(pointId) {
-  rlog.debug('CancelChangeLocation: called for pointId=' + pointId);
   
   if (!State.changingPointLocation || State.changingPointLocation.pointId !== pointId) {
-    rlog.debug('CancelChangeLocation: not in change mode for this point, aborting');
     return; // Not in change mode for this point
   }
   
@@ -7045,10 +6986,6 @@ window.appCancelChangeLocation = async function(pointId) {
   
   // Fetch the point to rebuild popup
   var point = await findPointById(pointId);
-  
-  rlog.debug('CancelChangeLocation: fetched point - id=' + (point ? point.id : 'null') + 
-             ', username=' + (point ? point.username : 'null') + 
-             ', status=' + (point ? point.status : 'null'));
   
   if (!point) {
     return;
@@ -7109,24 +7046,19 @@ window.appCancelChangeLocation = async function(pointId) {
 
 // Save change location mode
 window.appSaveChangeLocation = async function(pointId) {
-  rlog.debug('SaveChangeLocation: called for pointId=' + pointId);
   
   if (!State.changingPointLocation || State.changingPointLocation.pointId !== pointId) {
-    rlog.debug('SaveChangeLocation: not in change mode for this point, aborting');
     return; // Not in change mode for this point
   }
   
   // Get the marker
   var marker = State.markers[pointId];
   if (!marker) {
-    rlog.debug('SaveChangeLocation: marker not found');
     return;
   }
   
   // Get current marker position
   var latlng = marker.getLatLng();
-  
-  rlog.debug('SaveChangeLocation: saving new position - lat=' + latlng.lat + ', lng=' + latlng.lng);
   
   // Invalidate cache first
   invalidatePointCache(pointId);
@@ -7135,7 +7067,6 @@ window.appSaveChangeLocation = async function(pointId) {
   var freshPoint = await findPointById(pointId);
   
   if (!freshPoint) {
-    rlog.debug('SaveChangeLocation: point not found after fetch');
     await showStatusBarMessage('Error: Point not found', 3000);
     return;
   }
@@ -7147,13 +7078,8 @@ window.appSaveChangeLocation = async function(pointId) {
   // Remove foundBy field as it's read-only (comes from backend as camelCase but DB expects snake_case)
   delete freshPoint.foundBy;
   
-  rlog.debug('SaveChangeLocation: updating point to new coordinates - username=' + freshPoint.username);
-  
   // Save to backend
   var result = await DB.updatePoint(freshPoint.id, freshPoint);
-  
-  rlog.debug('SaveChangeLocation: DB.updatePoint result - success=' + result.success + 
-             ', error=' + (result.error || 'none'));
   
   if (result.success) {
     // Invalidate cache
@@ -7248,17 +7174,13 @@ function applyMobileStyling() {
  * Handles viewport resize events in fullscreen mode (important for mobile when address bar shows/hides)
  */
 function handleFullscreenResize() {
-  rlog.debug('handleFullscreenResize called: fullscreen=' + State.fullScreen.active + ', isDragging=' + (dividerHandlers ? dividerHandlers.isDragging : 'N/A'));
   
   if (!State.fullScreen.active) return;
   
   // Don't resize if divider is being dragged - prevents resize loop
   if (dividerHandlers && dividerHandlers.isDragging) {
-    rlog.debug('handleFullscreenResize: skipped - divider is being dragged');
     return;
   }
-  
-  rlog.debug('handleFullscreenResize: updating body to ' + window.innerWidth + 'x' + window.innerHeight);
   
   // Update body dimensions to match current viewport (handles address bar show/hide and orientation change)
   document.body.style.width = window.innerWidth + 'px';
@@ -7268,19 +7190,8 @@ function handleFullscreenResize() {
   // Force immediate reflow
   var dummy = document.body.offsetHeight;
   
-  // Log dimensions after resize
+  // Update map and table after resize
   setTimeout(function() {
-    var mapPoints = document.getElementById('mapPoints');
-    var mapPointsContainer = document.querySelector('#mapPoints-container');
-    var listDiv = document.querySelector('.mappoints-list');
-    var mapDiv = document.querySelector('.mappoints-geoview');
-    
-    rlog.debug('AfterResize: body=' + document.body.offsetWidth + 'x' + document.body.offsetHeight);
-    if (mapPoints) rlog.debug('AfterResize: mapPoints=' + mapPoints.offsetWidth + 'x' + mapPoints.offsetHeight);
-    if (mapPointsContainer) rlog.debug('AfterResize: container=' + mapPointsContainer.offsetWidth + 'x' + mapPointsContainer.offsetHeight);
-    if (listDiv) rlog.debug('AfterResize: list=' + listDiv.offsetWidth + 'x' + listDiv.offsetHeight);
-    if (mapDiv) rlog.debug('AfterResize: map=' + mapDiv.offsetWidth + 'x' + mapDiv.offsetHeight);
-  }, 100);
   
   // Update map size
   if (State.leafletMap && State.mapPointsView.showMap) {
@@ -7295,25 +7206,23 @@ function handleFullscreenResize() {
       var listDiv = document.querySelector('.mappoints-list');
       if (listDiv) {
         var targetHeight = listDiv.offsetHeight;
-        rlog.debug('AfterResize: updating table height to ' + targetHeight);
         State.pointsTable.setHeight(targetHeight);
         State.pointsTable.redraw(true);
       }
     }, 150);
   }
+  }, 100);
 }
 
 // Debounced resize handler
 var resizeTimeout;
 window.addEventListener('resize', function() {
-  rlog.debug('resize event fired: ' + window.innerWidth + 'x' + window.innerHeight);
   clearTimeout(resizeTimeout);
   resizeTimeout = setTimeout(handleFullscreenResize, 250);
 });
 
 // Handle orientation change on mobile
 window.addEventListener('orientationchange', function() {
-  rlog.debug('orientationchange event fired: orientation=' + (window.orientation || screen.orientation.angle));
   setTimeout(handleFullscreenResize, 300);
 });
 
