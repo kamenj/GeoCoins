@@ -72,6 +72,23 @@ cd /d "%KZZ_PATH%"
 git pull 2>nul
 
 echo.
+echo Projects ready:
+echo   GeoCoins: %GEOCOINS_PATH%
+echo   kzzNodeServer: %KZZ_PATH%
+echo.
+echo IMPORTANT: The docker-compose files expect kzzNodeServer at a specific relative path.
+echo.
+echo Current structure should be:
+echo   %PROJECTS_ROOT%\
+echo     ├── GeoCoins\
+echo     └── kzzNodeServer\
+echo.
+echo If this is your first time, you may need to update docker-compose.base.yml
+echo to point to the correct kzzNodeServer location.
+echo.
+pause
+
+echo.
 echo ========================================
 echo Starting Development Environment...
 echo ========================================

@@ -9,17 +9,68 @@ echo Starting GeoCoins in Multi-Window Mode
 echo ========================================
 echo.
 
+echo Detecting project structure...
+
+REM Find kzzNodeServer location relative to GeoCoins
+set PROJECTS_ROOT=%cd%\..
+set KZZ_PATH_2UP=..\..\kzzNodeServer
+set KZZ_PATH_7UP=..\..\..\..\..\..\..\kzz\kzzNodeServer
+
+REM Check which path exists
+if exist "%PROJECTS_ROOT%\kzzNodeServer" (
+    echo Found kzzNodeServer at standard location: %PROJECTS_ROOT%\kzzNodeServer
+    set KZZ_RELATIVE_PATH=%KZZ_PATH_2UP%
+    set STRUCTURE=STANDARD
+) else if exist "%cd%\..\..\..\..\..\..\..\kzz\kzzNodeServer" (
+    echo Found kzzNodeServer at original dev location
+    set KZZ_RELATIVE_PATH=%KZZ_PATH_7UP%
+    set STRUCTURE=ORIGINAL
+) else (
+    echo ERROR: Cannot find kzzNodeServer directory!
+    echo Searched:
+    echo   - %PROJECTS_ROOT%\kzzNodeServer
+    echo   - %cd%\..\..\..\..\..\..\..\kzz\kzzNodeServer
+    echo.
+    echo Please ensure kzzNodeServer is cloned next to GeoCoins folder.
+    pause
+    exit /b 1
+)
+
+echo Using %STRUCTURE% structure with path: %KZZ_RELATIVE_PATH%
+echo.
+
+REM Generate docker-compose override with correct paths
+echo Generating docker-compose.paths.yml with correct paths...
+(
+echo # Auto-generated path overrides based on detected structure
+echo # Generated: %date% %time%
+echo.
+echo services:
+echo   backend:
+echo     build:
+echo       context: %KZZ_RELATIVE_PATH%
+echo       dockerfile: docker/Dockerfile
+echo     volumes:
+echo       # Live code editing for development
+echo       - %KZZ_RELATIVE_PATH%/src:/app/src
+echo.
+echo   db:
+echo     volumes:
+echo       - postgres_data:/var/lib/postgresql/data
+echo       - %KZZ_RELATIVE_PATH%/database/geocoins_v1.sql:/docker-entrypoint-initdb.d/init.sql
+) > docker-compose.paths.yml
+
 echo Cleaning up existing containers...
 docker rm -f geocoins-db geocoins-backend geocoins-frontend geocoins-tunnel 2>nul
-docker-compose -f docker-compose.base.yml -f docker-compose.dev.yml down 2>nul
+docker-compose -f docker-compose.base.yml -f docker-compose.dev.yml -f docker-compose.paths.yml down 2>nul
 
 echo.
 echo Building Docker images (first time may take 2-3 minutes)...
-docker-compose -f docker-compose.base.yml -f docker-compose.dev.yml build
+docker-compose -f docker-compose.base.yml -f docker-compose.dev.yml -f docker-compose.paths.yml build
 
 echo.
 echo Starting all services in detached mode...
-docker-compose -f docker-compose.base.yml -f docker-compose.dev.yml up -d
+docker-compose -f docker-compose.base.yml -f docker-compose.dev.yml -f docker-compose.paths.yml up -d
 
 echo.
 echo Waiting 10 seconds for containers to fully start...
@@ -60,7 +111,7 @@ pause
 
 echo.
 echo Stopping all containers...
-docker-compose -f docker-compose.base.yml -f docker-compose.dev.yml down
+docker-compose -f docker-compose.base.yml -f docker-compose.dev.yml -f docker-compose.paths.yml down
 
 echo.
 echo Closing log windows...
