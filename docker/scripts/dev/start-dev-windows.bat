@@ -43,7 +43,6 @@ REM Generate docker-compose override with correct paths
 echo Generating docker-compose.paths.yml with correct paths...
 (
 echo # Auto-generated path overrides based on detected structure
-echo # Generated: %date% %time%
 echo.
 echo services:
 echo   backend:
@@ -51,7 +50,6 @@ echo     build:
 echo       context: %KZZ_RELATIVE_PATH%
 echo       dockerfile: docker/Dockerfile
 echo     volumes:
-echo       # Live code editing for development
 echo       - %KZZ_RELATIVE_PATH%/src:/app/src
 echo.
 echo   db:
