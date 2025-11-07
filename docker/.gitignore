@@ -1,0 +1,12 @@
+# Environment files
+.env
+
+# Cloudflare tunnel credentials (NEVER commit these!)
+tunnel-credentials.json
+*.json
+
+# Docker override files
+docker-compose.override.yml
+
+# Keep examples
+!.env.example

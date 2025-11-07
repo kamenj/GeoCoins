@@ -4,8 +4,8 @@ const path = require('path');
 
 const PORT = process.argv[2] || 8081;
 const ROOT_DIR = path.join(__dirname, '..', 'v5');
-const BACKEND_HOST = 'localhost';
-const BACKEND_PORT = 3000;
+const BACKEND_HOST = process.env.BACKEND_HOST || 'localhost';
+const BACKEND_PORT = process.env.BACKEND_PORT || 3000;
 
 const MIME_TYPES = {
   '.html': 'text/html',

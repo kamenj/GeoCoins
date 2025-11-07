@@ -1,0 +1,26 @@
+# Production environment overrides
+version: '3.8'
+
+services:
+  backend:
+    environment:
+      NODE_ENV: production
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: ${POSTGRES_PASSWORD}  # Read from .env file
+      DB_NAME: geocoins
+      JWT_SECRET: ${JWT_SECRET}  # Read from .env file
+      PORT: 3000
+      ALLOWED_ORIGINS: http://localhost:8080,http://127.0.0.1:8080,http://localhost:8081,http://127.0.0.1:8081,https://kkk.kaminooo.com
+    restart: unless-stopped
+
+  frontend:
+    environment:
+      BACKEND_HOST: backend
+      BACKEND_PORT: 3000
+    restart: unless-stopped
+
+  db:
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}  # Read from .env file

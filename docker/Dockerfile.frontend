@@ -1,0 +1,16 @@
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Copy v5 frontend files (context is GeoCoins root)
+COPY v5 ./v5
+
+# Copy webserver from bin directory
+COPY bin/webserver.js ./bin/webserver.js
+
+# Expose frontend port
+EXPOSE 8081
+
+# Start webserver (it will serve from ../v5 relative to bin/)
+WORKDIR /app/bin
+CMD ["node", "webserver.js", "8081"]

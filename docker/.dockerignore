@@ -1,0 +1,10 @@
+# Docker specific
+.env
+docker-compose.override.yml
+
+# Cloudflare tunnel credentials (sensitive!)
+tunnel-credentials.json
+*.json
+
+# Keep config example
+!.env.example

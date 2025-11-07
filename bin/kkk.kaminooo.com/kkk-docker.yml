@@ -1,0 +1,6 @@
+tunnel: b75605a4-4c9f-442e-ade7-d582a9b3f5e1
+credentials-file: /etc/cloudflared/credentials.json
+ingress:
+  - hostname: kkk.kaminooo.com
+    service: http://frontend:8081
+  - service: http_status:404

@@ -1,0 +1,28 @@
+# Development/Test environment overrides
+
+services:
+  backend:
+    environment:
+      NODE_ENV: development
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: geocoins
+      JWT_SECRET: dev-secret-key-not-for-production
+      PORT: 3000
+      ALLOWED_ORIGINS: http://localhost:8080,http://127.0.0.1:8080,http://localhost:8081,http://127.0.0.1:8081
+    volumes:
+      # Mount source code for live editing
+      - ../../../../../../../kzz/kzzNodeServer/src:/app/src
+    restart: "no"
+
+  frontend:
+    environment:
+      BACKEND_HOST: backend
+      BACKEND_PORT: 3000
+    volumes:
+      # Mount source for live editing
+      - ../v5:/app/v5
+      - ../bin/webserver.js:/app/bin/webserver.js
+    restart: "no"

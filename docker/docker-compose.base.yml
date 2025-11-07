@@ -1,0 +1,82 @@
+# Base configuration (shared between all environments)
+
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:17
+    container_name: geocoins-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: geocoins
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ../../../../../../../kzz/kzzNodeServer/database/geocoins_v1.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - geocoins-network
+
+  # Backend API Server
+  backend:
+    build:
+      context: ../../../../../../../kzz/kzzNodeServer
+      dockerfile: docker/Dockerfile
+    container_name: geocoins-backend
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: geocoins
+      NODE_ENV: production
+    ports:
+      - "3000:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - geocoins-network
+
+  # Frontend Web Server
+  frontend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.frontend
+    container_name: geocoins-frontend
+    environment:
+      BACKEND_HOST: backend
+      BACKEND_PORT: 3000
+    ports:
+      - "8081:8081"
+    depends_on:
+      - backend
+    networks:
+      - geocoins-network
+
+  # Cloudflare Tunnel
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    container_name: geocoins-tunnel
+    command: tunnel --no-autoupdate run
+    volumes:
+      - ../bin/kkk.kaminooo.com/kkk-docker.yml:/etc/cloudflared/config.yml:ro
+      - ../bin/kkk.kaminooo.com/b75605a4-4c9f-442e-ade7-d582a9b3f5e1.json:/etc/cloudflared/credentials.json:ro
+      - ../bin/kkk.kaminooo.com/cert.pem:/etc/cloudflared/cert.pem:ro
+    depends_on:
+      - frontend
+    networks:
+      - geocoins-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+
+networks:
+  geocoins-network:
+    driver: bridge
