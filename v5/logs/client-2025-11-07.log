@@ -117,3 +117,20 @@
 [2025-11-07T12:40:53.046Z] [DEBUG] refreshMapMarkers: created marker for point 5 at [42.68500000,23.31000000], draggable=null, opacity=1
 [2025-11-07T12:40:53.275Z] [DEBUG] refreshMapMarkers: created marker for point 6 at [42.68000000,23.34000000], draggable=null, opacity=1
 [2025-11-07T12:40:53.527Z] [DEBUG] refreshMapMarkers: created marker for point 7 at [42.70500000,23.32500000], draggable=null, opacity=1
+[2025-11-07T14:00:53.054Z] [DEBUG] refreshMapPointsTable: called - skipMapRefresh=false, caller=at showContent (https://kkk.kaminooo.com/app.js:2060:7)
+[2025-11-07T14:00:53.318Z] [DEBUG] refreshMapPointsTable: called - skipMapRefresh=false, caller=at loadAll (https://kkk.kaminooo.com/app.js:6668:3)
+[2025-11-07T14:00:53.564Z] [DEBUG] refreshMapMarkers: called - skipMapRefresh=false, changingPointLocation=null, caller=at initializeLeafletMap (https://kkk.kaminooo.com/app.js:4777:7)
+[2025-11-07T14:00:53.817Z] [DEBUG] refreshMapMarkers: called - skipMapRefresh=false, changingPointLocation=null, caller=at https://kkk.kaminooo.com/app.js:3802:7
+[2025-11-07T14:00:54.057Z] [DEBUG] refreshMapMarkers: called - skipMapRefresh=false, changingPointLocation=null, caller=at https://kkk.kaminooo.com/app.js:3802:7
+[2025-11-07T14:00:54.383Z] [DEBUG] refreshMapMarkers: created marker for point 1 at [42.69770000,23.32190000], draggable=null, opacity=1
+[2025-11-07T14:00:54.614Z] [DEBUG] refreshMapMarkers: created marker for point 2 at [42.13540000,24.74530000], draggable=null, opacity=1
+[2025-11-07T14:00:54.863Z] [DEBUG] refreshMapMarkers: created marker for point 3 at [42.69500000,23.33500000], draggable=null, opacity=1
+[2025-11-07T14:00:55.095Z] [DEBUG] refreshMapMarkers: created marker for point 4 at [42.71000000,23.35000000], draggable=null, opacity=1
+[2025-11-07T14:00:55.323Z] [DEBUG] refreshMapMarkers: created marker for point 5 at [42.68500000,23.31000000], draggable=null, opacity=1
+[2025-11-07T14:00:55.556Z] [DEBUG] refreshMapMarkers: created marker for point 6 at [42.68000000,23.34000000], draggable=null, opacity=1
+[2025-11-07T14:00:55.788Z] [DEBUG] refreshMapMarkers: created marker for point 7 at [42.70500000,23.32500000], draggable=null, opacity=1
+[2025-11-07T14:00:56.087Z] [DEBUG] refreshMapMarkers: created marker for point 8 at [42.69500000,23.32800000], draggable=null, opacity=1
+[2025-11-07T14:00:56.315Z] [DEBUG] refreshMapMarkers: created marker for point 9 at [42.69000000,23.31500000], draggable=null, opacity=1
+[2025-11-07T14:00:56.548Z] [DEBUG] refreshMapMarkers: created marker for point 10 at [42.70000000,23.33200000], draggable=null, opacity=1
+[2025-11-07T14:00:56.773Z] [DEBUG] refreshMapMarkers: created marker for point 11 at [42.69600000,23.32000000], draggable=null, opacity=1
+[2025-11-07T14:00:57.010Z] [DEBUG] refreshMapMarkers: created marker for point 12 at [42.65500000,23.37000000], draggable=null, opacity=1
